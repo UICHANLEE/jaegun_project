@@ -1,0 +1,1922 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>목양실 10:12</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090b0a;
+        --paper: #efe3c9;
+        --paper-ink: #201a13;
+        --panel: rgba(9, 13, 13, 0.82);
+        --panel-solid: rgba(14, 19, 18, 0.96);
+        --panel-soft: rgba(28, 31, 27, 0.72);
+        --line: rgba(232, 196, 119, 0.3);
+        --line-bright: rgba(232, 196, 119, 0.58);
+        --text: #f5ead7;
+        --muted: #bdb09a;
+        --gold: #e6ba61;
+        --teal: #69c6bd;
+        --green: #a0bf70;
+        --red: #df735f;
+        --blue: #8aa8d8;
+        --shadow: rgba(0, 0, 0, 0.58);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        color: var(--text);
+        background:
+          linear-gradient(90deg, rgba(4, 6, 6, 0.72), rgba(4, 6, 6, 0.28) 46%, rgba(4, 6, 6, 0.82)),
+          linear-gradient(rgba(5, 7, 7, 0.18), rgba(5, 7, 7, 0.9)),
+          url("assets/church-case-bg.png") center / cover fixed,
+          #0a0d0c;
+        font-family:
+          "Noto Sans KR",
+          "Apple SD Gothic Neo",
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        content: "";
+        background:
+          radial-gradient(circle at 12% 18%, rgba(232, 196, 119, 0.18), transparent 22rem),
+          radial-gradient(circle at 84% 24%, rgba(105, 198, 189, 0.22), transparent 24rem),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+          linear-gradient(rgba(255, 255, 255, 0.023) 1px, transparent 1px);
+        background-size: auto, auto, 54px 54px, 54px 54px;
+      }
+
+      body::after {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        content: "";
+        background:
+          repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 5px),
+          linear-gradient(0deg, rgba(0, 0, 0, 0.58), transparent 36%, rgba(0, 0, 0, 0.42));
+        opacity: 0.7;
+      }
+
+      button {
+        border: 0;
+        color: inherit;
+        font: inherit;
+      }
+
+      .app {
+        width: min(1240px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 36px 0 52px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+        gap: 1.4rem;
+        align-items: end;
+        min-height: 340px;
+        padding: 28px 0 22px;
+      }
+
+      .case-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        min-height: 34px;
+        padding: 0.42rem 0.7rem;
+        border: 1px solid rgba(232, 196, 119, 0.42);
+        background: rgba(6, 9, 9, 0.62);
+        box-shadow: 0 14px 34px var(--shadow);
+        color: var(--gold);
+        font-size: 0.78rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .page-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-top: 1rem;
+      }
+
+      .page-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        border: 1px solid rgba(105, 198, 189, 0.36);
+        padding: 0 0.68rem;
+        color: var(--text);
+        background: rgba(105, 198, 189, 0.12);
+        font-size: 0.78rem;
+        font-weight: 900;
+        text-decoration: none;
+      }
+
+      .mode-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.55rem;
+        margin-top: 0.85rem;
+      }
+
+      .mode-button {
+        display: inline-flex;
+        align-items: center;
+        min-height: 40px;
+        border: 1px solid rgba(232, 196, 119, 0.48);
+        padding: 0 0.82rem;
+        color: #1b1309;
+        background: linear-gradient(180deg, #efd08c, #bd813b);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+        font-size: 0.82rem;
+        font-weight: 950;
+        cursor: pointer;
+      }
+
+      .mode-button.secondary {
+        border-color: rgba(105, 198, 189, 0.4);
+        color: var(--text);
+        background: rgba(105, 198, 189, 0.12);
+      }
+
+      .mode-status {
+        min-height: 34px;
+        border: 1px solid rgba(232, 196, 119, 0.24);
+        padding: 0.42rem 0.66rem;
+        color: var(--muted);
+        background: rgba(6, 9, 9, 0.62);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .timer-controls {
+        display: grid;
+        grid-template-columns: auto minmax(96px, 128px) auto auto auto auto minmax(180px, 1fr);
+        gap: 0.55rem;
+        align-items: center;
+        max-width: 780px;
+        margin-top: 0.65rem;
+      }
+
+      .timer-label {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .timer-input {
+        height: 40px;
+        min-width: 0;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        border-radius: 0;
+        padding: 0 0.7rem;
+        color: var(--text);
+        background: rgba(6, 9, 9, 0.68);
+        font: inherit;
+        font-weight: 900;
+        outline: none;
+      }
+
+      .timer-status {
+        min-height: 40px;
+        border: 1px solid rgba(105, 198, 189, 0.28);
+        padding: 0.55rem 0.7rem;
+        color: var(--teal);
+        background: rgba(105, 198, 189, 0.1);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.82rem;
+        font-weight: 900;
+      }
+
+      .case-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--red);
+        box-shadow: 0 0 18px rgba(223, 115, 95, 0.9);
+      }
+
+      h1 {
+        max-width: 780px;
+        margin: 1rem 0 0.85rem;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(3.1rem, 7vw, 6.8rem);
+        line-height: 0.92;
+        letter-spacing: 0;
+        text-shadow: 0 20px 70px rgba(0, 0, 0, 0.76);
+      }
+
+      .lead {
+        max-width: 720px;
+        margin: 0;
+        color: #d7ccb7;
+        font-size: 1.08rem;
+        line-height: 1.75;
+      }
+
+      .case-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border: 1px solid rgba(232, 196, 119, 0.28);
+        background: rgba(7, 11, 11, 0.72);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(14px);
+      }
+
+      .stat {
+        min-height: 86px;
+        padding: 0.9rem;
+        border-right: 1px solid rgba(232, 196, 119, 0.18);
+      }
+
+      .stat:last-child {
+        border-right: 0;
+      }
+
+      .stat-value {
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 1.35rem;
+        font-weight: 900;
+      }
+
+      .stat-label {
+        margin-top: 0.28rem;
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.4;
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+        gap: 1rem;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.045), transparent 20%),
+          var(--panel);
+        box-shadow: 0 22px 70px rgba(0, 0, 0, 0.46);
+        backdrop-filter: blur(16px);
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 54px;
+        padding: 0.9rem 1rem;
+        border-bottom: 1px solid rgba(232, 196, 119, 0.2);
+        background: rgba(4, 7, 7, 0.44);
+      }
+
+      .panel-title {
+        color: var(--gold);
+        font-size: 0.88rem;
+        font-weight: 900;
+      }
+
+      .panel-meta {
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.75rem;
+      }
+
+      .suspects {
+        display: grid;
+        gap: 0.64rem;
+        padding: 0.8rem;
+      }
+
+      .suspect-card {
+        width: 100%;
+        min-height: 112px;
+        padding: 0;
+        border: 1px solid rgba(232, 196, 119, 0.22);
+        background: rgba(10, 15, 15, 0.7);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .suspect-card.active {
+        border-color: rgba(105, 198, 189, 0.72);
+        background:
+          linear-gradient(90deg, rgba(105, 198, 189, 0.18), transparent 64%),
+          rgba(13, 20, 19, 0.9);
+      }
+
+      .suspect-card.culprit.active {
+        border-color: rgba(223, 115, 95, 0.8);
+        background:
+          linear-gradient(90deg, rgba(223, 115, 95, 0.16), transparent 64%),
+          rgba(13, 20, 19, 0.9);
+      }
+
+      .suspect-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        min-height: 34px;
+        padding: 0 0.72rem;
+        border-bottom: 1px solid rgba(232, 196, 119, 0.16);
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .suspect-card.culprit .suspect-top {
+        color: #ffad9d;
+      }
+
+      .suspect-name {
+        padding: 0.74rem 0.72rem 0.24rem;
+        color: var(--text);
+        font-size: 1rem;
+        font-weight: 950;
+        line-height: 1.36;
+      }
+
+      .suspect-role {
+        padding: 0 0.72rem 0.72rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.45;
+      }
+
+      .workspace {
+        min-height: 720px;
+      }
+
+      .matrix-board {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .clue-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(230px, 1fr));
+        gap: 0.72rem;
+        padding: 0.9rem;
+        overflow-x: auto;
+      }
+
+      .person-column {
+        min-width: 0;
+        border: 1px solid rgba(232, 196, 119, 0.24);
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.04), transparent 22%),
+          rgba(8, 12, 12, 0.74);
+      }
+
+      .person-head {
+        min-height: 92px;
+        padding: 0.82rem;
+        border-bottom: 1px solid rgba(232, 196, 119, 0.18);
+        background: rgba(5, 8, 8, 0.48);
+      }
+
+      .person-portrait {
+        position: relative;
+        margin-bottom: 0.72rem;
+        border: 1px solid rgba(232, 196, 119, 0.22);
+        background: rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .person-portrait::after {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        content: "";
+        background:
+          linear-gradient(180deg, transparent 44%, rgba(0, 0, 0, 0.58)),
+          repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 1px, transparent 1px 5px);
+      }
+
+      .person-portrait img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 5;
+        object-fit: cover;
+      }
+
+      .person-id {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .person-name {
+        margin-top: 0.62rem;
+        color: var(--text);
+        font-size: 1.28rem;
+        font-weight: 950;
+        line-height: 1.18;
+      }
+
+      .person-role {
+        margin-top: 0.28rem;
+        color: var(--muted);
+        font-size: 0.76rem;
+        line-height: 1.38;
+      }
+
+      .matrix-clues {
+        display: grid;
+        gap: 0.48rem;
+        padding: 0.62rem;
+      }
+
+      .matrix-clue {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.62rem;
+        width: 100%;
+        min-height: 74px;
+        padding: 0.68rem;
+        border: 1px solid rgba(232, 196, 119, 0.18);
+        background: rgba(5, 8, 8, 0.58);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .matrix-clue:hover,
+      .matrix-clue.active {
+        border-color: rgba(105, 198, 189, 0.7);
+        background:
+          linear-gradient(90deg, rgba(105, 198, 189, 0.16), transparent 70%),
+          rgba(9, 15, 15, 0.9);
+      }
+
+      .matrix-clue.viewed {
+        border-color: rgba(160, 191, 112, 0.42);
+      }
+
+      .matrix-clue.locked .clue-title,
+      .matrix-clue.locked .clue-sub {
+        color: rgba(245, 234, 215, 0.5);
+      }
+
+      .clue-number {
+        display: grid;
+        width: 48px;
+        height: 34px;
+        place-items: center;
+        border: 1px solid rgba(105, 198, 189, 0.42);
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.7rem;
+        font-weight: 950;
+      }
+
+      .clue-title {
+        color: var(--text);
+        font-size: 0.86rem;
+        font-weight: 900;
+        line-height: 1.34;
+      }
+
+      .clue-sub {
+        margin-top: 0.18rem;
+        color: var(--muted);
+        font-size: 0.72rem;
+        line-height: 1.34;
+      }
+
+      .detail-layout {
+        display: grid;
+        grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1fr);
+        gap: 1rem;
+        padding: 0 0.9rem 0.9rem;
+      }
+
+      .code-console {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) auto;
+        gap: 0.62rem;
+        padding: 0 0.9rem 0.9rem;
+      }
+
+      .code-console input {
+        width: 100%;
+        min-width: 0;
+        height: 48px;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        border-radius: 0;
+        padding: 0 0.9rem;
+        color: var(--text);
+        background: rgba(3, 6, 6, 0.62);
+        font: inherit;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        outline: none;
+        text-transform: uppercase;
+      }
+
+      .code-console input:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 3px rgba(105, 198, 189, 0.16);
+      }
+
+      .code-console button {
+        min-width: 104px;
+        height: 48px;
+        border: 1px solid rgba(232, 196, 119, 0.5);
+        background: linear-gradient(180deg, #efd08c, #bd813b);
+        color: #18120b;
+        font-weight: 950;
+        cursor: pointer;
+      }
+
+      .code-message {
+        min-height: 28px;
+        padding: 0 0.9rem 0.8rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.5;
+      }
+
+      .code-message.error {
+        color: #ffb8aa;
+      }
+
+      .case-note {
+        border: 1px solid rgba(232, 196, 119, 0.22);
+        background: rgba(8, 12, 12, 0.72);
+      }
+
+      .case-note-inner {
+        padding: 1rem;
+      }
+
+      .case-note-portrait {
+        float: right;
+        width: min(38%, 150px);
+        margin: 0 0 0.8rem 1rem;
+        border: 1px solid rgba(232, 196, 119, 0.26);
+        background: rgba(0, 0, 0, 0.3);
+      }
+
+      .case-note-portrait img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 5;
+        object-fit: cover;
+      }
+
+      .case-note h2 {
+        margin: 0 0 0.55rem;
+        font-size: 2rem;
+        line-height: 1.05;
+      }
+
+      .case-note p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .dossier {
+        display: grid;
+        grid-template-columns: minmax(0, 0.95fr) minmax(330px, 1.05fr);
+        gap: 0.95rem;
+        padding: 1rem;
+      }
+
+      .profile {
+        min-height: 330px;
+        border: 1px solid rgba(232, 196, 119, 0.2);
+        background:
+          linear-gradient(145deg, rgba(232, 196, 119, 0.08), transparent 42%),
+          rgba(8, 12, 12, 0.7);
+      }
+
+      .profile-main {
+        padding: 1rem;
+      }
+
+      .profile-label {
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.75rem;
+        font-weight: 900;
+      }
+
+      .profile h2 {
+        margin: 0.55rem 0 0.35rem;
+        font-size: clamp(1.7rem, 4vw, 2.7rem);
+        line-height: 1.05;
+      }
+
+      .profile-sub {
+        color: var(--muted);
+        font-size: 0.96rem;
+        line-height: 1.55;
+      }
+
+      .profile-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-top: 1px solid rgba(232, 196, 119, 0.16);
+      }
+
+      .profile-field {
+        min-height: 82px;
+        padding: 0.82rem 1rem;
+        border-right: 1px solid rgba(232, 196, 119, 0.16);
+        border-bottom: 1px solid rgba(232, 196, 119, 0.16);
+      }
+
+      .profile-field:nth-child(2n) {
+        border-right: 0;
+      }
+
+      .field-name {
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .field-value {
+        margin-top: 0.28rem;
+        color: var(--text);
+        font-size: 0.9rem;
+        line-height: 1.48;
+      }
+
+      .hint-picker {
+        display: grid;
+        gap: 0.62rem;
+      }
+
+      .hint-button {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 0.72rem;
+        align-items: center;
+        width: 100%;
+        min-height: 66px;
+        padding: 0.72rem;
+        border: 1px solid rgba(232, 196, 119, 0.22);
+        background: rgba(9, 13, 13, 0.72);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .hint-button:hover,
+      .hint-button.active {
+        border-color: rgba(105, 198, 189, 0.68);
+        background:
+          linear-gradient(90deg, rgba(105, 198, 189, 0.14), transparent 70%),
+          rgba(11, 17, 16, 0.9);
+      }
+
+      .hint-button.viewed .hint-state {
+        color: var(--green);
+      }
+
+      .hint-type {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border: 1px solid rgba(105, 198, 189, 0.42);
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .hint-name {
+        color: var(--text);
+        font-size: 0.92rem;
+        font-weight: 900;
+        line-height: 1.35;
+      }
+
+      .hint-desc {
+        margin-top: 0.18rem;
+        color: var(--muted);
+        font-size: 0.76rem;
+        line-height: 1.36;
+      }
+
+      .hint-state {
+        color: rgba(245, 234, 215, 0.46);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+      }
+
+      .evidence {
+        min-height: 494px;
+        border: 1px solid rgba(232, 196, 119, 0.22);
+        background:
+          linear-gradient(90deg, rgba(105, 198, 189, 0.075), transparent 48%),
+          var(--panel-solid);
+      }
+
+      .evidence-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 50px;
+        padding: 0.82rem 0.95rem;
+        border-bottom: 1px solid rgba(232, 196, 119, 0.18);
+      }
+
+      .evidence-title {
+        color: var(--gold);
+        font-size: 0.9rem;
+        font-weight: 950;
+        line-height: 1.4;
+      }
+
+      .evidence-id {
+        flex: 0 0 auto;
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.74rem;
+      }
+
+      .evidence-body {
+        padding: 1rem;
+      }
+
+      .evidence-photo-strip {
+        margin: 0 0 1rem;
+        padding: 0.55rem;
+        background: rgba(239, 227, 201, 0.94);
+        box-shadow: 0 18px 38px rgba(0, 0, 0, 0.36);
+        transform: rotate(-0.35deg);
+      }
+
+      .evidence-photo-strip img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        border: 1px solid rgba(32, 26, 19, 0.16);
+      }
+
+      .evidence-photo-strip figcaption {
+        padding: 0.58rem 0.22rem 0.12rem;
+        color: var(--paper-ink);
+        font-size: 0.78rem;
+        font-weight: 900;
+        line-height: 1.45;
+      }
+
+      .empty-evidence {
+        display: grid;
+        min-height: 410px;
+        place-items: center;
+        border: 1px dashed rgba(232, 196, 119, 0.24);
+        color: rgba(245, 234, 215, 0.56);
+        text-align: center;
+        line-height: 1.7;
+      }
+
+      .artifact {
+        min-height: 330px;
+      }
+
+      .artifact.audio {
+        border: 1px solid rgba(105, 198, 189, 0.24);
+        background:
+          linear-gradient(180deg, rgba(105, 198, 189, 0.13), transparent 38%),
+          rgba(4, 9, 9, 0.74);
+      }
+
+      .wave {
+        display: flex;
+        align-items: center;
+        gap: 0.22rem;
+        height: 92px;
+        padding: 0 1rem;
+        border-bottom: 1px solid rgba(105, 198, 189, 0.18);
+      }
+
+      .wave span {
+        width: 5px;
+        height: calc(16px + var(--h) * 1px);
+        background: linear-gradient(180deg, var(--teal), rgba(232, 196, 119, 0.82));
+        box-shadow: 0 0 12px rgba(105, 198, 189, 0.28);
+      }
+
+      .transcript {
+        padding: 1rem;
+      }
+
+      .line {
+        display: grid;
+        grid-template-columns: 82px 1fr;
+        gap: 0.72rem;
+        margin-bottom: 0.8rem;
+        line-height: 1.62;
+      }
+
+      .speaker {
+        color: var(--teal);
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .speech {
+        color: var(--text);
+      }
+
+      .artifact.photo,
+      .artifact.chat,
+      .artifact.item,
+      .artifact.book {
+        color: var(--paper-ink);
+        background: var(--paper);
+        box-shadow: 0 20px 42px rgba(0, 0, 0, 0.36);
+      }
+
+      .artifact.photo {
+        padding: 0.82rem;
+        transform: rotate(-0.7deg);
+      }
+
+      .photo-frame {
+        min-height: 230px;
+        border: 1px solid rgba(32, 26, 19, 0.22);
+        background:
+          radial-gradient(circle at 74% 28%, rgba(128, 73, 45, 0.3), transparent 48px),
+          linear-gradient(135deg, rgba(28, 31, 27, 0.1), rgba(28, 31, 27, 0.26)),
+          repeating-linear-gradient(0deg, rgba(32, 26, 19, 0.08) 0 1px, transparent 1px 12px);
+      }
+
+      .photo-caption {
+        padding-top: 0.78rem;
+        font-size: 0.92rem;
+        font-weight: 900;
+        line-height: 1.55;
+      }
+
+      .artifact.chat {
+        padding: 0.88rem;
+      }
+
+      .chat-top {
+        padding-bottom: 0.65rem;
+        border-bottom: 1px solid rgba(32, 26, 19, 0.2);
+        font-size: 0.82rem;
+        font-weight: 900;
+      }
+
+      .bubble {
+        width: fit-content;
+        max-width: 86%;
+        margin-top: 0.68rem;
+        padding: 0.62rem 0.72rem;
+        border: 1px solid rgba(32, 26, 19, 0.18);
+        background: rgba(255, 255, 255, 0.48);
+        font-size: 0.9rem;
+        line-height: 1.55;
+      }
+
+      .bubble.right {
+        margin-left: auto;
+        background: rgba(232, 196, 119, 0.55);
+      }
+
+      .artifact.item {
+        padding: 1rem;
+      }
+
+      .evidence-tag {
+        display: inline-flex;
+        min-height: 28px;
+        align-items: center;
+        padding: 0 0.52rem;
+        border: 1px solid rgba(32, 26, 19, 0.3);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .item-sketch {
+        display: grid;
+        min-height: 190px;
+        place-items: center;
+        margin: 1rem 0;
+        border: 1px solid rgba(32, 26, 19, 0.18);
+        background:
+          radial-gradient(circle at 55% 45%, rgba(32, 26, 19, 0.13), transparent 58px),
+          repeating-linear-gradient(45deg, rgba(32, 26, 19, 0.08) 0 8px, transparent 8px 18px);
+        color: rgba(32, 26, 19, 0.66);
+        font-size: 2rem;
+        font-weight: 950;
+      }
+
+      .artifact.book {
+        padding: 0.9rem;
+      }
+
+      .ledger-row {
+        display: grid;
+        grid-template-columns: 1fr 90px 70px;
+        gap: 0.6rem;
+        padding: 0.58rem 0;
+        border-bottom: 1px solid rgba(32, 26, 19, 0.18);
+        font-size: 0.82rem;
+      }
+
+      .ledger-row strong {
+        color: #781f16;
+      }
+
+      .readout {
+        margin-top: 0.9rem;
+        padding: 0.92rem;
+        border-left: 3px solid var(--teal);
+        background: rgba(105, 198, 189, 0.1);
+        color: var(--text);
+        line-height: 1.7;
+      }
+
+      .readout strong {
+        color: var(--gold);
+      }
+
+      .progress {
+        display: grid;
+        gap: 0.65rem;
+        padding: 0 1rem 1rem;
+      }
+
+      .progress-top {
+        display: flex;
+        justify-content: space-between;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .locks {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 0.32rem;
+      }
+
+      .lock {
+        height: 9px;
+        border: 1px solid rgba(232, 196, 119, 0.24);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .lock.open {
+        border-color: rgba(105, 198, 189, 0.78);
+        background: linear-gradient(90deg, var(--teal), rgba(232, 196, 119, 0.78));
+      }
+
+      .verdict {
+        margin-top: 1rem;
+        border: 1px solid rgba(223, 115, 95, 0.36);
+        background:
+          linear-gradient(90deg, rgba(223, 115, 95, 0.14), transparent 55%),
+          rgba(9, 13, 13, 0.78);
+      }
+
+      .verdict-inner {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem;
+      }
+
+      .verdict-title {
+        color: #ffb1a2;
+        font-size: 0.9rem;
+        font-weight: 950;
+      }
+
+      .verdict-copy {
+        margin-top: 0.28rem;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.55;
+      }
+
+      .verdict button {
+        min-width: 112px;
+        height: 44px;
+        border: 1px solid rgba(223, 115, 95, 0.6);
+        background: rgba(223, 115, 95, 0.18);
+        color: var(--text);
+        font-weight: 950;
+        cursor: pointer;
+      }
+
+      .verdict button:disabled {
+        border-color: rgba(232, 196, 119, 0.22);
+        background: rgba(255, 255, 255, 0.045);
+        color: rgba(245, 234, 215, 0.44);
+        cursor: not-allowed;
+      }
+
+      .verdict-text {
+        display: none;
+        padding: 0 1rem 1rem;
+        color: var(--text);
+        line-height: 1.75;
+        white-space: pre-line;
+      }
+
+      .verdict.open .verdict-text {
+        display: block;
+      }
+
+      @media (max-width: 1020px) {
+        body {
+          background-attachment: scroll;
+        }
+
+        .hero,
+        .board,
+        .dossier,
+        .detail-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .clue-grid {
+          grid-template-columns: repeat(4, minmax(230px, 1fr));
+        }
+
+        .workspace {
+          min-height: 0;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .app {
+          width: min(100% - 22px, 1240px);
+          padding-top: 22px;
+        }
+
+        .hero {
+          min-height: 0;
+        }
+
+        .case-stats,
+        .profile-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .stat,
+        .profile-field {
+          border-right: 0;
+        }
+
+        .panel-head,
+        .evidence-head,
+        .verdict-inner {
+          align-items: flex-start;
+          grid-template-columns: 1fr;
+          flex-direction: column;
+        }
+
+        .line {
+          grid-template-columns: 1fr;
+          gap: 0.18rem;
+        }
+
+        .code-console {
+          grid-template-columns: 1fr;
+        }
+
+        .timer-controls {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .timer-label,
+        .timer-status {
+          grid-column: 1 / -1;
+        }
+
+        .locks {
+          grid-template-columns: repeat(6, 1fr);
+        }
+
+        .clue-grid {
+          grid-template-columns: repeat(4, minmax(230px, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <section class="hero">
+        <div>
+          <div class="case-kicker"><span class="case-dot"></span> 관리자 콘솔</div>
+          <h1>목양실 10:12</h1>
+          <p class="lead">
+            부활절 예배 전, 목사님이 목양실에서 쓰러진 채 발견되었습니다. 네 명의 인물, 열두 개의 증거, 그리고 서로 다른 거짓말. 증거를 모두 열어 사망추정시각과 조작된 알리바이를 맞춰 보세요.
+          </p>
+          <div class="page-links">
+            <a class="page-link" href="player.html">참가자용 모바일 페이지</a>
+            <a class="page-link" href="player.html?reset=1">참가자 힌트 초기화 링크</a>
+            <a class="page-link" href="docs/APP_FLOW.md">앱 흐름도</a>
+          </div>
+          <div class="mode-controls" aria-label="참가자 화면 전환">
+            <button class="mode-button" type="button" id="startCrimeMode">크라임씬 화면으로 전환</button>
+            <button class="mode-button secondary" type="button" id="resetRecreationMode">밝은 화면으로 되돌리기</button>
+            <div class="mode-status" id="modeStatus">현재 참가자 화면: 확인 중</div>
+          </div>
+          <div class="timer-controls" aria-label="참가자 타이머 설정">
+            <label class="timer-label" for="timerMinutes">타이머</label>
+            <input class="timer-input" id="timerMinutes" type="number" min="1" max="180" step="1" value="10" aria-label="타이머 분" />
+            <button class="mode-button" type="button" id="startTimer">시작</button>
+            <button class="mode-button secondary" type="button" id="stopTimer">정지</button>
+            <button class="mode-button secondary" type="button" id="resetTimer">초기화</button>
+            <button class="mode-button secondary" type="button" id="clearTimer">숨김</button>
+            <div class="timer-status" id="timerStatus">타이머: --:--</div>
+          </div>
+        </div>
+        <div class="case-stats" aria-label="사건 요약">
+          <div class="stat">
+            <div class="stat-value">4</div>
+            <div class="stat-label">조사 대상 인물</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">12</div>
+            <div class="stat-label">획득 가능한 힌트</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">10:12</div>
+            <div class="stat-label">추정 핵심 시각</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel matrix-board">
+        <div class="panel-head">
+          <div class="panel-title">용의자별 힌트 매트릭스</div>
+          <div class="panel-meta">4 PERSONS × 3 HINTS</div>
+        </div>
+        <div class="clue-grid" id="clueGrid"></div>
+        <form class="code-console" id="codeForm">
+          <input id="hintCodeInput" autocomplete="off" spellcheck="false" placeholder="힌트 코드 입력" />
+          <button type="submit">해제</button>
+        </form>
+        <div class="code-message" id="codeMessage">힌트는 코드 입력으로만 열립니다. 잠긴 칸을 눌러도 내용은 공개되지 않습니다.</div>
+        <div class="detail-layout">
+          <article class="case-note" id="caseNote"></article>
+          <article class="evidence" id="evidence"></article>
+        </div>
+        <div class="verdict" id="verdict">
+          <div class="verdict-inner">
+            <div>
+              <div class="verdict-title">최종 추리 봉투</div>
+              <div class="verdict-copy" id="verdictCopy">12개의 증거를 모두 열면 정답 확인이 가능합니다.</div>
+            </div>
+            <button type="button" id="verdictButton" disabled>정답 잠김</button>
+          </div>
+          <div class="verdict-text" id="verdictText"></div>
+        </div>
+        <div class="progress">
+          <div class="progress-top">
+            <span>열람한 증거</span>
+            <span id="progressText">0 / 12</span>
+          </div>
+          <div class="locks" id="locks" aria-hidden="true"></div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const suspects = [
+        {
+          id: "P01",
+          name: "홍강도",
+          role: "전도사 / 찬양팀 리더",
+          age: "32세",
+          gender: "남성",
+          portrait: "assets/portrait-hong-gangdo.png",
+          summary:
+            "너무 많은 사역으로 지치고 병든 상태. 사례를 올려 달라고 요청했다가 목사님에게 핀잔을 듣고 나왔다는 이야기가 있다.",
+          alibi: "사망추정시각에는 찬양팀 연습을 인도하고 있었다고 주장.",
+          motive: "사례비 인상 요청을 거절당했고, 모욕적인 말을 들은 직후 감정이 폭발할 이유가 있었다.",
+          clues: [
+            {
+              id: "H01",
+              code: "SILOAM73",
+              hint: "힌트1",
+              type: "ITEM",
+              title: "목사님 이름이 적힌 알러지 약",
+              short: "목양실 책상 아래에서 발견된 처방 약 봉투",
+              render: "item",
+              sketch: "RX",
+              artifactTitle: "증거 봉투 A-17",
+              image: "assets/evidence-allergy-peanut.png",
+              body:
+                "약 봉투에는 목사님 이름이 적혀 있고, 봉투 안쪽에는 흰 가루가 묻어 있습니다. 약은 평소 목사님이 급성 알러지 반응이 올 때 복용하던 것입니다.",
+              readout:
+                "약이 사라진 것이 아니라 '사용된 흔적'이 있습니다. 목사님에게 알러지가 있다는 사실을 아는 사람만 이 약의 의미를 정확히 이용할 수 있습니다.",
+            },
+            {
+              id: "H02",
+              code: "KAIROS18",
+              hint: "힌트2",
+              type: "PHOTO",
+              title: "땅콩가루",
+              short: "찬양팀 간식 테이블과 목양실 컵 주변에서 같은 가루",
+              render: "photo",
+              artifactTitle: "현장 사진 10:18",
+              image: "assets/evidence-allergy-peanut.png",
+              body:
+                "목양실 컵받침과 찬양팀 간식 테이블에서 같은 고운 갈색 가루가 발견되었습니다. 냄새는 고소하지만, 목사님에게는 치명적인 알러지 유발 물질입니다.",
+              readout:
+                "목사님은 땅콩 알러지가 있었습니다. 단순한 간식 흔적이 아니라 약과 함께 보면 계획적인 접촉 가능성이 생깁니다.",
+            },
+            {
+              id: "H03",
+              code: "MARAH52",
+              hint: "힌트3",
+              type: "AUDIO",
+              title: "사례비 대화 녹취",
+              short: "목사님과 전도사님의 대화 일부",
+              render: "audio",
+              artifactTitle: "녹취 파일 REC-1012",
+              image: "assets/evidence-allergy-peanut.png",
+              lines: [
+                ["홍강도", "목사님, 사역이 너무 많습니다. 사례를 조금이라도 조정해 주시면 안 될까요."],
+                ["목사님", "그런 마음으로 사역하면 오래 못 버팁니다. 지금도 충분히 받고 있어요."],
+                ["홍강도", "충분하다고요? 제 몸이 망가지는 건 아무도 안 보시네요."],
+              ],
+              readout:
+                "동기는 가장 선명합니다. 다만 결정적 증거는 이 녹취 하나가 아니라, 알러지 약과 땅콩가루가 같은 방향을 가리킨다는 점입니다.",
+            },
+          ],
+        },
+        {
+          id: "P02",
+          name: "이비리",
+          role: "재정부 권사님",
+          age: "55세",
+          gender: "여성",
+          portrait: "assets/portrait-lee-biri.png",
+          summary:
+            "목사님의 비리를 알고 폭로하겠다고 찾아간 인물. 감정은 격했지만 현장에서 발견된 흔적은 살인보다 말다툼과 은폐에 가깝다.",
+          alibi: "사건 시간대에는 식사 당번으로 주방에 있었다고 주장.",
+          motive: "회계 문제를 두고 목사님과 크게 충돌할 이유가 있었다.",
+          clues: [
+            {
+              id: "H05",
+              code: "EBEN47",
+              hint: "힌트1",
+              type: "AUDIO",
+              title: "화내는 음성",
+              short: "목양실 문 밖에서 녹음된 높은 목소리",
+              render: "audio",
+              artifactTitle: "복도 녹음 09:57",
+              image: "assets/evidence-finance-ledger.png",
+              lines: [
+                ["이비리", "목사님, 이 장부 제가 다 봤습니다. 그냥 넘어갈 문제가 아니에요."],
+                ["목사님", "예배 전에 소란 만들지 마세요."],
+                ["이비리", "오늘 끝나고 공동의회에서 말씀드릴 겁니다."],
+              ],
+              readout:
+                "권사님은 목사님을 찾아간 사실을 숨겼습니다. 하지만 녹음 시각은 09:57로, 핵심 사망추정시각보다 앞섭니다.",
+            },
+            {
+              id: "H06",
+              code: "TITHE68",
+              hint: "힌트2",
+              type: "ITEM",
+              title: "얼룩진 구겨진 돈",
+              short: "축축한 현금 다발과 커피 얼룩",
+              render: "item",
+              sketch: "₩",
+              artifactTitle: "증거 봉투 B-04",
+              image: "assets/evidence-finance-ledger.png",
+              body:
+                "찬장 뒤쪽에서 구겨진 현금이 발견되었습니다. 지폐는 축축하고 커피 냄새가 납니다. 누군가 급하게 숨기거나 닦아낸 흔적으로 보입니다.",
+              readout:
+                "돈은 권사님이 회계 문제로 목사님을 압박했다는 증거입니다. 그러나 알러지 반응이나 땅콩가루와는 연결되지 않습니다.",
+            },
+            {
+              id: "H07",
+              code: "LEDGER31",
+              hint: "힌트3",
+              type: "BOOK",
+              title: "회계장부",
+              short: "지출 항목 일부가 붉은 펜으로 표시됨",
+              render: "book",
+              artifactTitle: "재정부 장부 사본",
+              image: "assets/evidence-finance-ledger.png",
+              rows: [
+                ["부활절 장식비", "148,000", "확인"],
+                ["목양실 비품", "320,000", "보류"],
+                ["외부 강사 사례", "500,000", "불일치"],
+                ["찬양팀 소모품", "92,000", "확인"],
+              ],
+              readout:
+                "권사님의 거짓말은 '안 찾아갔다'는 부분입니다. 범행 수단과는 거리가 있어 구라범으로 분류됩니다.",
+            },
+          ],
+        },
+        {
+          id: "P03",
+          name: "서신자",
+          role: "새신자",
+          age: "23세",
+          gender: "여성",
+          portrait: "assets/portrait-seo-shinja.png",
+          summary:
+            "이름과 소속을 숨기고 청년 모임에 들어온 인물. 목양실 근처에서 큰 소리를 들었다고 말하지만 정체와 목적을 감추고 있었다.",
+          alibi: "청년 모임 중 화장실에 갔고, 가는 길에 목양실에서 큰 소리를 들었다고 주장.",
+          motive: "목사님이 청년들과 별도 대화를 나누며 새신자의 정체를 의심하던 정황이 있다.",
+          clues: [
+            {
+              id: "H09",
+              code: "DAMAS12",
+              hint: "힌트1",
+              type: "CHAT",
+              title: "신만지 교회 단톡방 캡처",
+              short: "새신자 접근 지시가 담긴 대화",
+              render: "chat",
+              artifactTitle: "휴대폰 캡처 IMG-23",
+              image: "assets/evidence-newcomer-phone.png",
+              messages: [
+                ["left", "이번 부활절 예배 때 청년부 분위기 확인해."],
+                ["right", "이름은 서신자로 말했습니다. 아직 의심은 안 받는 것 같아요."],
+                ["left", "목사와 직접 부딪히지 말고 청년들 쪽으로 들어가."],
+              ],
+              readout:
+                "정체를 숨긴 것은 사실입니다. 하지만 지시 내용은 잠입과 관찰에 가깝고, 목사님에게 위해를 가하라는 내용은 없습니다.",
+            },
+            {
+              id: "H10",
+              code: "TALITHA86",
+              hint: "힌트2",
+              type: "PHOTO",
+              title: "신분증",
+              short: "신만지 교회 출입증, 본명 서만희",
+              render: "photo",
+              artifactTitle: "소지품 사진",
+              image: "assets/evidence-newcomer-phone.png",
+              body:
+                "지갑 안쪽에서 신만지 교회 출입증이 발견되었습니다. 표시된 본명은 서만희, 오늘 교회에 적은 이름은 서신자입니다.",
+              readout:
+                "이름을 숨긴 명백한 거짓말입니다. 다만 거짓 신분은 살인 증거가 아니라 별개의 목적을 보여 줍니다.",
+            },
+            {
+              id: "H11",
+              code: "GALIL27",
+              hint: "힌트3",
+              type: "CHAT",
+              title: "청년들과 목사님의 카톡",
+              short: "새신자를 조심하라는 목사님의 메시지",
+              render: "chat",
+              artifactTitle: "목사님 휴대폰 백업",
+              image: "assets/evidence-newcomer-phone.png",
+              messages: [
+                ["left", "새로 온 청년이 어디 소속인지 조금 더 확인해 보자."],
+                ["left", "예배 전에는 직접 몰아붙이지 말고 자연스럽게 얘기해."],
+                ["right", "네 목사님. 오늘 끝나고 같이 확인해볼게요."],
+              ],
+              readout:
+                "목사님이 새신자를 의심한 정황은 있습니다. 서신자가 큰 소리를 들었다는 증언은 오히려 목양실 안에서 다른 충돌이 있었음을 보강합니다.",
+            },
+          ],
+        },
+        {
+          id: "P04",
+          name: "박간호",
+          role: "간호사 / 최초 발견자",
+          age: "24세",
+          gender: "여성",
+          portrait: "assets/portrait-park-ganho.png",
+          summary:
+            "3연속 나이트 근무 후 다음날 데이 근무를 위해 잠을 청하던 중, 옆 교회 찬양 소리에 예민해져 있었다. 이후 목사님을 처음 발견했다.",
+          alibi: "10:10 친구와 카톡을 주고받았고, 이후 교회에 와 목사님을 발견했다고 진술.",
+          motive: "소음에 대한 짜증은 있었지만 목사님과 직접적인 갈등은 약하다.",
+          clues: [
+            {
+              id: "H13",
+              code: "SHALOM64",
+              hint: "힌트1",
+              type: "AUDIO",
+              title: "혼잣말 녹음",
+              short: "BGM처럼 깔린 찬양 소리와 짜증 섞인 목소리",
+              render: "audio",
+              artifactTitle: "휴대폰 음성 메모 10:08",
+              image: "assets/evidence-nurse-bag.png",
+              lines: [
+                ["박간호", "아 진짜... 오늘 데이인데 잠 좀 자자."],
+                ["배경음", "같은 찬양 후렴이 일정한 간격으로 반복됨."],
+                ["박간호", "연습이면 왜 똑같은 부분만 계속 틀어놔."],
+              ],
+              readout:
+                "중요한 건 욕설이 아니라 배경음입니다. 실제 연습이라기보다 같은 찬양 구간이 반복 재생된 흔적이 있습니다.",
+            },
+            {
+              id: "H14",
+              code: "RHEMA20",
+              hint: "힌트2",
+              type: "CHAT",
+              title: "10시 10분 친구와의 카톡",
+              short: "집에서 소음 때문에 잠을 못 잔다고 보낸 메시지",
+              render: "chat",
+              artifactTitle: "카톡 백업 10:10",
+              image: "assets/evidence-nurse-bag.png",
+              messages: [
+                ["right", "나 오늘 데이인데 옆 교회 찬양소리 때문에 잠을 못 자."],
+                ["left", "또 나이트 끝나고 바로 출근이야? 좀 쉬어."],
+                ["right", "10분만 더 이러면 가서 말하고 올 거야."],
+              ],
+              readout:
+                "10:10에 집에서 대화한 흔적이 있어 핵심 시각에 목양실 안에 있었다고 보기는 어렵습니다.",
+            },
+            {
+              id: "H15",
+              code: "MANNA57",
+              hint: "힌트3",
+              type: "ITEM",
+              title: "하루견과",
+              short: "간호사 가방에서 발견된 밀봉 견과 봉지",
+              render: "item",
+              sketch: "NUT",
+              artifactTitle: "소지품 확인 C-12",
+              image: "assets/evidence-nurse-bag.png",
+              body:
+                "박간호의 가방에서 하루견과 봉지가 발견되었습니다. 봉지는 뜯기지 않았고, 구매 영수증 시각은 전날 밤 병원 편의점입니다.",
+              readout:
+                "견과류 때문에 의심을 살 수 있지만, 밀봉 상태라 현장의 땅콩가루와 직접 연결되지 않습니다.",
+            },
+          ],
+        },
+      ];
+
+      const verdict =
+        "진범은 전도사이자 찬양팀 리더인 홍강도입니다.\n\n핵심은 알리바이입니다. 사망추정시각에 찬양팀 연습 중이었다는 말은 박간호의 녹음에서 무너집니다. 배경의 찬양은 실제 합주가 아니라 같은 후렴이 반복 재생된 소리였습니다.\n\n범행 흐름은 이렇습니다. 홍강도는 사례비 인상 요청을 했다가 목사님에게 핀잔을 듣고 나옵니다. 목사님에게 심한 땅콩 알러지가 있다는 점과 목사님 이름의 알러지 약 위치를 알고 있었고, 목양실 컵 주변에 땅콩가루를 남겼습니다. 이후 찬양팀 연습 소리를 틀어 둔 채 알리바이를 만들었습니다.\n\n이비리는 회계 문제를 숨긴 구라범, 서신자는 정체를 숨긴 구라범, 박간호는 짜증 섞인 최초 발견자입니다.";
+
+      const state = {
+        clueId: null,
+        viewed: new Set(),
+      };
+
+      const clueGridEl = document.querySelector("#clueGrid");
+      const caseNoteEl = document.querySelector("#caseNote");
+      const evidenceEl = document.querySelector("#evidence");
+      const codeForm = document.querySelector("#codeForm");
+      const hintCodeInput = document.querySelector("#hintCodeInput");
+      const codeMessage = document.querySelector("#codeMessage");
+      const progressTextEl = document.querySelector("#progressText");
+      const locksEl = document.querySelector("#locks");
+      const verdictEl = document.querySelector("#verdict");
+      const verdictButton = document.querySelector("#verdictButton");
+      const verdictText = document.querySelector("#verdictText");
+      const verdictCopy = document.querySelector("#verdictCopy");
+      const startCrimeModeButton = document.querySelector("#startCrimeMode");
+      const resetRecreationModeButton = document.querySelector("#resetRecreationMode");
+      const modeStatus = document.querySelector("#modeStatus");
+      const timerMinutesInput = document.querySelector("#timerMinutes");
+      const startTimerButton = document.querySelector("#startTimer");
+      const stopTimerButton = document.querySelector("#stopTimer");
+      const resetTimerButton = document.querySelector("#resetTimer");
+      const clearTimerButton = document.querySelector("#clearTimer");
+      const timerStatus = document.querySelector("#timerStatus");
+
+      const allClues = suspects.flatMap((suspect) => suspect.clues);
+      const codeMap = new Map(allClues.map((clue) => [clue.code, clue]));
+      const gameModeKey = "upupGameMode";
+      const modeChannel = "BroadcastChannel" in window ? new BroadcastChannel("upup-game-mode") : null;
+      let sharedTimer = null;
+
+      function normalizeGameMode(mode) {
+        return mode === "crime" ? "crime" : "recreation";
+      }
+
+      function renderModeStatus(mode, source = "로컬") {
+        const label = normalizeGameMode(mode) === "crime" ? "크라임씬 화면" : "밝은 화면";
+        modeStatus.textContent = `현재 참가자 화면: ${label} (${source})`;
+      }
+
+      function formatSeconds(totalSeconds) {
+        const safeSeconds = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+        const minutes = Math.floor(safeSeconds / 60);
+        const seconds = safeSeconds % 60;
+        return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      }
+
+      function getTimerRemaining(timer) {
+        if (!timer) return 0;
+        if (timer.running && timer.endsAt) {
+          return Math.max(0, Math.floor((new Date(timer.endsAt).getTime() - Date.now()) / 1000));
+        }
+        return Math.max(0, Number(timer.remainingSeconds) || 0);
+      }
+
+      function renderTimerStatus(timer = sharedTimer) {
+        if (!timer || !timer.durationSeconds) {
+          timerStatus.textContent = "타이머: --:--";
+          return;
+        }
+        const remaining = getTimerRemaining(timer);
+        const label = timer.running && remaining > 0 ? "진행 중" : remaining <= 0 ? "종료" : "정지";
+        timerStatus.textContent = `타이머: ${formatSeconds(remaining)} · ${label}`;
+      }
+
+      function modeSourceLabel(source) {
+        if (source === "redis") return "공유 서버";
+        if (source === "local-file") return "로컬 서버";
+        if (source === "memory") return "임시 서버";
+        return "서버 동기화";
+      }
+
+      function publishLocalMode(mode, source = "로컬") {
+        const normalized = normalizeGameMode(mode);
+        localStorage.setItem(gameModeKey, normalized);
+        localStorage.setItem("gameMode", normalized);
+        if (modeChannel) modeChannel.postMessage({ mode: normalized });
+        renderModeStatus(normalized, source);
+      }
+
+      async function pushSharedMode(mode) {
+        const normalized = normalizeGameMode(mode);
+        publishLocalMode(normalized, "전송 중");
+        try {
+          const response = await fetch("/api/mode", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: normalized }),
+          });
+          if (!response.ok) throw new Error("mode api unavailable");
+          const payload = await response.json();
+          publishLocalMode(payload.mode, modeSourceLabel(payload.source));
+          sharedTimer = payload.timer;
+          renderTimerStatus();
+        } catch {
+          renderModeStatus(normalized, "이 브라우저 미리보기");
+        }
+      }
+
+      async function pushSharedTimer(action) {
+        const minutes = Math.max(1, Math.min(180, Number(timerMinutesInput.value) || 10));
+        timerMinutesInput.value = minutes;
+        const timer = { action, durationSeconds: minutes * 60 };
+        renderTimerStatus({ durationSeconds: timer.durationSeconds, remainingSeconds: timer.durationSeconds, running: action === "start" });
+        try {
+          const response = await fetch("/api/mode", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ timer }),
+          });
+          if (!response.ok) throw new Error("timer api unavailable");
+          const payload = await response.json();
+          sharedTimer = payload.timer;
+          renderTimerStatus();
+          if (modeChannel) modeChannel.postMessage({ mode: payload.mode, timer: payload.timer });
+        } catch {
+          timerStatus.textContent = "타이머: 서버 연결 필요";
+        }
+      }
+
+      async function syncSharedMode() {
+        try {
+          const response = await fetch("/api/mode", { cache: "no-store" });
+          if (!response.ok) throw new Error("mode api unavailable");
+          const payload = await response.json();
+          publishLocalMode(payload.mode, modeSourceLabel(payload.source));
+          sharedTimer = payload.timer;
+          renderTimerStatus();
+        } catch {
+          renderModeStatus(localStorage.getItem(gameModeKey) || "recreation", "이 브라우저 미리보기");
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function findClue(id) {
+        for (const suspect of suspects) {
+          const clue = suspect.clues.find((item) => item.id === id);
+          if (clue) return { suspect, clue };
+        }
+        return { suspect: suspects[0], clue: null };
+      }
+
+      function renderClueGrid() {
+        clueGridEl.innerHTML = suspects
+          .map((suspect) => {
+            const opened = suspect.clues.filter((clue) => state.viewed.has(clue.id)).length;
+            return `
+              <section class="person-column">
+                <div class="person-head">
+                  <div class="person-portrait">
+                    <img src="${escapeHtml(suspect.portrait)}" alt="${escapeHtml(suspect.name)} 가상 인물 이미지" />
+                  </div>
+                  <div class="person-id"><span>${suspect.id}</span><span>${opened} / ${suspect.clues.length}</span></div>
+                  <div class="person-name">${suspect.name}</div>
+                  <div class="person-role">직업: ${suspect.role}<br>나이: ${suspect.age}<br>성별: ${suspect.gender}</div>
+                </div>
+                <div class="matrix-clues">
+                  ${suspect.clues
+                    .map((clue) => {
+                      const active = clue.id === state.clueId ? "active" : "";
+                      const viewed = state.viewed.has(clue.id) ? "viewed" : "";
+                      const locked = state.viewed.has(clue.id) ? "" : "locked";
+                      return `
+                        <button class="matrix-clue ${active} ${viewed} ${locked}" type="button" data-clue="${clue.id}">
+                          <span class="clue-number">${clue.hint}</span>
+                          <span>
+                            <span class="clue-title">${state.viewed.has(clue.id) ? clue.title : clue.hint}</span>
+                            <span class="clue-sub">${state.viewed.has(clue.id) ? clue.short : "힌트 코드 입력 필요"}</span>
+                          </span>
+                        </button>
+                      `;
+                    })
+                    .join("")}
+                </div>
+              </section>
+            `;
+          })
+          .join("");
+
+        document.querySelectorAll("[data-clue]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const clueId = button.dataset.clue;
+            if (!state.viewed.has(clueId)) {
+              state.clueId = null;
+              codeMessage.textContent = "잠긴 힌트입니다. 현장에서 얻은 힌트 코드를 입력해야 열립니다.";
+              codeMessage.classList.add("error");
+              render();
+              return;
+            }
+            state.clueId = clueId;
+            codeMessage.textContent = "이미 해제된 힌트를 다시 열람 중입니다.";
+            codeMessage.classList.remove("error");
+            render();
+          });
+        });
+      }
+
+      function renderCaseNote(suspect, clue) {
+        caseNoteEl.innerHTML = `
+          <div class="case-note-inner">
+            <div class="case-note-portrait">
+              <img src="${escapeHtml(suspect.portrait)}" alt="${escapeHtml(suspect.name)} 가상 인물 이미지" />
+            </div>
+            <div class="profile-label">${suspect.id} · ${clue ? clue.hint : "힌트 선택 대기"}</div>
+            <h2>${suspect.name}</h2>
+            <div class="profile-grid" style="margin-top: 1rem;">
+              <div class="profile-field">
+                <div class="field-name">직업</div>
+                <div class="field-value">${suspect.role}</div>
+              </div>
+              <div class="profile-field">
+                <div class="field-name">나이</div>
+                <div class="field-value">${suspect.age}</div>
+              </div>
+              <div class="profile-field">
+                <div class="field-name">성별</div>
+                <div class="field-value">${suspect.gender}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function waveBars() {
+        const heights = [22, 42, 18, 58, 33, 68, 29, 48, 76, 34, 54, 21, 63, 38, 72, 26, 46, 60, 31, 52, 19, 66, 41, 28];
+        return heights.map((height) => `<span style="--h:${height}"></span>`).join("");
+      }
+
+      function renderArtifact(clue) {
+        if (!clue) {
+          return `
+            <div class="evidence-head">
+              <div class="evidence-title">증거 미선택</div>
+              <div class="evidence-id">----</div>
+            </div>
+            <div class="evidence-body">
+              <div class="empty-evidence">위 매트릭스에서 인물별 힌트 1~3 중 하나를 선택하세요.<br>총 12개의 힌트를 모두 열면 정답 봉투가 열립니다.</div>
+            </div>
+          `;
+        }
+
+        const header = `
+          <div class="evidence-head">
+            <div class="evidence-title">${clue.title}</div>
+            <div class="evidence-id">${clue.id}</div>
+          </div>
+        `;
+        const imageBlock = clue.image
+          ? `
+            <figure class="evidence-photo-strip">
+              <img src="${escapeHtml(clue.image)}" alt="${escapeHtml(clue.title)} 증거 사진" />
+              <figcaption>${escapeHtml(clue.artifactTitle)}</figcaption>
+            </figure>
+          `
+          : "";
+
+        let artifact = "";
+        if (clue.render === "audio") {
+          artifact = `
+            <div class="artifact audio">
+              <div class="wave">${waveBars()}</div>
+              <div class="transcript">
+                ${clue.lines
+                  .map(
+                    ([speaker, speech]) => `
+                      <div class="line">
+                        <div class="speaker">${escapeHtml(speaker)}</div>
+                        <div class="speech">${escapeHtml(speech)}</div>
+                      </div>
+                    `,
+                  )
+                  .join("")}
+              </div>
+            </div>
+          `;
+        }
+
+        if (clue.render === "photo") {
+          artifact = `
+            <div class="artifact photo">
+              <div class="photo-frame"></div>
+              <div class="photo-caption">${escapeHtml(clue.artifactTitle)}<br>${escapeHtml(clue.body)}</div>
+            </div>
+          `;
+        }
+
+        if (clue.render === "chat") {
+          artifact = `
+            <div class="artifact chat">
+              <div class="chat-top">${escapeHtml(clue.artifactTitle)}</div>
+              ${clue.messages
+                .map((message) => `<div class="bubble ${message[0] === "right" ? "right" : ""}">${escapeHtml(message[1])}</div>`)
+                .join("")}
+            </div>
+          `;
+        }
+
+        if (clue.render === "item") {
+          artifact = `
+            <div class="artifact item">
+              <div class="evidence-tag">${escapeHtml(clue.artifactTitle)}</div>
+              <div class="item-sketch">${escapeHtml(clue.sketch)}</div>
+              <div>${escapeHtml(clue.body)}</div>
+            </div>
+          `;
+        }
+
+        if (clue.render === "book") {
+          artifact = `
+            <div class="artifact book">
+              <div class="chat-top">${escapeHtml(clue.artifactTitle)}</div>
+              ${clue.rows
+                .map(
+                  (row) => `
+                    <div class="ledger-row">
+                      <span>${escapeHtml(row[0])}</span>
+                      <span>${escapeHtml(row[1])}</span>
+                      <strong>${escapeHtml(row[2])}</strong>
+                    </div>
+                  `,
+                )
+                .join("")}
+            </div>
+          `;
+        }
+
+        return `
+          ${header}
+          <div class="evidence-body">
+            ${imageBlock}
+            ${artifact}
+            <div class="readout"><strong>수사 메모</strong><br>${escapeHtml(clue.readout)}</div>
+          </div>
+        `;
+      }
+
+      function renderProgress() {
+        progressTextEl.textContent = `${state.viewed.size} / ${allClues.length}`;
+        locksEl.innerHTML = allClues
+          .map((clue) => `<div class="lock ${state.viewed.has(clue.id) ? "open" : ""}"></div>`)
+          .join("");
+        const solved = state.viewed.size === allClues.length;
+        verdictButton.disabled = !solved;
+        verdictButton.textContent = solved ? "정답 확인" : "정답 잠김";
+        verdictCopy.textContent = solved
+          ? "모든 힌트가 열렸습니다. 이제 진범의 알리바이가 왜 무너지는지 확인하세요."
+          : `증거 ${allClues.length - state.viewed.size}개가 더 필요합니다.`;
+        if (!solved) {
+          verdictEl.classList.remove("open");
+        }
+      }
+
+      function render() {
+        const { suspect, clue } = findClue(state.clueId);
+        renderClueGrid();
+        renderCaseNote(suspect, clue);
+        evidenceEl.innerHTML = renderArtifact(clue);
+        renderProgress();
+      }
+
+      verdictText.textContent = verdict;
+      verdictButton.addEventListener("click", () => {
+        if (verdictButton.disabled) return;
+        verdictEl.classList.toggle("open");
+      });
+
+      function unlockHintCode(rawCode) {
+        const code = rawCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+        const clue = codeMap.get(code);
+        if (!clue) {
+          state.clueId = null;
+          codeMessage.textContent = "일치하는 힌트 코드가 없습니다. 코드의 영문과 숫자를 다시 확인하세요.";
+          codeMessage.classList.add("error");
+          render();
+          return false;
+        }
+
+        state.viewed.add(clue.id);
+        state.clueId = clue.id;
+        codeMessage.textContent = `${code} 코드가 승인되었습니다. 해당 힌트가 해제되었습니다.`;
+        codeMessage.classList.remove("error");
+        render();
+        return true;
+      }
+
+      window.unlockHintCode = unlockHintCode;
+
+      codeForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (unlockHintCode(hintCodeInput.value)) {
+          hintCodeInput.value = "";
+        }
+      });
+
+      startCrimeModeButton.addEventListener("click", () => pushSharedMode("crime"));
+      resetRecreationModeButton.addEventListener("click", () => pushSharedMode("recreation"));
+      startTimerButton.addEventListener("click", () => pushSharedTimer("start"));
+      stopTimerButton.addEventListener("click", () => pushSharedTimer("stop"));
+      resetTimerButton.addEventListener("click", () => pushSharedTimer("reset"));
+      clearTimerButton.addEventListener("click", () => pushSharedTimer("clear"));
+      window.addEventListener("storage", (event) => {
+        if (event.key === gameModeKey || event.key === "gameMode") {
+          renderModeStatus(event.newValue || "recreation", "이 브라우저 미리보기");
+        }
+      });
+      if (modeChannel) {
+        modeChannel.addEventListener("message", (event) => {
+          if (event.data?.mode) renderModeStatus(event.data.mode, "이 브라우저 미리보기");
+          if (event.data?.timer) {
+            sharedTimer = event.data.timer;
+            renderTimerStatus();
+          }
+        });
+      }
+
+      syncSharedMode();
+      setInterval(renderTimerStatus, 1000);
+      render();
+    </script>
+  </body>
+</html>

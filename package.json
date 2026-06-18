@@ -1,0 +1,11 @@
+{
+  "name": "church-crime-scene",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python3 server.py",
+    "deploy:preview": "vercel --yes",
+    "deploy:prod": "vercel --prod"
+  }
+}

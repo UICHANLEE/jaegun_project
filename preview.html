@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>목양실 10:12 미리보기</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #101820;
+        color: #f7efe3;
+        font-family:
+          Pretendard,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(247, 239, 227, 0.18);
+        background: #17212b;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0;
+      }
+
+      .links {
+        display: flex;
+        gap: 10px;
+      }
+
+      a {
+        color: #f6d58b;
+        font-size: 13px;
+        text-decoration: none;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: minmax(560px, 1fr) minmax(340px, 420px);
+        gap: 14px;
+        height: calc(100vh - 58px);
+        padding: 14px;
+      }
+
+      section {
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid rgba(247, 239, 227, 0.2);
+        background: #0f1720;
+      }
+
+      .bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 36px;
+        padding: 0 12px;
+        border-bottom: 1px solid rgba(247, 239, 227, 0.14);
+        color: #d8c39b;
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      iframe {
+        display: block;
+        width: 100%;
+        height: calc(100% - 36px);
+        border: 0;
+        background: #fff;
+      }
+
+      .phone {
+        max-width: 420px;
+      }
+
+      @media (max-width: 980px) {
+        main {
+          grid-template-columns: 1fr;
+          height: auto;
+        }
+
+        section {
+          height: 82vh;
+        }
+
+        .phone {
+          max-width: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>목양실 10:12 페이지 미리보기</h1>
+      <nav class="links" aria-label="빠른 링크">
+        <a href="index.html" target="_blank">관리자 열기</a>
+        <a href="player.html" target="_blank">참가자 열기</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <div class="bar">
+          <span>관리자 페이지</span>
+          <span>index.html</span>
+        </div>
+        <iframe src="index.html" title="관리자 페이지"></iframe>
+      </section>
+      <section class="phone">
+        <div class="bar">
+          <span>참가자 페이지</span>
+          <span>player.html</span>
+        </div>
+        <iframe src="player.html" title="참가자 페이지"></iframe>
+      </section>
+    </main>
+  </body>
+</html>

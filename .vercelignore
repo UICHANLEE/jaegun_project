@@ -1,0 +1,9 @@
+outputs
+scripts
+__pycache__
+*.pyc
+node_modules
+server.py
+.env
+.env.*
+.runtime
