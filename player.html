@@ -115,17 +115,19 @@
 
       .player-timer {
         position: fixed;
-        top: 14px;
-        right: 14px;
-        z-index: 80;
+        top: 50%;
+        left: 50%;
+        z-index: 90;
         display: grid;
-        gap: 0.08rem;
-        min-width: 112px;
+        gap: 0.16rem;
+        min-width: min(78vw, 260px);
         border: 1px solid rgba(37, 80, 111, 0.2);
-        padding: 0.46rem 0.62rem;
-        background: rgba(255, 255, 255, 0.82);
+        padding: 0.82rem 1rem;
+        background: rgba(255, 255, 255, 0.9);
         color: #17324a;
-        box-shadow: 0 12px 30px rgba(50, 85, 112, 0.18);
+        box-shadow: 0 24px 60px rgba(50, 85, 112, 0.28);
+        transform: translate(-50%, -50%);
+        pointer-events: none;
         text-align: center;
       }
 
@@ -137,12 +139,12 @@
         border-color: rgba(232, 196, 119, 0.3);
         color: var(--text);
         background: rgba(6, 9, 9, 0.82);
-        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.58);
       }
 
       .timer-small {
         color: #58728a;
-        font-size: 0.66rem;
+        font-size: 0.72rem;
         font-weight: 950;
         letter-spacing: 0.04em;
       }
@@ -153,7 +155,8 @@
 
       .timer-time {
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 1.28rem;
+        font-size: clamp(3.25rem, 18vw, 5.8rem);
+        line-height: 0.95;
         font-weight: 950;
       }
 
@@ -1079,7 +1082,8 @@
       const playerTimerTime = document.querySelector("#playerTimerTime");
       const gameModeKey = "upupGameMode";
       const modeChannel = "BroadcastChannel" in window ? new BroadcastChannel("upup-game-mode") : null;
-      const modePollMs = 850 + Math.floor(Math.random() * 500);
+      const fastPollBaseMs = 450;
+      const hiddenPollBaseMs = 4000;
       const drawingWords = [
         "교회",
         "찬양",
@@ -1099,6 +1103,8 @@
       ];
       let drawingWordIndex = -1;
       let sharedTimer = null;
+      let currentGameMode = normalizeGameMode(localStorage.getItem(gameModeKey) || localStorage.getItem("gameMode"));
+      let syncTimeoutId = null;
 
       function normalizeGameMode(mode) {
         return mode === "crime" ? "crime" : "recreation";
@@ -1106,6 +1112,7 @@
 
       function applyGameMode(mode, source = "로컬") {
         const normalized = normalizeGameMode(mode);
+        currentGameMode = normalized;
         document.body.dataset.mode = normalized;
         localStorage.setItem(gameModeKey, normalized);
         localStorage.setItem("gameMode", normalized);
@@ -1151,6 +1158,25 @@
           applyGameMode(localStorage.getItem(gameModeKey) || localStorage.getItem("gameMode") || "recreation", "대기");
         }
       }
+
+      function nextSyncDelay() {
+        if (document.hidden) return hiddenPollBaseMs + Math.floor(Math.random() * 1200);
+        const timerRemaining = getTimerRemaining(sharedTimer);
+        const timerVisible = Boolean(sharedTimer?.durationSeconds);
+        const base = currentGameMode === "recreation" || timerVisible || timerRemaining > 0 ? fastPollBaseMs : 700;
+        return base + Math.floor(Math.random() * 200);
+      }
+
+      async function syncGameModeLoop() {
+        await syncGameMode();
+        window.clearTimeout(syncTimeoutId);
+        syncTimeoutId = window.setTimeout(syncGameModeLoop, nextSyncDelay());
+      }
+
+      document.addEventListener("visibilitychange", () => {
+        window.clearTimeout(syncTimeoutId);
+        syncTimeoutId = window.setTimeout(syncGameModeLoop, document.hidden ? 1000 : 50);
+      });
 
       function escapeHtml(value) {
         return String(value)
@@ -1371,9 +1397,8 @@
         });
       }
 
-      syncGameMode();
-      setInterval(syncGameMode, modePollMs);
-      setInterval(renderPlayerTimer, 1000);
+      syncGameModeLoop();
+      setInterval(renderPlayerTimer, 250);
       renderWordCards();
       render();
     </script>
