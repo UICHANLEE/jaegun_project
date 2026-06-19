@@ -160,6 +160,90 @@
         font-weight: 950;
       }
 
+      .name-gate {
+        position: fixed;
+        inset: 0;
+        z-index: 120;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        background: rgba(255, 255, 255, 0.62);
+        backdrop-filter: blur(14px);
+      }
+
+      body[data-mode="crime"] .name-gate {
+        background: rgba(4, 7, 7, 0.72);
+      }
+
+      .name-gate[hidden] {
+        display: none;
+      }
+
+      .name-card {
+        display: grid;
+        gap: 0.78rem;
+        width: min(100%, 360px);
+        border: 1px solid rgba(27, 91, 130, 0.22);
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.9);
+        color: #17324a;
+        box-shadow: 0 24px 70px rgba(50, 85, 112, 0.25);
+      }
+
+      body[data-mode="crime"] .name-card {
+        border-color: rgba(232, 196, 119, 0.32);
+        background: rgba(11, 16, 16, 0.94);
+        color: var(--text);
+      }
+
+      .name-title {
+        font-size: 1.18rem;
+        font-weight: 950;
+      }
+
+      .name-form {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+      }
+
+      .name-form input {
+        min-width: 0;
+        height: 48px;
+        border: 1px solid rgba(37, 80, 111, 0.24);
+        border-radius: 0;
+        padding: 0 0.75rem;
+        color: #17324a;
+        background: rgba(255, 255, 255, 0.82);
+        font: inherit;
+        font-weight: 900;
+        outline: none;
+      }
+
+      body[data-mode="crime"] .name-form input {
+        border-color: rgba(232, 196, 119, 0.34);
+        color: var(--text);
+        background: rgba(3, 6, 6, 0.72);
+      }
+
+      .name-form button,
+      .change-name {
+        min-height: 40px;
+        border: 1px solid rgba(37, 80, 111, 0.28);
+        border-radius: 0;
+        padding: 0 0.78rem;
+        color: #ffffff;
+        background: linear-gradient(180deg, #3f87b2, #25506f);
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 950;
+      }
+
+      .change-name {
+        color: #25506f;
+        background: rgba(255, 255, 255, 0.74);
+      }
+
       .recreation-stage {
         position: relative;
         z-index: 1;
@@ -740,14 +824,23 @@
     </style>
   </head>
   <body data-mode="recreation">
+    <section class="name-gate" id="nameGate" aria-label="참가자 이름 입력">
+      <div class="name-card">
+        <div class="name-title">참가자 이름</div>
+        <form class="name-form" id="nameForm">
+          <input id="participantNameInput" autocomplete="name" placeholder="이름 입력" />
+          <button type="submit">입장</button>
+        </form>
+      </div>
+    </section>
     <div class="player-timer" id="playerTimer" hidden>
       <span class="timer-small" id="playerTimerLabel">MISSION TIMER</span>
       <span class="timer-time" id="playerTimerTime">--:--</span>
     </div>
     <section class="recreation-screen" aria-label="레크레이션 대기 화면">
       <div class="recreation-top">
-        <span class="rec-badge">재건 부산노회 청년부</span>
-        <span>TEAM PLAY</span>
+        <span class="rec-badge" id="participantBadge">재건 부산노회 청년부</span>
+        <button class="change-name" type="button" id="changeNameButton">이름 변경</button>
       </div>
       <div class="recreation-stage">
         <div>
@@ -762,6 +855,10 @@
           <div class="rec-row">
             <span class="rec-label">진행 방식</span>
             <span class="rec-value">단어 전달</span>
+          </div>
+          <div class="rec-row">
+            <span class="rec-label">내 조</span>
+            <span class="rec-value" id="playerGroupValue">이름 입력 필요</span>
           </div>
           <div class="team-grid" aria-label="팀 점수판">
             <div class="team"><strong>1팀</strong><span>0점</span></div>
@@ -1048,6 +1145,7 @@
         localStorage.removeItem("viewedClues");
         localStorage.removeItem("upupGameMode");
         localStorage.removeItem("gameMode");
+        localStorage.removeItem("participantName");
         urlParams.delete("reset");
         const cleanUrl = `${window.location.pathname}${urlParams.toString() ? `?${urlParams.toString()}` : ""}`;
         window.history.replaceState(null, "", cleanUrl);
@@ -1077,13 +1175,20 @@
       const wordCardGrid = document.querySelector("#wordCardGrid");
       const wordCard = document.querySelector("#wordCard");
       const wordCount = document.querySelector("#wordCount");
+      const nameGate = document.querySelector("#nameGate");
+      const nameForm = document.querySelector("#nameForm");
+      const participantNameInput = document.querySelector("#participantNameInput");
+      const participantBadge = document.querySelector("#participantBadge");
+      const playerGroupValue = document.querySelector("#playerGroupValue");
+      const changeNameButton = document.querySelector("#changeNameButton");
       const playerTimer = document.querySelector("#playerTimer");
       const playerTimerLabel = document.querySelector("#playerTimerLabel");
       const playerTimerTime = document.querySelector("#playerTimerTime");
       const gameModeKey = "upupGameMode";
+      const participantNameKey = "participantName";
       const modeChannel = "BroadcastChannel" in window ? new BroadcastChannel("upup-game-mode") : null;
-      const fastPollBaseMs = 450;
-      const hiddenPollBaseMs = 4000;
+      const fastPollBaseMs = 320;
+      const hiddenPollBaseMs = 3200;
       const drawingWords = [
         "교회",
         "찬양",
@@ -1103,6 +1208,8 @@
       ];
       let drawingWordIndex = -1;
       let sharedTimer = null;
+      let sharedGroups = [];
+      let participantName = localStorage.getItem(participantNameKey) || "";
       let currentGameMode = normalizeGameMode(localStorage.getItem(gameModeKey) || localStorage.getItem("gameMode"));
       let syncTimeoutId = null;
 
@@ -1118,6 +1225,58 @@
         localStorage.setItem("gameMode", normalized);
         document.body.dataset.modeSource = source;
         modeWait.textContent = normalized === "crime" ? "사건 화면으로 전환 중" : `진행자 신호 대기 · ${source}`;
+      }
+
+      function modeSourceLabel(source) {
+        if (source === "redis") return "공유 서버";
+        if (source === "local-file") return "로컬 서버";
+        if (source === "memory") return "임시 서버";
+        return "서버";
+      }
+
+      function normalizePersonName(name) {
+        return String(name || "").replace(/\s+/g, "").toLowerCase();
+      }
+
+      function normalizeGroups(groups) {
+        const source = Array.isArray(groups) && groups.length ? groups : [1, 2, 3].map((number) => ({ number, names: [] }));
+        return source
+          .map((group, index) => ({
+            number: Math.max(1, Number(group.number) || index + 1),
+            names: Array.isArray(group.names) ? group.names.map((name) => String(name || "").trim()).filter(Boolean) : [],
+          }))
+          .sort((a, b) => a.number - b.number);
+      }
+
+      function findParticipantGroup() {
+        const normalizedName = normalizePersonName(participantName);
+        if (!normalizedName) return null;
+        return sharedGroups.find((group) => group.names.some((name) => normalizePersonName(name) === normalizedName)) || null;
+      }
+
+      function renderParticipantIdentity() {
+        const cleanName = String(participantName || "").trim();
+        nameGate.hidden = Boolean(cleanName);
+        participantNameInput.value = cleanName;
+        if (!cleanName) {
+          participantBadge.textContent = "재건 부산노회 청년부";
+          playerGroupValue.textContent = "이름 입력 필요";
+          return;
+        }
+
+        const group = findParticipantGroup();
+        participantBadge.textContent = group ? `${cleanName} · ${group.number}조` : `${cleanName} · 조 배정 대기`;
+        playerGroupValue.textContent = group ? `${group.number}조` : "조 배정 대기";
+      }
+
+      function saveParticipantName(rawName) {
+        participantName = String(rawName || "").trim();
+        if (participantName) {
+          localStorage.setItem(participantNameKey, participantName);
+        } else {
+          localStorage.removeItem(participantNameKey);
+        }
+        renderParticipantIdentity();
       }
 
       function formatSeconds(totalSeconds) {
@@ -1147,15 +1306,21 @@
       }
 
       async function syncGameMode() {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 1400);
         try {
-          const response = await fetch("/api/mode", { cache: "no-store" });
+          const response = await fetch("/api/mode", { cache: "no-store", signal: controller.signal });
           if (!response.ok) throw new Error("mode api unavailable");
           const payload = await response.json();
-          applyGameMode(payload.mode, payload.source === "redis" ? "공유 서버" : "서버");
+          applyGameMode(payload.mode, modeSourceLabel(payload.source));
           sharedTimer = payload.timer;
+          sharedGroups = normalizeGroups(payload.groups);
+          renderParticipantIdentity();
           renderPlayerTimer();
         } catch {
           applyGameMode(localStorage.getItem(gameModeKey) || localStorage.getItem("gameMode") || "recreation", "대기");
+        } finally {
+          window.clearTimeout(timeoutId);
         }
       }
 
@@ -1373,8 +1538,24 @@
             sharedTimer = event.data.timer;
             renderPlayerTimer();
           }
+          if (event.data?.groups) {
+            sharedGroups = normalizeGroups(event.data.groups);
+            renderParticipantIdentity();
+          }
         });
       }
+
+      nameForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        saveParticipantName(participantNameInput.value);
+      });
+
+      changeNameButton.addEventListener("click", () => {
+        localStorage.removeItem(participantNameKey);
+        participantName = "";
+        renderParticipantIdentity();
+        requestAnimationFrame(() => participantNameInput.focus());
+      });
 
       function renderWordCards() {
         wordCardGrid.innerHTML = drawingWords
@@ -1400,6 +1581,7 @@
       syncGameModeLoop();
       setInterval(renderPlayerTimer, 250);
       renderWordCards();
+      renderParticipantIdentity();
       render();
     </script>
   </body>

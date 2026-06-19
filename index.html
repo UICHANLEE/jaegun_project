@@ -213,6 +213,46 @@
         font-weight: 900;
       }
 
+      .group-controls {
+        display: grid;
+        gap: 0.55rem;
+        max-width: 780px;
+        margin-top: 0.7rem;
+      }
+
+      .group-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.55rem;
+        align-items: start;
+      }
+
+      .group-textarea {
+        width: 100%;
+        min-height: 92px;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        border-radius: 0;
+        padding: 0.72rem 0.78rem;
+        color: var(--text);
+        background: rgba(6, 9, 9, 0.68);
+        font: inherit;
+        font-size: 0.84rem;
+        font-weight: 800;
+        line-height: 1.55;
+        outline: none;
+        resize: vertical;
+      }
+
+      .group-status {
+        min-height: 34px;
+        border: 1px solid rgba(232, 196, 119, 0.24);
+        padding: 0.42rem 0.66rem;
+        color: var(--muted);
+        background: rgba(6, 9, 9, 0.62);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
       .case-dot {
         width: 9px;
         height: 9px;
@@ -1132,6 +1172,10 @@
           grid-column: 1 / -1;
         }
 
+        .group-row {
+          grid-template-columns: 1fr;
+        }
+
         .locks {
           grid-template-columns: repeat(6, 1fr);
         }
@@ -1169,6 +1213,13 @@
             <button class="mode-button secondary" type="button" id="resetTimer">초기화</button>
             <button class="mode-button secondary" type="button" id="clearTimer">숨김</button>
             <div class="timer-status" id="timerStatus">타이머: --:--</div>
+          </div>
+          <div class="group-controls" aria-label="참가자 조 편성">
+            <div class="group-row">
+              <textarea class="group-textarea" id="groupRosterInput" spellcheck="false" placeholder="1조: 김하늘, 박민준&#10;2조: 이서연, 최지호&#10;3조: 정다은, 오유찬"></textarea>
+              <button class="mode-button" type="button" id="saveGroups">조 저장</button>
+            </div>
+            <div class="group-status" id="groupStatus">조 편성: 확인 중</div>
           </div>
         </div>
         <div class="case-stats" aria-label="사건 요약">
@@ -1516,12 +1567,16 @@
       const resetTimerButton = document.querySelector("#resetTimer");
       const clearTimerButton = document.querySelector("#clearTimer");
       const timerStatus = document.querySelector("#timerStatus");
+      const groupRosterInput = document.querySelector("#groupRosterInput");
+      const saveGroupsButton = document.querySelector("#saveGroups");
+      const groupStatus = document.querySelector("#groupStatus");
 
       const allClues = suspects.flatMap((suspect) => suspect.clues);
       const codeMap = new Map(allClues.map((clue) => [clue.code, clue]));
       const gameModeKey = "upupGameMode";
       const modeChannel = "BroadcastChannel" in window ? new BroadcastChannel("upup-game-mode") : null;
       let sharedTimer = null;
+      let sharedGroups = [];
 
       function normalizeGameMode(mode) {
         return mode === "crime" ? "crime" : "recreation";
@@ -1557,6 +1612,51 @@
         timerStatus.textContent = `타이머: ${formatSeconds(remaining)} · ${label}`;
       }
 
+      function normalizeGroupName(name) {
+        return String(name || "").replace(/\s+/g, "").toLowerCase();
+      }
+
+      function normalizeGroups(groups) {
+        const source = Array.isArray(groups) && groups.length ? groups : [1, 2, 3].map((number) => ({ number, names: [] }));
+        return source
+          .map((group, index) => ({
+            number: Math.max(1, Number(group.number) || index + 1),
+            names: [...new Map((group.names || []).map((name) => [normalizeGroupName(name), String(name || "").trim()])).values()].filter(Boolean),
+          }))
+          .sort((a, b) => a.number - b.number);
+      }
+
+      function parseGroups(text) {
+        const groups = [];
+        String(text || "")
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .forEach((line, index) => {
+            const match = line.match(/^(\d+)\s*(?:조|팀)?\s*[:：-]?\s*(.*)$/);
+            const number = match ? Number(match[1]) : index + 1;
+            const namesText = match ? match[2] : line;
+            const names = namesText
+              .split(/[,，/、\s]+/)
+              .map((name) => name.trim())
+              .filter(Boolean);
+            groups.push({ number, names });
+          });
+        return normalizeGroups(groups);
+      }
+
+      function groupsToText(groups) {
+        return normalizeGroups(groups)
+          .map((group) => `${group.number}조: ${group.names.join(", ")}`)
+          .join("\n");
+      }
+
+      function renderGroupStatus(groups = sharedGroups) {
+        const normalized = normalizeGroups(groups);
+        const total = normalized.reduce((sum, group) => sum + group.names.length, 0);
+        groupStatus.textContent = `조 편성: ${normalized.length}개 조 · ${total}명 등록`;
+      }
+
       function modeSourceLabel(source) {
         if (source === "redis") return "공유 서버";
         if (source === "local-file") return "로컬 서버";
@@ -1572,20 +1672,37 @@
         renderModeStatus(normalized, source);
       }
 
+      async function fetchModeApi(options = {}) {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 1800);
+        try {
+          const response = await fetch("/api/mode", {
+            cache: "no-store",
+            ...options,
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error("mode api unavailable");
+          return response.json();
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
+      }
+
       async function pushSharedMode(mode) {
         const normalized = normalizeGameMode(mode);
         publishLocalMode(normalized, "전송 중");
         try {
-          const response = await fetch("/api/mode", {
+          const payload = await fetchModeApi({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ mode: normalized }),
           });
-          if (!response.ok) throw new Error("mode api unavailable");
-          const payload = await response.json();
           publishLocalMode(payload.mode, modeSourceLabel(payload.source));
           sharedTimer = payload.timer;
+          sharedGroups = normalizeGroups(payload.groups);
+          groupRosterInput.value = groupsToText(sharedGroups);
           renderTimerStatus();
+          renderGroupStatus();
         } catch {
           renderModeStatus(normalized, "이 브라우저 미리보기");
         }
@@ -1597,13 +1714,11 @@
         const timer = { action, durationSeconds: minutes * 60 };
         renderTimerStatus({ durationSeconds: timer.durationSeconds, remainingSeconds: timer.durationSeconds, running: action === "start" });
         try {
-          const response = await fetch("/api/mode", {
+          const payload = await fetchModeApi({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ timer }),
           });
-          if (!response.ok) throw new Error("timer api unavailable");
-          const payload = await response.json();
           sharedTimer = payload.timer;
           renderTimerStatus();
           if (modeChannel) modeChannel.postMessage({ mode: payload.mode, timer: payload.timer });
@@ -1614,14 +1729,34 @@
 
       async function syncSharedMode() {
         try {
-          const response = await fetch("/api/mode", { cache: "no-store" });
-          if (!response.ok) throw new Error("mode api unavailable");
-          const payload = await response.json();
+          const payload = await fetchModeApi();
           publishLocalMode(payload.mode, modeSourceLabel(payload.source));
           sharedTimer = payload.timer;
+          sharedGroups = normalizeGroups(payload.groups);
+          groupRosterInput.value = groupsToText(sharedGroups);
           renderTimerStatus();
+          renderGroupStatus();
         } catch {
           renderModeStatus(localStorage.getItem(gameModeKey) || "recreation", "이 브라우저 미리보기");
+        }
+      }
+
+      async function pushSharedGroups() {
+        const groups = parseGroups(groupRosterInput.value);
+        groupRosterInput.value = groupsToText(groups);
+        groupStatus.textContent = "조 편성: 저장 중";
+        try {
+          const payload = await fetchModeApi({
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ groups }),
+          });
+          sharedGroups = normalizeGroups(payload.groups);
+          groupRosterInput.value = groupsToText(sharedGroups);
+          renderGroupStatus();
+          if (modeChannel) modeChannel.postMessage({ mode: payload.mode, timer: payload.timer, groups: payload.groups });
+        } catch {
+          groupStatus.textContent = "조 편성: 서버 연결 필요";
         }
       }
 
@@ -1899,6 +2034,7 @@
       stopTimerButton.addEventListener("click", () => pushSharedTimer("stop"));
       resetTimerButton.addEventListener("click", () => pushSharedTimer("reset"));
       clearTimerButton.addEventListener("click", () => pushSharedTimer("clear"));
+      saveGroupsButton.addEventListener("click", pushSharedGroups);
       window.addEventListener("storage", (event) => {
         if (event.key === gameModeKey || event.key === "gameMode") {
           renderModeStatus(event.newValue || "recreation", "이 브라우저 미리보기");
@@ -1910,6 +2046,11 @@
           if (event.data?.timer) {
             sharedTimer = event.data.timer;
             renderTimerStatus();
+          }
+          if (event.data?.groups) {
+            sharedGroups = normalizeGroups(event.data.groups);
+            groupRosterInput.value = groupsToText(sharedGroups);
+            renderGroupStatus();
           }
         });
       }

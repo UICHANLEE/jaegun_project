@@ -11,8 +11,29 @@ function fallbackState() {
     version: 1,
     updatedAt: new Date().toISOString(),
     timer: defaultTimer(),
+    groups: defaultGroups(),
   };
   return globalThis.__upupGameModeState;
+}
+
+function defaultGroups() {
+  return [
+    { number: 1, names: [] },
+    { number: 2, names: [] },
+    { number: 3, names: [] },
+  ];
+}
+
+function normalizeGroups(groups) {
+  const source = Array.isArray(groups) && groups.length ? groups : defaultGroups();
+  return source
+    .map((group, index) => ({
+      number: Math.max(1, Number(group?.number) || index + 1),
+      names: Array.isArray(group?.names)
+        ? [...new Set(group.names.map((name) => String(name || "").trim()).filter(Boolean))]
+        : [],
+    }))
+    .sort((a, b) => a.number - b.number);
 }
 
 function defaultTimer() {
@@ -88,6 +109,15 @@ function hasRedis() {
   return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 }
 
+function stateSource() {
+  return hasRedis() ? "redis" : "memory";
+}
+
+function stateWarning() {
+  if (hasRedis()) return "";
+  return "Redis is not configured. Vercel memory state is temporary and may not sync across phones.";
+}
+
 async function redisCommand(command) {
   const response = await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/pipeline`, {
     method: "POST",
@@ -126,6 +156,7 @@ async function readModeState() {
         version: Number(parsed.version) || 1,
         updatedAt: parsed.updatedAt || new Date().toISOString(),
         timer: withLiveRemaining(parsed.timer),
+        groups: normalizeGroups(parsed.groups),
       };
   } catch {
     return fallbackState();
@@ -149,6 +180,7 @@ async function writeModeState(payload) {
     version: current.version + 1,
     updatedAt: new Date().toISOString(),
     timer: nextTimer(current.timer, body.timer),
+    groups: Array.isArray(body.groups) ? normalizeGroups(body.groups) : normalizeGroups(current.groups),
   };
 
   if (hasRedis()) {
@@ -176,13 +208,13 @@ export default async function handler(request, response) {
   try {
     if (request.method === "GET") {
       const state = await readModeState();
-      response.status(200).json({ ...state, source: hasRedis() ? "redis" : "memory", latencyMs: Date.now() - startedAt });
+      response.status(200).json({ ...state, source: stateSource(), warning: stateWarning(), latencyMs: Date.now() - startedAt });
       return;
     }
 
     if (request.method === "POST") {
       const state = await writeModeState(request.body);
-      response.status(200).json({ ...state, source: hasRedis() ? "redis" : "memory", latencyMs: Date.now() - startedAt });
+      response.status(200).json({ ...state, source: stateSource(), warning: stateWarning(), latencyMs: Date.now() - startedAt });
       return;
     }
   } catch (error) {

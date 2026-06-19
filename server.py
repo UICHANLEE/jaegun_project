@@ -34,6 +34,34 @@ def default_timer() -> dict[str, str | int | bool]:
     }
 
 
+def default_groups() -> list[dict[str, int | list[str]]]:
+    return [
+        {"number": 1, "names": []},
+        {"number": 2, "names": []},
+        {"number": 3, "names": []},
+    ]
+
+
+def normalize_groups(groups: object) -> list[dict[str, int | list[str]]]:
+    source = groups if isinstance(groups, list) and groups else default_groups()
+    normalized = []
+    for index, group in enumerate(source):
+        group = group if isinstance(group, dict) else {}
+        seen = set()
+        names = []
+        for raw_name in group.get("names", []):
+            name = str(raw_name or "").strip()
+            if name and name not in seen:
+                names.append(name)
+                seen.add(name)
+        try:
+            number = max(1, int(group.get("number", index + 1)))
+        except Exception:
+            number = index + 1
+        normalized.append({"number": number, "names": names})
+    return sorted(normalized, key=lambda item: int(item["number"]))
+
+
 def normalize_timer(timer: dict | None) -> dict[str, str | int | bool]:
     normalized = default_timer()
     if not isinstance(timer, dict):
@@ -77,6 +105,7 @@ def read_state() -> dict[str, str | int | bool | dict]:
             "updatedAt": str(payload.get("updatedAt", "")),
             "source": "local-file",
             "timer": timer,
+            "groups": normalize_groups(payload.get("groups")),
         }
     except Exception:
         return {
@@ -85,6 +114,7 @@ def read_state() -> dict[str, str | int | bool | dict]:
             "updatedAt": "",
             "source": "local-file",
             "timer": default_timer(),
+            "groups": default_groups(),
         }
 
 
@@ -131,6 +161,7 @@ def write_state(payload: dict | None) -> dict[str, str | int | bool | dict]:
         "updatedAt": datetime.now(UTC).isoformat(),
         "source": "local-file",
         "timer": next_timer(current["timer"], payload.get("timer")),
+        "groups": normalize_groups(payload.get("groups") if isinstance(payload.get("groups"), list) else current.get("groups")),
     }
     RUNTIME_DIR.mkdir(exist_ok=True)
     MODE_FILE.write_text(json.dumps(next_state, ensure_ascii=False, indent=2), encoding="utf-8")
