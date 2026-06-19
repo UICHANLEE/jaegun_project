@@ -12,8 +12,80 @@ function fallbackState() {
     updatedAt: new Date().toISOString(),
     timer: defaultTimer(),
     groups: defaultGroups(),
+    participants: [],
+    recreation: defaultRecreation(),
   };
   return globalThis.__upupGameModeState;
+}
+
+function defaultRecreation() {
+  return { started: false, updatedAt: "" };
+}
+
+function normalizeRecreation(recreation) {
+  return {
+    started: Boolean(recreation?.started),
+    updatedAt: recreation?.updatedAt || "",
+  };
+}
+
+function nextRecreation(currentRecreation, payload) {
+  const recreation = normalizeRecreation(currentRecreation);
+  if (!payload || typeof payload !== "object") return recreation;
+  if (typeof payload.started === "boolean") {
+    recreation.started = payload.started;
+    recreation.updatedAt = new Date().toISOString();
+  }
+  return recreation;
+}
+
+function normalizeName(name) {
+  return String(name || "").trim();
+}
+
+function normalizeNameKey(name) {
+  return normalizeName(name).replace(/\s+/g, "").toLowerCase();
+}
+
+function normalizeParticipants(participants) {
+  const seen = new Set();
+  const source = Array.isArray(participants) ? participants : [];
+  return source
+    .map((participant) => ({
+      name: normalizeName(participant?.name),
+      joinedAt: participant?.joinedAt || new Date().toISOString(),
+    }))
+    .filter((participant) => {
+      const key = normalizeNameKey(participant.name);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => String(a.joinedAt).localeCompare(String(b.joinedAt)));
+}
+
+function nextParticipants(currentParticipants, payload) {
+  let participants = normalizeParticipants(currentParticipants);
+  if (!payload || typeof payload !== "object") return participants;
+
+  if (payload.action === "join") {
+    const name = normalizeName(payload.name);
+    const key = normalizeNameKey(name);
+    if (!key) return participants;
+    const existing = participants.find((participant) => normalizeNameKey(participant.name) === key);
+    if (existing) {
+      existing.name = name;
+      existing.joinedAt = existing.joinedAt || new Date().toISOString();
+    } else {
+      participants.push({ name, joinedAt: new Date().toISOString() });
+    }
+  }
+
+  if (payload.action === "clear") {
+    participants = [];
+  }
+
+  return normalizeParticipants(participants);
 }
 
 function defaultGroups() {
@@ -157,6 +229,8 @@ async function readModeState() {
         updatedAt: parsed.updatedAt || new Date().toISOString(),
         timer: withLiveRemaining(parsed.timer),
         groups: normalizeGroups(parsed.groups),
+        participants: normalizeParticipants(parsed.participants),
+        recreation: normalizeRecreation(parsed.recreation),
       };
   } catch {
     return fallbackState();
@@ -181,6 +255,8 @@ async function writeModeState(payload) {
     updatedAt: new Date().toISOString(),
     timer: nextTimer(current.timer, body.timer),
     groups: Array.isArray(body.groups) ? normalizeGroups(body.groups) : normalizeGroups(current.groups),
+    participants: nextParticipants(current.participants, body.participant),
+    recreation: nextRecreation(current.recreation, body.recreation),
   };
 
   if (hasRedis()) {

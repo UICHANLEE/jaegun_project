@@ -253,6 +253,63 @@
         font-weight: 800;
       }
 
+      .participant-controls {
+        display: grid;
+        gap: 0.55rem;
+        max-width: 780px;
+        margin-top: 0.7rem;
+      }
+
+      .participant-list {
+        display: grid;
+        gap: 0.45rem;
+      }
+
+      .participant-row {
+        display: grid;
+        grid-template-columns: minmax(120px, 1fr) auto;
+        gap: 0.55rem;
+        align-items: center;
+        border: 1px solid rgba(232, 196, 119, 0.22);
+        padding: 0.52rem;
+        background: rgba(6, 9, 9, 0.54);
+      }
+
+      .participant-name {
+        color: var(--text);
+        font-size: 0.86rem;
+        font-weight: 900;
+        line-height: 1.35;
+      }
+
+      .participant-group {
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+      }
+
+      .assign-buttons {
+        display: flex;
+        gap: 0.34rem;
+      }
+
+      .assign-button {
+        min-width: 40px;
+        min-height: 34px;
+        border: 1px solid rgba(105, 198, 189, 0.34);
+        color: var(--text);
+        background: rgba(105, 198, 189, 0.12);
+        font-size: 0.76rem;
+        font-weight: 950;
+        cursor: pointer;
+      }
+
+      .assign-button.active {
+        border-color: rgba(232, 196, 119, 0.68);
+        color: #1b1309;
+        background: linear-gradient(180deg, #efd08c, #bd813b);
+      }
+
       .case-dot {
         width: 9px;
         height: 9px;
@@ -1205,6 +1262,11 @@
             <button class="mode-button secondary" type="button" id="resetRecreationMode">밝은 화면으로 되돌리기</button>
             <div class="mode-status" id="modeStatus">현재 참가자 화면: 확인 중</div>
           </div>
+          <div class="mode-controls" aria-label="레크레이션 시작 제어">
+            <button class="mode-button" type="button" id="startRecreation">레크레이션 시작</button>
+            <button class="mode-button secondary" type="button" id="pauseRecreation">단어 숨김</button>
+            <div class="mode-status" id="recreationStatus">레크레이션: 확인 중</div>
+          </div>
           <div class="timer-controls" aria-label="참가자 타이머 설정">
             <label class="timer-label" for="timerMinutes">타이머</label>
             <input class="timer-input" id="timerMinutes" type="number" min="1" max="180" step="1" value="10" aria-label="타이머 분" />
@@ -1220,6 +1282,10 @@
               <button class="mode-button" type="button" id="saveGroups">조 저장</button>
             </div>
             <div class="group-status" id="groupStatus">조 편성: 확인 중</div>
+          </div>
+          <div class="participant-controls" aria-label="입장 참가자 조 배정">
+            <div class="group-status" id="participantStatus">입장 명단: 확인 중</div>
+            <div class="participant-list" id="participantList"></div>
           </div>
         </div>
         <div class="case-stats" aria-label="사건 요약">
@@ -1561,6 +1627,9 @@
       const startCrimeModeButton = document.querySelector("#startCrimeMode");
       const resetRecreationModeButton = document.querySelector("#resetRecreationMode");
       const modeStatus = document.querySelector("#modeStatus");
+      const startRecreationButton = document.querySelector("#startRecreation");
+      const pauseRecreationButton = document.querySelector("#pauseRecreation");
+      const recreationStatus = document.querySelector("#recreationStatus");
       const timerMinutesInput = document.querySelector("#timerMinutes");
       const startTimerButton = document.querySelector("#startTimer");
       const stopTimerButton = document.querySelector("#stopTimer");
@@ -1570,6 +1639,8 @@
       const groupRosterInput = document.querySelector("#groupRosterInput");
       const saveGroupsButton = document.querySelector("#saveGroups");
       const groupStatus = document.querySelector("#groupStatus");
+      const participantStatus = document.querySelector("#participantStatus");
+      const participantList = document.querySelector("#participantList");
 
       const allClues = suspects.flatMap((suspect) => suspect.clues);
       const codeMap = new Map(allClues.map((clue) => [clue.code, clue]));
@@ -1577,6 +1648,8 @@
       const modeChannel = "BroadcastChannel" in window ? new BroadcastChannel("upup-game-mode") : null;
       let sharedTimer = null;
       let sharedGroups = [];
+      let sharedParticipants = [];
+      let sharedRecreation = { started: false };
 
       function normalizeGameMode(mode) {
         return mode === "crime" ? "crime" : "recreation";
@@ -1626,6 +1699,64 @@
           .sort((a, b) => a.number - b.number);
       }
 
+      function normalizeParticipants(participants) {
+        const seen = new Set();
+        return (Array.isArray(participants) ? participants : [])
+          .map((participant) => ({
+            name: String(participant?.name || "").trim(),
+            joinedAt: participant?.joinedAt || "",
+          }))
+          .filter((participant) => {
+            const key = normalizeGroupName(participant.name);
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+      }
+
+      function findGroupForName(name, groups = sharedGroups) {
+        const key = normalizeGroupName(name);
+        return normalizeGroups(groups).find((group) => group.names.some((item) => normalizeGroupName(item) === key)) || null;
+      }
+
+      function renderRecreationStatus(recreation = sharedRecreation) {
+        recreationStatus.textContent = `레크레이션: ${recreation?.started ? "단어 공개 중" : "시작 대기"}`;
+      }
+
+      function renderParticipantList() {
+        const participants = normalizeParticipants(sharedParticipants);
+        participantStatus.textContent = `입장 명단: ${participants.length}명`;
+        if (!participants.length) {
+          participantList.innerHTML = `<div class="group-status">아직 입장한 참가자가 없습니다.</div>`;
+          return;
+        }
+
+        participantList.innerHTML = participants
+          .map((participant) => {
+            const group = findGroupForName(participant.name);
+            return `
+              <div class="participant-row">
+                <div>
+                  <div class="participant-name">${escapeHtml(participant.name)}</div>
+                  <div class="participant-group">${group ? `${group.number}조` : "?조"}</div>
+                </div>
+                <div class="assign-buttons">
+                  ${[1, 2, 3]
+                    .map(
+                      (number) => `
+                        <button class="assign-button ${group?.number === number ? "active" : ""}" type="button" data-assign-group="${number}" data-participant="${escapeHtml(participant.name)}">
+                          ${number}조
+                        </button>
+                      `,
+                    )
+                    .join("")}
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
       function parseGroups(text) {
         const groups = [];
         String(text || "")
@@ -1649,6 +1780,11 @@
         return normalizeGroups(groups)
           .map((group) => `${group.number}조: ${group.names.join(", ")}`)
           .join("\n");
+      }
+
+      function renderGroupRosterInput(groups) {
+        if (document.activeElement === groupRosterInput) return;
+        groupRosterInput.value = groupsToText(groups);
       }
 
       function renderGroupStatus(groups = sharedGroups) {
@@ -1700,9 +1836,13 @@
           publishLocalMode(payload.mode, modeSourceLabel(payload.source));
           sharedTimer = payload.timer;
           sharedGroups = normalizeGroups(payload.groups);
-          groupRosterInput.value = groupsToText(sharedGroups);
+          sharedParticipants = normalizeParticipants(payload.participants);
+          sharedRecreation = payload.recreation || { started: false };
+          renderGroupRosterInput(sharedGroups);
           renderTimerStatus();
           renderGroupStatus();
+          renderParticipantList();
+          renderRecreationStatus();
         } catch {
           renderModeStatus(normalized, "이 브라우저 미리보기");
         }
@@ -1733,9 +1873,13 @@
           publishLocalMode(payload.mode, modeSourceLabel(payload.source));
           sharedTimer = payload.timer;
           sharedGroups = normalizeGroups(payload.groups);
-          groupRosterInput.value = groupsToText(sharedGroups);
+          sharedParticipants = normalizeParticipants(payload.participants);
+          sharedRecreation = payload.recreation || { started: false };
+          renderGroupRosterInput(sharedGroups);
           renderTimerStatus();
           renderGroupStatus();
+          renderParticipantList();
+          renderRecreationStatus();
         } catch {
           renderModeStatus(localStorage.getItem(gameModeKey) || "recreation", "이 브라우저 미리보기");
         }
@@ -1754,10 +1898,44 @@
           sharedGroups = normalizeGroups(payload.groups);
           groupRosterInput.value = groupsToText(sharedGroups);
           renderGroupStatus();
-          if (modeChannel) modeChannel.postMessage({ mode: payload.mode, timer: payload.timer, groups: payload.groups });
+          renderParticipantList();
+          if (modeChannel) modeChannel.postMessage({ mode: payload.mode, timer: payload.timer, groups: payload.groups, recreation: payload.recreation });
         } catch {
           groupStatus.textContent = "조 편성: 서버 연결 필요";
         }
+      }
+
+      async function pushSharedRecreation(started) {
+        sharedRecreation = { started };
+        renderRecreationStatus();
+        try {
+          const payload = await fetchModeApi({
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ recreation: { started } }),
+          });
+          sharedRecreation = payload.recreation || { started };
+          renderRecreationStatus();
+          if (modeChannel) modeChannel.postMessage({ mode: payload.mode, timer: payload.timer, groups: payload.groups, recreation: payload.recreation });
+        } catch {
+          recreationStatus.textContent = "레크레이션: 서버 연결 필요";
+        }
+      }
+
+      function assignParticipantToGroup(name, groupNumber) {
+        const cleanName = String(name || "").trim();
+        if (!cleanName) return;
+        const groups = normalizeGroups(sharedGroups).map((group) => ({
+          number: group.number,
+          names: group.names.filter((item) => normalizeGroupName(item) !== normalizeGroupName(cleanName)),
+        }));
+        const target = groups.find((group) => group.number === groupNumber) || groups[0];
+        target.names.push(cleanName);
+        sharedGroups = normalizeGroups(groups);
+        groupRosterInput.value = groupsToText(sharedGroups);
+        renderGroupStatus();
+        renderParticipantList();
+        pushSharedGroups();
       }
 
       function escapeHtml(value) {
@@ -2030,11 +2208,18 @@
 
       startCrimeModeButton.addEventListener("click", () => pushSharedMode("crime"));
       resetRecreationModeButton.addEventListener("click", () => pushSharedMode("recreation"));
+      startRecreationButton.addEventListener("click", () => pushSharedRecreation(true));
+      pauseRecreationButton.addEventListener("click", () => pushSharedRecreation(false));
       startTimerButton.addEventListener("click", () => pushSharedTimer("start"));
       stopTimerButton.addEventListener("click", () => pushSharedTimer("stop"));
       resetTimerButton.addEventListener("click", () => pushSharedTimer("reset"));
       clearTimerButton.addEventListener("click", () => pushSharedTimer("clear"));
       saveGroupsButton.addEventListener("click", pushSharedGroups);
+      participantList.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-assign-group]");
+        if (!button) return;
+        assignParticipantToGroup(button.dataset.participant, Number(button.dataset.assignGroup));
+      });
       window.addEventListener("storage", (event) => {
         if (event.key === gameModeKey || event.key === "gameMode") {
           renderModeStatus(event.newValue || "recreation", "이 브라우저 미리보기");
@@ -2049,14 +2234,26 @@
           }
           if (event.data?.groups) {
             sharedGroups = normalizeGroups(event.data.groups);
-            groupRosterInput.value = groupsToText(sharedGroups);
+            renderGroupRosterInput(sharedGroups);
             renderGroupStatus();
+            renderParticipantList();
+          }
+          if (event.data?.participants) {
+            sharedParticipants = normalizeParticipants(event.data.participants);
+            renderParticipantList();
+          }
+          if (event.data?.recreation) {
+            sharedRecreation = event.data.recreation;
+            renderRecreationStatus();
           }
         });
       }
 
       syncSharedMode();
+      setInterval(syncSharedMode, 1800);
       setInterval(renderTimerStatus, 1000);
+      renderParticipantList();
+      renderRecreationStatus();
       render();
     </script>
   </body>

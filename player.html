@@ -398,6 +398,26 @@
         line-height: 1;
       }
 
+      .word-start-wait {
+        display: grid;
+        min-height: 88px;
+        place-items: center;
+        border: 1px dashed rgba(37, 80, 111, 0.22);
+        background: rgba(255, 255, 255, 0.54);
+        color: #58728a;
+        font-size: 0.94rem;
+        font-weight: 950;
+      }
+
+      body[data-recreation-started="true"] .word-start-wait {
+        display: none;
+      }
+
+      body[data-recreation-started="false"] .word-card-grid,
+      body[data-recreation-started="false"] .word-card {
+        display: none;
+      }
+
       .mode-wait {
         min-height: 44px;
         border: 1px solid rgba(255, 158, 67, 0.34);
@@ -871,6 +891,7 @@
             <div class="rec-label">협동 그리기 단어 카드</div>
             <div class="word-count" id="wordCount">선택 대기</div>
           </div>
+          <div class="word-start-wait" id="wordStartWait">진행자 시작 대기</div>
           <div class="word-card-grid" id="wordCardGrid"></div>
           <div class="word-card" id="wordCard">카드를 선택하세요</div>
         </div>
@@ -1242,6 +1263,7 @@
       let drawingWordIndex = -1;
       let sharedTimer = null;
       let sharedGroups = [];
+      let sharedRecreation = { started: false };
       let participantName = readStoredValue(participantNameKey);
       let currentGameMode = normalizeGameMode(readStoredValue(gameModeKey) || readStoredValue("gameMode"));
       let syncTimeoutId = null;
@@ -1258,6 +1280,16 @@
         writeStoredValue("gameMode", normalized);
         document.body.dataset.modeSource = source;
         modeWait.textContent = normalized === "crime" ? "사건 화면으로 전환 중" : `진행자 신호 대기 · ${source}`;
+      }
+
+      function applyRecreation(recreation) {
+        sharedRecreation = { started: Boolean(recreation?.started) };
+        document.body.dataset.recreationStarted = sharedRecreation.started ? "true" : "false";
+        if (!sharedRecreation.started) {
+          wordCount.textContent = "시작 대기";
+        } else if (drawingWordIndex < 0) {
+          wordCount.textContent = "선택 대기";
+        }
       }
 
       function modeSourceLabel(source) {
@@ -1301,8 +1333,8 @@
         }
 
         const group = findParticipantGroup();
-        participantBadge.textContent = group ? `${cleanName} · ${group.number}조` : `${cleanName} · 조 배정 대기`;
-        playerGroupValue.textContent = group ? `${group.number}조` : "조 배정 대기";
+        participantBadge.textContent = group ? `${cleanName} · ${group.number}조` : `${cleanName} · ?조`;
+        playerGroupValue.textContent = group ? `${group.number}조` : "?조";
       }
 
       function saveParticipantName(rawName) {
@@ -1313,6 +1345,36 @@
           removeStoredValue(participantNameKey);
         }
         renderParticipantIdentity();
+        if (participantName) registerParticipantName(participantName);
+      }
+
+      async function postModePayload(payload) {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 1600);
+        try {
+          const response = await fetch("/api/mode", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+            cache: "no-store",
+          });
+          if (!response.ok) throw new Error("mode api unavailable");
+          return response.json();
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
+      }
+
+      async function registerParticipantName(name) {
+        try {
+          const payload = await postModePayload({ participant: { action: "join", name } });
+          sharedGroups = normalizeGroups(payload.groups);
+          applyRecreation(payload.recreation);
+          renderParticipantIdentity();
+        } catch {
+          renderParticipantIdentity();
+        }
       }
 
       function formatSeconds(totalSeconds) {
@@ -1351,6 +1413,7 @@
           applyGameMode(payload.mode, modeSourceLabel(payload.source));
           sharedTimer = payload.timer;
           sharedGroups = normalizeGroups(payload.groups);
+          applyRecreation(payload.recreation);
           renderParticipantIdentity();
           renderPlayerTimer();
         } catch {
@@ -1578,6 +1641,9 @@
             sharedGroups = normalizeGroups(event.data.groups);
             renderParticipantIdentity();
           }
+          if (event.data?.recreation) {
+            applyRecreation(event.data.recreation);
+          }
         });
       }
 
@@ -1617,6 +1683,7 @@
       syncGameModeLoop();
       setInterval(renderPlayerTimer, 250);
       renderWordCards();
+      applyRecreation(sharedRecreation);
       renderParticipantIdentity();
       render();
     </script>

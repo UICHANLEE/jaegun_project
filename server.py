@@ -42,6 +42,79 @@ def default_groups() -> list[dict[str, int | list[str]]]:
     ]
 
 
+def default_recreation() -> dict[str, str | bool]:
+    return {"started": False, "updatedAt": ""}
+
+
+def normalize_recreation(recreation: object) -> dict[str, str | bool]:
+    recreation = recreation if isinstance(recreation, dict) else {}
+    return {
+        "started": bool(recreation.get("started", False)),
+        "updatedAt": str(recreation.get("updatedAt") or ""),
+    }
+
+
+def next_recreation(current_recreation: object, payload: object) -> dict[str, str | bool]:
+    recreation = normalize_recreation(current_recreation)
+    if not isinstance(payload, dict):
+        return recreation
+    if isinstance(payload.get("started"), bool):
+        recreation["started"] = payload["started"]
+        recreation["updatedAt"] = datetime.now(UTC).isoformat()
+    return recreation
+
+
+def normalize_name(name: object) -> str:
+    return str(name or "").strip()
+
+
+def normalize_name_key(name: object) -> str:
+    return "".join(normalize_name(name).split()).lower()
+
+
+def normalize_participants(participants: object) -> list[dict[str, str]]:
+    source = participants if isinstance(participants, list) else []
+    normalized = []
+    seen = set()
+    for participant in source:
+        participant = participant if isinstance(participant, dict) else {}
+        name = normalize_name(participant.get("name"))
+        key = normalize_name_key(name)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        normalized.append(
+            {
+                "name": name,
+                "joinedAt": str(participant.get("joinedAt") or datetime.now(UTC).isoformat()),
+            }
+        )
+    return sorted(normalized, key=lambda item: item["joinedAt"])
+
+
+def next_participants(current_participants: object, payload: object) -> list[dict[str, str]]:
+    participants = normalize_participants(current_participants)
+    if not isinstance(payload, dict):
+        return participants
+
+    if payload.get("action") == "join":
+        name = normalize_name(payload.get("name"))
+        key = normalize_name_key(name)
+        if not key:
+            return participants
+        existing = next((item for item in participants if normalize_name_key(item["name"]) == key), None)
+        if existing:
+            existing["name"] = name
+            existing["joinedAt"] = existing.get("joinedAt") or datetime.now(UTC).isoformat()
+        else:
+            participants.append({"name": name, "joinedAt": datetime.now(UTC).isoformat()})
+
+    if payload.get("action") == "clear":
+        participants = []
+
+    return normalize_participants(participants)
+
+
 def normalize_groups(groups: object) -> list[dict[str, int | list[str]]]:
     source = groups if isinstance(groups, list) and groups else default_groups()
     normalized = []
@@ -106,6 +179,8 @@ def read_state() -> dict[str, str | int | bool | dict]:
             "source": "local-file",
             "timer": timer,
             "groups": normalize_groups(payload.get("groups")),
+            "participants": normalize_participants(payload.get("participants")),
+            "recreation": normalize_recreation(payload.get("recreation")),
         }
     except Exception:
         return {
@@ -115,6 +190,8 @@ def read_state() -> dict[str, str | int | bool | dict]:
             "source": "local-file",
             "timer": default_timer(),
             "groups": default_groups(),
+            "participants": [],
+            "recreation": default_recreation(),
         }
 
 
@@ -162,6 +239,8 @@ def write_state(payload: dict | None) -> dict[str, str | int | bool | dict]:
         "source": "local-file",
         "timer": next_timer(current["timer"], payload.get("timer")),
         "groups": normalize_groups(payload.get("groups") if isinstance(payload.get("groups"), list) else current.get("groups")),
+        "participants": next_participants(current.get("participants"), payload.get("participant")),
+        "recreation": next_recreation(current.get("recreation"), payload.get("recreation")),
     }
     RUNTIME_DIR.mkdir(exist_ok=True)
     MODE_FILE.write_text(json.dumps(next_state, ensure_ascii=False, indent=2), encoding="utf-8")
