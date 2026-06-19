@@ -1140,12 +1140,45 @@
       const verdict =
         "진범은 전도사이자 찬양팀 리더인 홍강도입니다.\n\n핵심은 알리바이입니다. 사망추정시각에 찬양팀 연습 중이었다는 말은 박간호의 녹음에서 무너집니다. 배경의 찬양은 실제 합주가 아니라 같은 후렴이 반복 재생된 소리였습니다.\n\n홍강도는 사례비 인상 요청을 했다가 목사님에게 핀잔을 듣고 나왔고, 목사님의 땅콩 알러지와 알러지 약 위치를 알고 있었습니다.";
 
+      function readStoredValue(key, fallback = "") {
+        try {
+          return localStorage.getItem(key) || fallback;
+        } catch {
+          return fallback;
+        }
+      }
+
+      function writeStoredValue(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch {
+          /* Storage can be unavailable in some mobile private/in-app browsers. */
+        }
+      }
+
+      function removeStoredValue(key) {
+        try {
+          localStorage.removeItem(key);
+        } catch {
+          /* Storage can be unavailable in some mobile private/in-app browsers. */
+        }
+      }
+
+      function readStoredArray(key) {
+        try {
+          const parsed = JSON.parse(readStoredValue(key, "[]"));
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get("reset") === "1") {
-        localStorage.removeItem("viewedClues");
-        localStorage.removeItem("upupGameMode");
-        localStorage.removeItem("gameMode");
-        localStorage.removeItem("participantName");
+        removeStoredValue("viewedClues");
+        removeStoredValue("upupGameMode");
+        removeStoredValue("gameMode");
+        removeStoredValue("participantName");
         urlParams.delete("reset");
         const cleanUrl = `${window.location.pathname}${urlParams.toString() ? `?${urlParams.toString()}` : ""}`;
         window.history.replaceState(null, "", cleanUrl);
@@ -1153,7 +1186,7 @@
 
       const state = {
         clueId: null,
-        viewed: new Set(JSON.parse(localStorage.getItem("viewedClues") || "[]")),
+        viewed: new Set(readStoredArray("viewedClues")),
       };
 
       const allClues = suspects.flatMap((suspect) => suspect.clues);
@@ -1209,8 +1242,8 @@
       let drawingWordIndex = -1;
       let sharedTimer = null;
       let sharedGroups = [];
-      let participantName = localStorage.getItem(participantNameKey) || "";
-      let currentGameMode = normalizeGameMode(localStorage.getItem(gameModeKey) || localStorage.getItem("gameMode"));
+      let participantName = readStoredValue(participantNameKey);
+      let currentGameMode = normalizeGameMode(readStoredValue(gameModeKey) || readStoredValue("gameMode"));
       let syncTimeoutId = null;
 
       function normalizeGameMode(mode) {
@@ -1221,8 +1254,8 @@
         const normalized = normalizeGameMode(mode);
         currentGameMode = normalized;
         document.body.dataset.mode = normalized;
-        localStorage.setItem(gameModeKey, normalized);
-        localStorage.setItem("gameMode", normalized);
+        writeStoredValue(gameModeKey, normalized);
+        writeStoredValue("gameMode", normalized);
         document.body.dataset.modeSource = source;
         modeWait.textContent = normalized === "crime" ? "사건 화면으로 전환 중" : `진행자 신호 대기 · ${source}`;
       }
@@ -1257,7 +1290,10 @@
       function renderParticipantIdentity() {
         const cleanName = String(participantName || "").trim();
         nameGate.hidden = Boolean(cleanName);
-        participantNameInput.value = cleanName;
+        const userIsTypingName = document.activeElement === participantNameInput;
+        if (cleanName || !userIsTypingName) {
+          participantNameInput.value = cleanName;
+        }
         if (!cleanName) {
           participantBadge.textContent = "재건 부산노회 청년부";
           playerGroupValue.textContent = "이름 입력 필요";
@@ -1272,9 +1308,9 @@
       function saveParticipantName(rawName) {
         participantName = String(rawName || "").trim();
         if (participantName) {
-          localStorage.setItem(participantNameKey, participantName);
+          writeStoredValue(participantNameKey, participantName);
         } else {
-          localStorage.removeItem(participantNameKey);
+          removeStoredValue(participantNameKey);
         }
         renderParticipantIdentity();
       }
@@ -1318,7 +1354,7 @@
           renderParticipantIdentity();
           renderPlayerTimer();
         } catch {
-          applyGameMode(localStorage.getItem(gameModeKey) || localStorage.getItem("gameMode") || "recreation", "대기");
+          applyGameMode(readStoredValue(gameModeKey) || readStoredValue("gameMode") || "recreation", "대기");
         } finally {
           window.clearTimeout(timeoutId);
         }
@@ -1489,7 +1525,7 @@
       }
 
       function render() {
-        localStorage.setItem("viewedClues", JSON.stringify([...state.viewed]));
+        writeStoredValue("viewedClues", JSON.stringify([...state.viewed]));
         const { clue } = findClue(state.clueId);
         renderSuspects();
         evidenceEl.innerHTML = renderArtifact(clue);
@@ -1551,7 +1587,7 @@
       });
 
       changeNameButton.addEventListener("click", () => {
-        localStorage.removeItem(participantNameKey);
+        removeStoredValue(participantNameKey);
         participantName = "";
         renderParticipantIdentity();
         requestAnimationFrame(() => participantNameInput.focus());
