@@ -7,3 +7,4 @@ server.py
 .env
 .env.*
 .runtime
+assets/*.png

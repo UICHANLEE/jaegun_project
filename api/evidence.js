@@ -7,20 +7,27 @@ function hasRedis() {
   return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 }
 
-async function redisCommand(command) {
+async function redisCommands(commands) {
   const response = await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/pipeline`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify([command]),
+    body: JSON.stringify(commands),
   });
 
   if (!response.ok) throw new Error(`Redis request failed with ${response.status}`);
-  const [result] = await response.json();
-  if (result.error) throw new Error(result.error);
-  return result.result;
+  const results = await response.json();
+  return results.map((result) => {
+    if (result.error) throw new Error(result.error);
+    return result.result;
+  });
+}
+
+async function redisCommand(command) {
+  const [result] = await redisCommands([command]);
+  return result;
 }
 
 function normalizeNameKey(name) {
@@ -116,8 +123,10 @@ export default async function handler(request, response) {
         createdAt: new Date().toISOString(),
       };
 
-      await redisCommand(["LPUSH", evidenceKey(group), JSON.stringify(item)]);
-      await redisCommand(["LTRIM", evidenceKey(group), 0, MAX_ITEMS_PER_GROUP - 1]);
+      await redisCommands([
+        ["LPUSH", evidenceKey(group), JSON.stringify(item)],
+        ["LTRIM", evidenceKey(group), 0, MAX_ITEMS_PER_GROUP - 1],
+      ]);
       response.status(201).json({ group, item, source: "redis" });
       return;
     }

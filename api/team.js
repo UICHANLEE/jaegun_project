@@ -8,19 +8,26 @@ function hasRedis() {
   return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 }
 
-async function redisCommand(command) {
+async function redisCommands(commands) {
   const response = await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/pipeline`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify([command]),
+    body: JSON.stringify(commands),
   });
   if (!response.ok) throw new Error(`Redis request failed with ${response.status}`);
-  const [result] = await response.json();
-  if (result.error) throw new Error(result.error);
-  return result.result;
+  const results = await response.json();
+  return results.map((result) => {
+    if (result.error) throw new Error(result.error);
+    return result.result;
+  });
+}
+
+async function redisCommand(command) {
+  const [result] = await redisCommands([command]);
+  return result;
 }
 
 function normalizeNameKey(name) {
@@ -93,13 +100,27 @@ export default async function handler(request, response) {
         return;
       }
       const includeEvidence = String(request.query?.evidence ?? "1") !== "0";
-      const evidence = includeEvidence
-        ? await redisCommand(["LRANGE", `${EVIDENCE_KEY_PREFIX}${group}`, 0, MAX_ITEMS_PER_GROUP - 1])
-        : null;
-      const evidenceCount = Number(await redisCommand(["LLEN", `${EVIDENCE_KEY_PREFIX}${group}`])) || 0;
-      const latestEvidenceRaw = await redisCommand(["LINDEX", `${EVIDENCE_KEY_PREFIX}${group}`, 0]);
+      const evidenceKey = `${EVIDENCE_KEY_PREFIX}${group}`;
+      const clueKey = `${CLUE_KEY_PREFIX}${group}`;
+      const commands = includeEvidence
+        ? [
+            ["LRANGE", evidenceKey, 0, MAX_ITEMS_PER_GROUP - 1],
+            ["LLEN", evidenceKey],
+            ["LINDEX", evidenceKey, 0],
+            ["SMEMBERS", clueKey],
+          ]
+        : [
+            ["LLEN", evidenceKey],
+            ["LINDEX", evidenceKey, 0],
+            ["SMEMBERS", clueKey],
+          ];
+      const results = await redisCommands(commands);
+      const evidence = includeEvidence ? results[0] : null;
+      const offset = includeEvidence ? 1 : 0;
+      const evidenceCount = Number(results[offset]) || 0;
+      const latestEvidenceRaw = results[offset + 1];
       const latestEvidenceId = parseEvidenceItems(latestEvidenceRaw ? [latestEvidenceRaw] : [])[0]?.id || "";
-      const clueIds = await redisCommand(["SMEMBERS", `${CLUE_KEY_PREFIX}${group}`]);
+      const clueIds = results[offset + 2];
       response.status(200).json({
         group,
         clueIds: normalizeClueIds(clueIds),
@@ -119,10 +140,15 @@ export default async function handler(request, response) {
         return;
       }
       const clueIds = normalizeClueIds(request.body?.clueIds);
-      if (clueIds.length) {
-        await redisCommand(["SADD", `${CLUE_KEY_PREFIX}${group}`, ...clueIds]);
-      }
-      const storedClueIds = await redisCommand(["SMEMBERS", `${CLUE_KEY_PREFIX}${group}`]);
+      const clueKey = `${CLUE_KEY_PREFIX}${group}`;
+      const commands = clueIds.length
+        ? [
+            ["SADD", clueKey, ...clueIds],
+            ["SMEMBERS", clueKey],
+          ]
+        : [["SMEMBERS", clueKey]];
+      const results = await redisCommands(commands);
+      const storedClueIds = results.at(-1);
       response.status(200).json({ group, clueIds: normalizeClueIds(storedClueIds), source: "redis" });
       return;
     }
