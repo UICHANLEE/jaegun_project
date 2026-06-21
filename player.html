@@ -836,9 +836,301 @@
         display: block;
       }
 
+      .field-kit {
+        display: grid;
+        gap: 0.8rem;
+        margin: 0 0 12px;
+        padding: 0.86rem;
+      }
+
+      .field-kit-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.8rem;
+      }
+
+      .field-kit-title {
+        margin-top: 0.24rem;
+        font-size: 1rem;
+        font-weight: 950;
+      }
+
+      .field-kit-copy {
+        margin: 0.28rem 0 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.5;
+      }
+
+      .field-kit-group {
+        flex: 0 0 auto;
+        border: 1px solid rgba(105, 198, 189, 0.42);
+        padding: 0.38rem 0.56rem;
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .field-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.56rem;
+      }
+
+      .field-action,
+      .sheet-button {
+        min-height: 48px;
+        border: 1px solid rgba(232, 196, 119, 0.48);
+        border-radius: 4px;
+        padding: 0.68rem;
+        color: #1b1309;
+        background: linear-gradient(180deg, #efd08c, #bd813b);
+        font-weight: 950;
+      }
+
+      .field-action.secondary,
+      .sheet-button.secondary {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.055);
+      }
+
+      .field-action:disabled,
+      .sheet-button:disabled {
+        border-color: rgba(232, 196, 119, 0.16);
+        color: rgba(245, 234, 215, 0.38);
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .field-status {
+        min-height: 20px;
+        color: var(--muted);
+        font-size: 0.76rem;
+        line-height: 1.45;
+      }
+
+      .field-status.error {
+        color: #ffb1a2;
+      }
+
+      .camera-input {
+        position: fixed;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      body.modal-open {
+        overflow: hidden;
+      }
+
+      .evidence-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 140;
+        display: grid;
+        align-items: end;
+        padding: 12px;
+        background: rgba(3, 5, 5, 0.82);
+        backdrop-filter: blur(12px);
+      }
+
+      .evidence-overlay[hidden] {
+        display: none;
+      }
+
+      .evidence-sheet {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        width: min(100%, 560px);
+        max-height: min(88vh, 760px);
+        margin: 0 auto;
+        overflow: hidden;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        border-radius: 6px 6px 0 0;
+        background: #0d1211;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.68);
+      }
+
+      .sheet-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        min-height: 58px;
+        padding: 0.78rem 0.9rem;
+        border-bottom: 1px solid rgba(232, 196, 119, 0.18);
+      }
+
+      .sheet-title {
+        color: var(--gold);
+        font-size: 0.96rem;
+        font-weight: 950;
+      }
+
+      .sheet-subtitle {
+        margin-top: 0.16rem;
+        color: var(--muted);
+        font-size: 0.72rem;
+      }
+
+      .sheet-close {
+        min-width: 52px;
+        min-height: 38px;
+        border: 1px solid rgba(232, 196, 119, 0.28);
+        border-radius: 4px;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.05);
+        font-weight: 900;
+      }
+
+      .sheet-body {
+        min-height: 0;
+        overflow: auto;
+        padding: 0.84rem;
+      }
+
+      .capture-preview {
+        display: block;
+        width: 100%;
+        max-height: 48vh;
+        border: 1px solid rgba(232, 196, 119, 0.2);
+        border-radius: 4px;
+        background: #050707;
+        object-fit: contain;
+      }
+
+      .capture-label {
+        display: grid;
+        gap: 0.4rem;
+        margin-top: 0.78rem;
+        color: var(--muted);
+        font-size: 0.76rem;
+        font-weight: 900;
+      }
+
+      .capture-label input {
+        width: 100%;
+        height: 48px;
+        border: 1px solid rgba(232, 196, 119, 0.3);
+        border-radius: 4px;
+        padding: 0 0.74rem;
+        color: var(--text);
+        background: rgba(2, 5, 5, 0.72);
+        outline: none;
+      }
+
+      .capture-label input:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 3px rgba(105, 198, 189, 0.14);
+      }
+
+      .sheet-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.56rem;
+        padding: 0.8rem;
+        border-top: 1px solid rgba(232, 196, 119, 0.18);
+      }
+
+      .gallery-state {
+        min-height: 44px;
+        padding: 0.68rem 0.78rem;
+        border: 1px solid rgba(105, 198, 189, 0.2);
+        color: var(--muted);
+        background: rgba(105, 198, 189, 0.07);
+        font-size: 0.78rem;
+        line-height: 1.5;
+      }
+
+      .team-gallery {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.62rem;
+        margin-top: 0.72rem;
+      }
+
+      .gallery-item {
+        overflow: hidden;
+        border: 1px solid rgba(232, 196, 119, 0.2);
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .gallery-photo {
+        display: block;
+        width: 100%;
+        border: 0;
+        padding: 0;
+        background: #050707;
+      }
+
+      .gallery-photo img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+      }
+
+      .gallery-meta {
+        padding: 0.58rem;
+      }
+
+      .gallery-caption {
+        overflow: hidden;
+        color: var(--text);
+        font-size: 0.78rem;
+        font-weight: 900;
+        line-height: 1.35;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .gallery-byline {
+        margin-top: 0.22rem;
+        color: var(--muted);
+        font-size: 0.66rem;
+      }
+
+      .photo-viewer {
+        z-index: 160;
+        align-items: center;
+      }
+
+      .viewer-sheet {
+        grid-template-rows: auto minmax(0, 1fr);
+        border-radius: 6px;
+      }
+
+      .viewer-image {
+        display: block;
+        width: 100%;
+        max-height: 64vh;
+        object-fit: contain;
+      }
+
+      .viewer-copy {
+        padding: 0.78rem 0.9rem;
+        border-top: 1px solid rgba(232, 196, 119, 0.18);
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.5;
+      }
+
       @media (min-width: 480px) {
         .locks {
           grid-template-columns: repeat(12, 1fr);
+        }
+
+        .evidence-overlay {
+          align-items: center;
+        }
+
+        .evidence-sheet {
+          border-radius: 6px;
         }
       }
     </style>
@@ -905,6 +1197,23 @@
         <p class="lead">힌트코드를 입력해 증거를 해제하고, 네 인물의 알리바이를 비교하세요.</p>
       </section>
 
+      <section class="panel field-kit" aria-label="조별 현장 증거 수집">
+        <div class="field-kit-head">
+          <div>
+            <div class="person-id">FIELD KIT</div>
+            <div class="field-kit-title">우리 조 현장 증거</div>
+            <p class="field-kit-copy">촬영한 사진과 메모는 같은 조원에게만 공유됩니다.</p>
+          </div>
+          <div class="field-kit-group" id="evidenceGroupLabel">?조</div>
+        </div>
+        <div class="field-actions">
+          <button class="field-action" type="button" id="captureEvidenceButton">증거 촬영</button>
+          <button class="field-action secondary" type="button" id="openGalleryButton">우리 조 증거함</button>
+        </div>
+        <div class="field-status" id="evidenceShareStatus" aria-live="polite">조 배정 후 사용할 수 있습니다.</div>
+        <input class="camera-input" id="evidenceCameraInput" type="file" accept="image/*" capture="environment" />
+      </section>
+
       <section class="panel unlock">
         <form class="code-form" id="codeForm">
           <input id="hintCodeInput" autocomplete="off" spellcheck="false" placeholder="힌트 코드" />
@@ -935,6 +1244,66 @@
         <div class="verdict-text" id="verdictText"></div>
       </section>
     </main>
+
+    <section class="evidence-overlay" id="captureEvidenceSheet" role="dialog" aria-modal="true" aria-labelledby="captureEvidenceTitle" hidden>
+      <div class="evidence-sheet">
+        <div class="sheet-head">
+          <div>
+            <div class="sheet-title" id="captureEvidenceTitle">증거 기록</div>
+            <div class="sheet-subtitle" id="captureGroupLabel">조별 공유 준비</div>
+          </div>
+          <button class="sheet-close" type="button" data-close-evidence="capture">닫기</button>
+        </div>
+        <div class="sheet-body">
+          <img class="capture-preview" id="captureEvidencePreview" alt="촬영한 증거 미리보기" />
+          <label class="capture-label" for="evidenceCaptionInput">
+            증거 메모
+            <input id="evidenceCaptionInput" maxlength="60" placeholder="예: 목양실 책상 아래에서 발견" />
+          </label>
+          <div class="field-status" id="captureEvidenceStatus" aria-live="polite"></div>
+        </div>
+        <div class="sheet-actions">
+          <button class="sheet-button secondary" type="button" id="retakeEvidenceButton">다시 촬영</button>
+          <button class="sheet-button" type="button" id="saveEvidenceButton">증거함에 저장</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="evidence-overlay" id="teamGallerySheet" role="dialog" aria-modal="true" aria-labelledby="teamGalleryTitle" hidden>
+      <div class="evidence-sheet">
+        <div class="sheet-head">
+          <div>
+            <div class="sheet-title" id="teamGalleryTitle">우리 조 증거함</div>
+            <div class="sheet-subtitle" id="teamGallerySubtitle">조별 현장 기록</div>
+          </div>
+          <button class="sheet-close" type="button" data-close-evidence="gallery">닫기</button>
+        </div>
+        <div class="sheet-body">
+          <div class="gallery-state" id="teamGalleryStatus" aria-live="polite">증거를 불러오는 중입니다.</div>
+          <div class="team-gallery" id="teamGalleryGrid"></div>
+        </div>
+        <div class="sheet-actions">
+          <button class="sheet-button secondary" type="button" id="refreshGalleryButton">새로고침</button>
+          <button class="sheet-button" type="button" id="galleryCaptureButton">증거 촬영</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="evidence-overlay photo-viewer" id="evidencePhotoViewer" role="dialog" aria-modal="true" aria-labelledby="evidenceViewerTitle" hidden>
+      <div class="evidence-sheet viewer-sheet">
+        <div class="sheet-head">
+          <div>
+            <div class="sheet-title" id="evidenceViewerTitle">증거 사진</div>
+            <div class="sheet-subtitle" id="evidenceViewerByline"></div>
+          </div>
+          <button class="sheet-close" type="button" data-close-evidence="viewer">닫기</button>
+        </div>
+        <div class="sheet-body">
+          <img class="viewer-image" id="evidenceViewerImage" alt="확대된 조별 증거 사진" />
+          <div class="viewer-copy" id="evidenceViewerCopy"></div>
+        </div>
+      </div>
+    </section>
 
     <script>
       const suspects = [
@@ -1238,6 +1607,29 @@
       const playerTimer = document.querySelector("#playerTimer");
       const playerTimerLabel = document.querySelector("#playerTimerLabel");
       const playerTimerTime = document.querySelector("#playerTimerTime");
+      const evidenceGroupLabel = document.querySelector("#evidenceGroupLabel");
+      const evidenceShareStatus = document.querySelector("#evidenceShareStatus");
+      const captureEvidenceButton = document.querySelector("#captureEvidenceButton");
+      const openGalleryButton = document.querySelector("#openGalleryButton");
+      const evidenceCameraInput = document.querySelector("#evidenceCameraInput");
+      const captureEvidenceSheet = document.querySelector("#captureEvidenceSheet");
+      const captureGroupLabel = document.querySelector("#captureGroupLabel");
+      const captureEvidencePreview = document.querySelector("#captureEvidencePreview");
+      const evidenceCaptionInput = document.querySelector("#evidenceCaptionInput");
+      const captureEvidenceStatus = document.querySelector("#captureEvidenceStatus");
+      const retakeEvidenceButton = document.querySelector("#retakeEvidenceButton");
+      const saveEvidenceButton = document.querySelector("#saveEvidenceButton");
+      const teamGallerySheet = document.querySelector("#teamGallerySheet");
+      const teamGallerySubtitle = document.querySelector("#teamGallerySubtitle");
+      const teamGalleryStatus = document.querySelector("#teamGalleryStatus");
+      const teamGalleryGrid = document.querySelector("#teamGalleryGrid");
+      const refreshGalleryButton = document.querySelector("#refreshGalleryButton");
+      const galleryCaptureButton = document.querySelector("#galleryCaptureButton");
+      const evidencePhotoViewer = document.querySelector("#evidencePhotoViewer");
+      const evidenceViewerTitle = document.querySelector("#evidenceViewerTitle");
+      const evidenceViewerByline = document.querySelector("#evidenceViewerByline");
+      const evidenceViewerImage = document.querySelector("#evidenceViewerImage");
+      const evidenceViewerCopy = document.querySelector("#evidenceViewerCopy");
       const gameModeKey = "upupGameMode";
       const participantNameKey = "participantName";
       const modeChannel = "BroadcastChannel" in window ? new BroadcastChannel("upup-game-mode") : null;
@@ -1267,6 +1659,8 @@
       let participantName = readStoredValue(participantNameKey);
       let currentGameMode = normalizeGameMode(readStoredValue(gameModeKey) || readStoredValue("gameMode"));
       let syncTimeoutId = null;
+      let pendingEvidenceImage = "";
+      let teamEvidenceItems = [];
 
       function normalizeGameMode(mode) {
         return mode === "crime" ? "crime" : "recreation";
@@ -1280,6 +1674,7 @@
         writeStoredValue("gameMode", normalized);
         document.body.dataset.modeSource = source;
         modeWait.textContent = normalized === "crime" ? "사건 화면으로 전환 중" : `진행자 신호 대기 · ${source}`;
+        if (normalized !== "crime") closeAllEvidenceOverlays();
       }
 
       function applyRecreation(recreation) {
@@ -1329,12 +1724,257 @@
         if (!cleanName) {
           participantBadge.textContent = "재건 부산노회 청년부";
           playerGroupValue.textContent = "이름 입력 필요";
+          renderEvidenceAvailability();
           return;
         }
 
         const group = findParticipantGroup();
         participantBadge.textContent = group ? `${cleanName} · ${group.number}조` : `${cleanName} · ?조`;
         playerGroupValue.textContent = group ? `${group.number}조` : "?조";
+        renderEvidenceAvailability();
+      }
+
+      function renderEvidenceAvailability() {
+        const group = findParticipantGroup();
+        const enabled = Boolean(participantName && group);
+        const stateKey = !participantName ? "no-name" : group ? `group-${group.number}` : "unassigned";
+        evidenceGroupLabel.textContent = group ? `${group.number}조` : "?조";
+        captureEvidenceButton.disabled = !enabled;
+        openGalleryButton.disabled = !enabled;
+        galleryCaptureButton.disabled = !enabled;
+        if (evidenceShareStatus.dataset.state !== stateKey) {
+          evidenceShareStatus.dataset.state = stateKey;
+          evidenceShareStatus.classList.remove("error");
+          if (!participantName) {
+            evidenceShareStatus.textContent = "이름을 입력한 뒤 사용할 수 있습니다.";
+          } else if (!group) {
+            evidenceShareStatus.textContent = "관리자가 조를 배정하면 촬영과 공유가 열립니다.";
+          } else {
+            evidenceShareStatus.textContent = `${group.number}조 전용 증거함 · 최근 사진 18장까지 공유`;
+          }
+        }
+      }
+
+      function syncEvidenceModalState() {
+        const open = !captureEvidenceSheet.hidden || !teamGallerySheet.hidden || !evidencePhotoViewer.hidden;
+        document.body.classList.toggle("modal-open", open);
+      }
+
+      function openEvidenceOverlay(element) {
+        element.hidden = false;
+        syncEvidenceModalState();
+      }
+
+      function closeEvidenceOverlay(element) {
+        element.hidden = true;
+        syncEvidenceModalState();
+      }
+
+      function discardPendingEvidence() {
+        pendingEvidenceImage = "";
+        captureEvidencePreview.removeAttribute("src");
+        evidenceCaptionInput.value = "";
+        setCaptureStatus("");
+        closeEvidenceOverlay(captureEvidenceSheet);
+      }
+
+      function closeEvidenceViewer() {
+        evidenceViewerImage.removeAttribute("src");
+        closeEvidenceOverlay(evidencePhotoViewer);
+      }
+
+      function closeAllEvidenceOverlays() {
+        pendingEvidenceImage = "";
+        captureEvidencePreview.removeAttribute("src");
+        evidenceCaptionInput.value = "";
+        evidenceViewerImage.removeAttribute("src");
+        captureEvidenceSheet.hidden = true;
+        teamGallerySheet.hidden = true;
+        evidencePhotoViewer.hidden = true;
+        syncEvidenceModalState();
+      }
+
+      function setCaptureStatus(text, isError = false) {
+        captureEvidenceStatus.textContent = text;
+        captureEvidenceStatus.classList.toggle("error", isError);
+      }
+
+      function triggerEvidenceCamera() {
+        const group = findParticipantGroup();
+        if (!participantName || !group) {
+          evidenceShareStatus.textContent = "조 배정 후 촬영할 수 있습니다.";
+          evidenceShareStatus.classList.add("error");
+          return;
+        }
+        evidenceShareStatus.classList.remove("error");
+        evidenceCameraInput.value = "";
+        evidenceCameraInput.click();
+      }
+
+      function loadImageElement(file) {
+        return new Promise((resolve, reject) => {
+          const url = URL.createObjectURL(file);
+          const image = new Image();
+          image.onload = () => resolve({ image, url });
+          image.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error("사진을 읽을 수 없습니다."));
+          };
+          image.src = url;
+        });
+      }
+
+      async function compressEvidenceImage(file) {
+        if (!file || !String(file.type || "").startsWith("image/")) {
+          throw new Error("사진 파일을 선택해주세요.");
+        }
+
+        const loaded = await loadImageElement(file);
+        try {
+          const maxSide = 720;
+          const scale = Math.min(1, maxSide / Math.max(loaded.image.naturalWidth, loaded.image.naturalHeight));
+          const width = Math.max(1, Math.round(loaded.image.naturalWidth * scale));
+          const height = Math.max(1, Math.round(loaded.image.naturalHeight * scale));
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext("2d", { alpha: false });
+          context.fillStyle = "#ffffff";
+          context.fillRect(0, 0, width, height);
+          context.drawImage(loaded.image, 0, 0, width, height);
+
+          let quality = 0.72;
+          let imageData = canvas.toDataURL("image/jpeg", quality);
+          while (imageData.length > 260000 && quality > 0.42) {
+            quality -= 0.08;
+            imageData = canvas.toDataURL("image/jpeg", quality);
+          }
+          if (imageData.length > 280000) throw new Error("사진 용량을 줄이지 못했습니다. 다른 사진을 선택해주세요.");
+          return imageData;
+        } finally {
+          URL.revokeObjectURL(loaded.url);
+        }
+      }
+
+      async function evidenceApi(path, options = {}) {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+        try {
+          const response = await fetch(path, { cache: "no-store", ...options, signal: controller.signal });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            const error = new Error(payload.error || "증거함 서버에 연결할 수 없습니다.");
+            error.status = response.status;
+            throw error;
+          }
+          return payload;
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
+      }
+
+      function formatEvidenceDate(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "시간 미상";
+        return date.toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      }
+
+      function renderTeamEvidence() {
+        const group = findParticipantGroup();
+        teamGallerySubtitle.textContent = group ? `${group.number}조 공동 수집 기록` : "조 배정 필요";
+        if (!teamEvidenceItems.length) {
+          teamGalleryGrid.innerHTML = "";
+          teamGalleryStatus.textContent = "아직 수집된 사진이 없습니다. 첫 증거를 촬영해보세요.";
+          return;
+        }
+
+        teamGalleryStatus.textContent = `최근 증거 ${teamEvidenceItems.length}장 · 사진을 누르면 크게 볼 수 있습니다.`;
+        teamGalleryGrid.innerHTML = teamEvidenceItems
+          .map(
+            (item) => `
+              <article class="gallery-item">
+                <button class="gallery-photo" type="button" data-team-evidence="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.caption)} 크게 보기">
+                  <img src="${escapeHtml(item.imageData)}" alt="${escapeHtml(item.caption)}" loading="lazy" />
+                </button>
+                <div class="gallery-meta">
+                  <div class="gallery-caption">${escapeHtml(item.caption)}</div>
+                  <div class="gallery-byline">${escapeHtml(item.author)} · ${escapeHtml(formatEvidenceDate(item.createdAt))}</div>
+                </div>
+              </article>
+            `,
+          )
+          .join("");
+      }
+
+      async function loadTeamEvidence() {
+        const group = findParticipantGroup();
+        if (!participantName || !group) {
+          teamEvidenceItems = [];
+          renderTeamEvidence();
+          return;
+        }
+        teamGalleryStatus.textContent = "우리 조 증거를 불러오는 중입니다.";
+        teamGalleryGrid.innerHTML = "";
+        refreshGalleryButton.disabled = true;
+        try {
+          const payload = await evidenceApi(`/api/evidence?name=${encodeURIComponent(participantName)}`);
+          teamEvidenceItems = Array.isArray(payload.items) ? payload.items : [];
+          renderTeamEvidence();
+        } catch (error) {
+          teamGalleryStatus.textContent = error.status === 403 ? "관리자에게 조 배정을 요청해주세요." : "증거함을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.";
+        } finally {
+          refreshGalleryButton.disabled = false;
+        }
+      }
+
+      async function openTeamGallery() {
+        if (!findParticipantGroup()) {
+          evidenceShareStatus.textContent = "관리자가 조를 배정해야 증거함을 열 수 있습니다.";
+          evidenceShareStatus.classList.add("error");
+          return;
+        }
+        evidenceShareStatus.classList.remove("error");
+        openEvidenceOverlay(teamGallerySheet);
+        await loadTeamEvidence();
+      }
+
+      function openEvidenceViewer(item) {
+        evidenceViewerTitle.textContent = item.caption || "증거 사진";
+        evidenceViewerByline.textContent = `${item.author || "조원"} · ${formatEvidenceDate(item.createdAt)}`;
+        evidenceViewerImage.src = item.imageData;
+        evidenceViewerCopy.textContent = item.caption || "증거 사진";
+        openEvidenceOverlay(evidencePhotoViewer);
+      }
+
+      async function savePendingEvidence() {
+        if (!pendingEvidenceImage || !findParticipantGroup()) return;
+        saveEvidenceButton.disabled = true;
+        retakeEvidenceButton.disabled = true;
+        setCaptureStatus("우리 조 증거함에 저장하는 중입니다.");
+        try {
+          await evidenceApi("/api/evidence", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: participantName,
+              caption: evidenceCaptionInput.value,
+              imageData: pendingEvidenceImage,
+            }),
+          });
+          pendingEvidenceImage = "";
+          captureEvidencePreview.removeAttribute("src");
+          evidenceCaptionInput.value = "";
+          closeEvidenceOverlay(captureEvidenceSheet);
+          evidenceShareStatus.textContent = "증거 사진이 우리 조 증거함에 저장되었습니다.";
+          evidenceShareStatus.classList.remove("error");
+          openEvidenceOverlay(teamGallerySheet);
+          await loadTeamEvidence();
+        } catch (error) {
+          setCaptureStatus(error.status === 403 ? "조 배정을 다시 확인해주세요." : "저장하지 못했습니다. 연결을 확인하고 다시 시도해주세요.", true);
+        } finally {
+          saveEvidenceButton.disabled = false;
+          retakeEvidenceButton.disabled = false;
+        }
       }
 
       function saveParticipantName(rawName) {
@@ -1350,7 +1990,7 @@
 
       async function postModePayload(payload) {
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 1600);
+        const timeoutId = window.setTimeout(() => controller.abort(), 6000);
         try {
           const response = await fetch("/api/mode", {
             method: "POST",
@@ -1387,7 +2027,7 @@
       function getTimerRemaining(timer) {
         if (!timer) return 0;
         if (timer.running && timer.endsAt) {
-          return Math.max(0, Math.floor((new Date(timer.endsAt).getTime() - Date.now()) / 1000));
+          return Math.max(0, Math.ceil((new Date(timer.endsAt).getTime() - Date.now()) / 1000));
         }
         return Math.max(0, Number(timer.remainingSeconds) || 0);
       }
@@ -1647,6 +2287,71 @@
         });
       }
 
+      captureEvidenceButton.addEventListener("click", triggerEvidenceCamera);
+      openGalleryButton.addEventListener("click", openTeamGallery);
+      refreshGalleryButton.addEventListener("click", loadTeamEvidence);
+      galleryCaptureButton.addEventListener("click", () => {
+        closeEvidenceOverlay(teamGallerySheet);
+        triggerEvidenceCamera();
+      });
+      retakeEvidenceButton.addEventListener("click", triggerEvidenceCamera);
+      saveEvidenceButton.addEventListener("click", savePendingEvidence);
+
+      evidenceCameraInput.addEventListener("change", async () => {
+        const file = evidenceCameraInput.files?.[0];
+        evidenceCameraInput.value = "";
+        if (!file) return;
+        evidenceShareStatus.textContent = "촬영한 사진을 증거 기록으로 준비하는 중입니다.";
+        evidenceShareStatus.classList.remove("error");
+        captureEvidenceButton.disabled = true;
+        try {
+          pendingEvidenceImage = await compressEvidenceImage(file);
+          captureEvidencePreview.src = pendingEvidenceImage;
+          const group = findParticipantGroup();
+          captureGroupLabel.textContent = group ? `${group.number}조 증거함에 저장` : "조 배정 필요";
+          setCaptureStatus("메모를 남기고 저장해주세요.");
+          openEvidenceOverlay(captureEvidenceSheet);
+        } catch (error) {
+          pendingEvidenceImage = "";
+          evidenceShareStatus.textContent = error instanceof Error ? error.message : "사진을 준비하지 못했습니다.";
+          evidenceShareStatus.classList.add("error");
+        } finally {
+          renderEvidenceAvailability();
+        }
+      });
+
+      teamGalleryGrid.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-team-evidence]");
+        if (!button) return;
+        const item = teamEvidenceItems.find((entry) => entry.id === button.dataset.teamEvidence);
+        if (item) openEvidenceViewer(item);
+      });
+
+      document.querySelectorAll("[data-close-evidence]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const target = button.dataset.closeEvidence;
+          if (target === "capture") discardPendingEvidence();
+          if (target === "gallery") closeEvidenceOverlay(teamGallerySheet);
+          if (target === "viewer") closeEvidenceViewer();
+        });
+      });
+
+      [captureEvidenceSheet, teamGallerySheet, evidencePhotoViewer].forEach((overlay) => {
+        overlay.addEventListener("click", (event) => {
+          if (event.target !== overlay) return;
+          if (overlay === captureEvidenceSheet) discardPendingEvidence();
+          else if (overlay === evidencePhotoViewer) closeEvidenceViewer();
+          else closeEvidenceOverlay(overlay);
+        });
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        if (!evidencePhotoViewer.hidden) closeEvidenceViewer();
+        else if (!captureEvidenceSheet.hidden) discardPendingEvidence();
+        else if (!teamGallerySheet.hidden) closeEvidenceOverlay(teamGallerySheet);
+      });
+
       nameForm.addEventListener("submit", (event) => {
         event.preventDefault();
         saveParticipantName(participantNameInput.value);
@@ -1655,6 +2360,8 @@
       changeNameButton.addEventListener("click", () => {
         removeStoredValue(participantNameKey);
         participantName = "";
+        teamEvidenceItems = [];
+        closeAllEvidenceOverlays();
         renderParticipantIdentity();
         requestAnimationFrame(() => participantNameInput.focus());
       });

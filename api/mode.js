@@ -1,5 +1,6 @@
 const DEFAULT_MODE = "recreation";
 const MODE_KEY = "crime-scene:mode";
+const MODE_LOCK_KEY = `${MODE_KEY}:write-lock`;
 
 function normalizeMode(mode) {
   return mode === "crime" ? "crime" : DEFAULT_MODE;
@@ -135,7 +136,7 @@ function normalizeTimer(timer) {
 
 function currentRemaining(timer) {
   if (timer.running && timer.endsAt) {
-    const remaining = Math.floor((new Date(timer.endsAt).getTime() - Date.now()) / 1000);
+    const remaining = Math.ceil((new Date(timer.endsAt).getTime() - Date.now()) / 1000);
     return Math.max(0, remaining);
   }
   return Math.max(0, Number(timer.remainingSeconds) || 0);
@@ -156,10 +157,17 @@ function nextTimer(currentTimer, payload) {
     timer.endsAt = durationSeconds > 0 ? new Date(now.getTime() + durationSeconds * 1000).toISOString() : "";
   }
 
-  if (payload.action === "stop") {
+  if (payload.action === "pause" || payload.action === "stop") {
     timer.remainingSeconds = currentRemaining(timer);
     timer.running = false;
     timer.endsAt = "";
+  }
+
+  if (payload.action === "resume") {
+    const remainingSeconds = currentRemaining(timer);
+    timer.remainingSeconds = remainingSeconds;
+    timer.running = remainingSeconds > 0;
+    timer.endsAt = remainingSeconds > 0 ? new Date(now.getTime() + remainingSeconds * 1000).toISOString() : "";
   }
 
   if (payload.action === "reset") {
@@ -211,6 +219,35 @@ async function redisCommand(command) {
   return result.result;
 }
 
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function withRedisWriteLock(callback) {
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const deadline = Date.now() + 6000;
+
+  while (Date.now() < deadline) {
+    const acquired = await redisCommand(["SET", MODE_LOCK_KEY, token, "NX", "PX", 8000]);
+    if (acquired === "OK") {
+      try {
+        return await callback();
+      } finally {
+        await redisCommand([
+          "EVAL",
+          "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+          1,
+          MODE_LOCK_KEY,
+          token,
+        ]).catch(() => {});
+      }
+    }
+    await wait(25 + Math.floor(Math.random() * 35));
+  }
+
+  throw new Error("Mode store is busy. Please retry.");
+}
+
 async function readModeState() {
   if (!hasRedis()) return fallbackState();
 
@@ -247,6 +284,13 @@ function withLiveRemaining(timer) {
 }
 
 async function writeModeState(payload) {
+  if (hasRedis()) {
+    return withRedisWriteLock(() => writeModeStateUnlocked(payload));
+  }
+  return writeModeStateUnlocked(payload);
+}
+
+async function writeModeStateUnlocked(payload) {
   const current = await readModeState();
   const body = payload && typeof payload === "object" ? payload : {};
   const next = {

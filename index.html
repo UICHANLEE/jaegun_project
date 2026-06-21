@@ -1270,8 +1270,8 @@
           <div class="timer-controls" aria-label="참가자 타이머 설정">
             <label class="timer-label" for="timerMinutes">타이머</label>
             <input class="timer-input" id="timerMinutes" type="number" min="1" max="180" step="1" value="10" aria-label="타이머 분" />
-            <button class="mode-button" type="button" id="startTimer">시작</button>
-            <button class="mode-button secondary" type="button" id="stopTimer">정지</button>
+            <button class="mode-button" type="button" id="startTimer">재생</button>
+            <button class="mode-button secondary" type="button" id="stopTimer">일시정지</button>
             <button class="mode-button secondary" type="button" id="resetTimer">초기화</button>
             <button class="mode-button secondary" type="button" id="clearTimer">숨김</button>
             <div class="timer-status" id="timerStatus">타이머: --:--</div>
@@ -1670,7 +1670,7 @@
       function getTimerRemaining(timer) {
         if (!timer) return 0;
         if (timer.running && timer.endsAt) {
-          return Math.max(0, Math.floor((new Date(timer.endsAt).getTime() - Date.now()) / 1000));
+          return Math.max(0, Math.ceil((new Date(timer.endsAt).getTime() - Date.now()) / 1000));
         }
         return Math.max(0, Number(timer.remainingSeconds) || 0);
       }
@@ -1683,6 +1683,8 @@
         const remaining = getTimerRemaining(timer);
         const label = timer.running && remaining > 0 ? "진행 중" : remaining <= 0 ? "종료" : "정지";
         timerStatus.textContent = `타이머: ${formatSeconds(remaining)} · ${label}`;
+        startTimerButton.textContent = !timer.running && remaining > 0 && remaining < timer.durationSeconds ? "계속" : "재생";
+        stopTimerButton.disabled = !timer.running || remaining <= 0;
       }
 
       function normalizeGroupName(name) {
@@ -1810,7 +1812,8 @@
 
       async function fetchModeApi(options = {}) {
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 1800);
+        const timeoutMs = String(options.method || "GET").toUpperCase() === "POST" ? 5000 : 1800;
+        const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
         try {
           const response = await fetch("/api/mode", {
             cache: "no-store",
@@ -1851,8 +1854,14 @@
       async function pushSharedTimer(action) {
         const minutes = Math.max(1, Math.min(180, Number(timerMinutesInput.value) || 10));
         timerMinutesInput.value = minutes;
-        const timer = { action, durationSeconds: minutes * 60 };
-        renderTimerStatus({ durationSeconds: timer.durationSeconds, remainingSeconds: timer.durationSeconds, running: action === "start" });
+        const shouldResume = action === "play" && sharedTimer && !sharedTimer.running && getTimerRemaining(sharedTimer) > 0 && getTimerRemaining(sharedTimer) < sharedTimer.durationSeconds;
+        const resolvedAction = action === "play" ? (shouldResume ? "resume" : "start") : action;
+        const timer = { action: resolvedAction, durationSeconds: minutes * 60 };
+        if (resolvedAction === "start") {
+          renderTimerStatus({ durationSeconds: timer.durationSeconds, remainingSeconds: timer.durationSeconds, running: true, endsAt: new Date(Date.now() + timer.durationSeconds * 1000).toISOString() });
+        } else if (resolvedAction === "pause") {
+          renderTimerStatus({ ...sharedTimer, remainingSeconds: getTimerRemaining(sharedTimer), running: false, endsAt: "" });
+        }
         try {
           const payload = await fetchModeApi({
             method: "POST",
@@ -2210,8 +2219,8 @@
       resetRecreationModeButton.addEventListener("click", () => pushSharedMode("recreation"));
       startRecreationButton.addEventListener("click", () => pushSharedRecreation(true));
       pauseRecreationButton.addEventListener("click", () => pushSharedRecreation(false));
-      startTimerButton.addEventListener("click", () => pushSharedTimer("start"));
-      stopTimerButton.addEventListener("click", () => pushSharedTimer("stop"));
+      startTimerButton.addEventListener("click", () => pushSharedTimer("play"));
+      stopTimerButton.addEventListener("click", () => pushSharedTimer("pause"));
       resetTimerButton.addEventListener("click", () => pushSharedTimer("reset"));
       clearTimerButton.addEventListener("click", () => pushSharedTimer("clear"));
       saveGroupsButton.addEventListener("click", pushSharedGroups);
