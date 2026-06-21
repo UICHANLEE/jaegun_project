@@ -16,11 +16,15 @@ MODE_FILE = RUNTIME_DIR / "mode.json"
 MODE_TMP_FILE = RUNTIME_DIR / "mode.json.tmp"
 EVIDENCE_FILE = RUNTIME_DIR / "evidence.json"
 EVIDENCE_TMP_FILE = RUNTIME_DIR / "evidence.json.tmp"
+PROGRESS_FILE = RUNTIME_DIR / "progress.json"
+PROGRESS_TMP_FILE = RUNTIME_DIR / "progress.json.tmp"
 PORT = 8123
 STATE_LOCK = threading.Lock()
 EVIDENCE_LOCK = threading.Lock()
+PROGRESS_LOCK = threading.Lock()
 MAX_EVIDENCE_ITEMS = 18
-MAX_EVIDENCE_IMAGE_LENGTH = 280_000
+MAX_EVIDENCE_IMAGE_LENGTH = 200_000
+VALID_CLUE_IDS = {f"H{index:02d}" for index in range(1, 13)}
 
 
 def normalize_mode(mode: str | None) -> str:
@@ -330,6 +334,53 @@ def add_evidence_for_participant(payload: object) -> tuple[int | None, dict[str,
     return group, item, None
 
 
+def normalize_clue_ids(values: object) -> list[str]:
+    values = values if isinstance(values, list) else []
+    return sorted({str(value or "").upper() for value in values if str(value or "").upper() in VALID_CLUE_IDS})
+
+
+def read_progress_store() -> dict[str, list[str]]:
+    try:
+        payload = json.loads(PROGRESS_FILE.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+
+
+def write_progress_store(store: dict[str, list[str]]) -> None:
+    RUNTIME_DIR.mkdir(exist_ok=True)
+    PROGRESS_TMP_FILE.write_text(json.dumps(store, ensure_ascii=False), encoding="utf-8")
+    PROGRESS_TMP_FILE.replace(PROGRESS_FILE)
+
+
+def add_clues_for_participant(payload: object) -> tuple[int | None, list[str], str | None]:
+    payload = payload if isinstance(payload, dict) else {}
+    group = participant_group_for_name(payload.get("name"))
+    if group is None:
+        return None, [], "Group assignment required"
+    store = read_progress_store()
+    clue_ids = sorted(set(normalize_clue_ids(store.get(str(group), []))) | set(normalize_clue_ids(payload.get("clueIds"))))
+    store[str(group)] = clue_ids
+    write_progress_store(store)
+    return group, clue_ids, None
+
+
+def team_state(group: int, include_evidence: bool = True) -> dict[str, object]:
+    evidence = read_evidence_store().get(str(group), [])
+    evidence = evidence if isinstance(evidence, list) else []
+    clue_ids = normalize_clue_ids(read_progress_store().get(str(group), []))
+    payload: dict[str, object] = {
+        "group": group,
+        "clueIds": clue_ids,
+        "evidenceCount": len(evidence),
+        "latestEvidenceId": str(evidence[0].get("id") or "") if evidence and isinstance(evidence[0], dict) else "",
+        "source": "local-file",
+    }
+    if include_evidence:
+        payload["evidence"] = evidence[:MAX_EVIDENCE_ITEMS]
+    return payload
+
+
 class EscapeRoomHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
@@ -359,11 +410,25 @@ class EscapeRoomHandler(SimpleHTTPRequestHandler):
                 return
             self.send_mode(200, {"group": group, "items": items, "source": "local-file"})
             return
+        if parsed.path == "/api/team":
+            query = parse_qs(parsed.query)
+            try:
+                group = int(query.get("group", ["0"])[0])
+            except Exception:
+                group = 0
+            if group not in {1, 2, 3}:
+                self.send_mode(400, {"error": "Valid group number required"})
+                return
+            include_evidence = query.get("evidence", ["1"])[0] != "0"
+            with EVIDENCE_LOCK, PROGRESS_LOCK:
+                payload = team_state(group, include_evidence)
+            self.send_mode(200, payload)
+            return
         super().do_GET()
 
     def do_POST(self) -> None:
         path = self.path.split("?", 1)[0]
-        if path not in {"/api/mode", "/api/evidence"}:
+        if path not in {"/api/mode", "/api/evidence", "/api/team"}:
             self.send_error(404)
             return
 
@@ -381,6 +446,13 @@ class EscapeRoomHandler(SimpleHTTPRequestHandler):
                     self.send_mode(403 if group is None else 400, {"error": error})
                     return
                 self.send_mode(201, {"group": group, "item": item, "source": "local-file"})
+            elif path == "/api/team":
+                with PROGRESS_LOCK:
+                    group, clue_ids, error = add_clues_for_participant(payload)
+                if error:
+                    self.send_mode(403, {"error": error})
+                    return
+                self.send_mode(200, {"group": group, "clueIds": clue_ids, "source": "local-file"})
             else:
                 with STATE_LOCK:
                     state = write_state(payload)

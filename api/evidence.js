@@ -1,7 +1,7 @@
 const MODE_KEY = "crime-scene:mode";
 const EVIDENCE_KEY_PREFIX = "crime-scene:evidence:group:";
 const MAX_ITEMS_PER_GROUP = 18;
-const MAX_IMAGE_DATA_LENGTH = 280000;
+const MAX_IMAGE_DATA_LENGTH = 200000;
 
 function hasRedis() {
   return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);

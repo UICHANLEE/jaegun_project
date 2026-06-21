@@ -1661,6 +1661,8 @@
       let syncTimeoutId = null;
       let pendingEvidenceImage = "";
       let teamEvidenceItems = [];
+      let lastTeamProgressSignature = "";
+      let teamProgressRetryAfter = 0;
 
       function normalizeGameMode(mode) {
         return mode === "crime" ? "crime" : "recreation";
@@ -1732,6 +1734,7 @@
         participantBadge.textContent = group ? `${cleanName} · ${group.number}조` : `${cleanName} · ?조`;
         playerGroupValue.textContent = group ? `${group.number}조` : "?조";
         renderEvidenceAvailability();
+        syncTeamClueProgress();
       }
 
       function renderEvidenceAvailability() {
@@ -1845,11 +1848,11 @@
 
           let quality = 0.72;
           let imageData = canvas.toDataURL("image/jpeg", quality);
-          while (imageData.length > 260000 && quality > 0.42) {
+          while (imageData.length > 180000 && quality > 0.34) {
             quality -= 0.08;
             imageData = canvas.toDataURL("image/jpeg", quality);
           }
-          if (imageData.length > 280000) throw new Error("사진 용량을 줄이지 못했습니다. 다른 사진을 선택해주세요.");
+          if (imageData.length > 200000) throw new Error("사진 용량을 줄이지 못했습니다. 다른 사진을 선택해주세요.");
           return imageData;
         } finally {
           URL.revokeObjectURL(loaded.url);
@@ -1870,6 +1873,27 @@
           return payload;
         } finally {
           window.clearTimeout(timeoutId);
+        }
+      }
+
+      async function syncTeamClueProgress() {
+        const group = findParticipantGroup();
+        if (!participantName || !group) return;
+        const clueIds = [...state.viewed].sort();
+        const signature = `${normalizePersonName(participantName)}|${group.number}|${clueIds.join(",")}`;
+        if (signature === lastTeamProgressSignature) return;
+        if (Date.now() < teamProgressRetryAfter) return;
+        lastTeamProgressSignature = signature;
+        try {
+          await evidenceApi("/api/team", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: participantName, clueIds }),
+          });
+          teamProgressRetryAfter = 0;
+        } catch {
+          lastTeamProgressSignature = "";
+          teamProgressRetryAfter = Date.now() + 5000;
         }
       }
 
@@ -2233,6 +2257,7 @@
         renderSuspects();
         evidenceEl.innerHTML = renderArtifact(clue);
         renderProgress();
+        syncTeamClueProgress();
       }
 
       function unlock(rawCode) {
@@ -2361,6 +2386,8 @@
         removeStoredValue(participantNameKey);
         participantName = "";
         teamEvidenceItems = [];
+        lastTeamProgressSignature = "";
+        teamProgressRetryAfter = 0;
         closeAllEvidenceOverlays();
         renderParticipantIdentity();
         requestAnimationFrame(() => participantNameInput.focus());

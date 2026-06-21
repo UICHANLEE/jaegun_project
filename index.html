@@ -310,6 +310,280 @@
         background: linear-gradient(180deg, #efd08c, #bd813b);
       }
 
+      .team-monitor {
+        margin-bottom: 14px;
+        overflow: hidden;
+      }
+
+      .team-monitor-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.48rem;
+      }
+
+      .team-tabs {
+        display: inline-grid;
+        grid-template-columns: repeat(3, 1fr);
+        border: 1px solid rgba(105, 198, 189, 0.34);
+      }
+
+      .team-tab {
+        min-width: 58px;
+        min-height: 38px;
+        border-right: 1px solid rgba(105, 198, 189, 0.26);
+        color: var(--text);
+        background: rgba(105, 198, 189, 0.08);
+        font-size: 0.78rem;
+        font-weight: 950;
+        cursor: pointer;
+      }
+
+      .team-tab:last-child {
+        border-right: 0;
+      }
+
+      .team-tab.active {
+        color: #1b1309;
+        background: linear-gradient(180deg, #efd08c, #bd813b);
+      }
+
+      .team-refresh {
+        min-height: 40px;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        padding: 0 0.74rem;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.045);
+        font-size: 0.78rem;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .team-monitor-status {
+        min-height: 38px;
+        padding: 0.52rem 0.9rem;
+        border-top: 1px solid rgba(232, 196, 119, 0.18);
+        border-bottom: 1px solid rgba(232, 196, 119, 0.18);
+        color: var(--muted);
+        background: rgba(6, 9, 9, 0.48);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .team-monitor-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.35fr);
+        min-height: 310px;
+      }
+
+      .team-monitor-section {
+        min-width: 0;
+        padding: 0.9rem;
+      }
+
+      .team-monitor-section + .team-monitor-section {
+        border-left: 1px solid rgba(232, 196, 119, 0.18);
+      }
+
+      .team-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        margin-bottom: 0.72rem;
+      }
+
+      .team-section-title {
+        color: var(--gold);
+        font-size: 0.86rem;
+        font-weight: 950;
+      }
+
+      .team-section-count {
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.76rem;
+        font-weight: 900;
+      }
+
+      .team-clue-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.42rem;
+      }
+
+      .team-clue-item {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 0.5rem;
+        align-items: center;
+        min-height: 58px;
+        border: 1px solid rgba(232, 196, 119, 0.16);
+        padding: 0.5rem;
+        color: rgba(245, 234, 215, 0.48);
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .team-clue-item.acquired {
+        border-color: rgba(105, 198, 189, 0.48);
+        color: var(--text);
+        background: rgba(105, 198, 189, 0.11);
+      }
+
+      .team-clue-id {
+        display: grid;
+        min-height: 30px;
+        place-items: center;
+        border: 1px solid currentColor;
+        color: inherit;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.68rem;
+        font-weight: 950;
+      }
+
+      .team-clue-name {
+        overflow: hidden;
+        font-size: 0.76rem;
+        font-weight: 900;
+        line-height: 1.35;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .team-clue-owner {
+        margin-top: 0.12rem;
+        color: var(--muted);
+        font-size: 0.66rem;
+      }
+
+      .admin-evidence-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.56rem;
+      }
+
+      .admin-evidence-empty {
+        display: grid;
+        grid-column: 1 / -1;
+        min-height: 180px;
+        place-items: center;
+        border: 1px dashed rgba(232, 196, 119, 0.2);
+        color: var(--muted);
+        font-size: 0.8rem;
+        text-align: center;
+      }
+
+      .admin-evidence-item {
+        overflow: hidden;
+        border: 1px solid rgba(232, 196, 119, 0.18);
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .admin-evidence-photo {
+        display: block;
+        width: 100%;
+        border: 0;
+        padding: 0;
+        background: #050707;
+        cursor: pointer;
+      }
+
+      .admin-evidence-photo img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+      }
+
+      .admin-evidence-meta {
+        padding: 0.5rem;
+      }
+
+      .admin-evidence-caption {
+        overflow: hidden;
+        color: var(--text);
+        font-size: 0.72rem;
+        font-weight: 900;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .admin-evidence-byline {
+        margin-top: 0.16rem;
+        color: var(--muted);
+        font-size: 0.64rem;
+      }
+
+      body.admin-modal-open {
+        overflow: hidden;
+      }
+
+      .admin-photo-viewer {
+        position: fixed;
+        inset: 0;
+        z-index: 120;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        background: rgba(3, 5, 5, 0.86);
+        backdrop-filter: blur(12px);
+      }
+
+      .admin-photo-viewer[hidden] {
+        display: none;
+      }
+
+      .admin-viewer-sheet {
+        width: min(760px, 100%);
+        max-height: 90vh;
+        overflow: auto;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        background: #0d1211;
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.7);
+      }
+
+      .admin-viewer-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 56px;
+        padding: 0.72rem 0.84rem;
+        border-bottom: 1px solid rgba(232, 196, 119, 0.18);
+      }
+
+      .admin-viewer-title {
+        color: var(--gold);
+        font-size: 0.9rem;
+        font-weight: 950;
+      }
+
+      .admin-viewer-close {
+        min-height: 36px;
+        border: 1px solid rgba(232, 196, 119, 0.3);
+        padding: 0 0.65rem;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.05);
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .admin-viewer-image {
+        display: block;
+        width: 100%;
+        max-height: 70vh;
+        background: #050707;
+        object-fit: contain;
+      }
+
+      .admin-viewer-copy {
+        padding: 0.75rem 0.84rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.5;
+      }
+
       .case-dot {
         width: 9px;
         height: 9px;
@@ -1170,8 +1444,14 @@
         .hero,
         .board,
         .dossier,
-        .detail-layout {
+        .detail-layout,
+        .team-monitor-layout {
           grid-template-columns: 1fr;
+        }
+
+        .team-monitor-section + .team-monitor-section {
+          border-top: 1px solid rgba(232, 196, 119, 0.18);
+          border-left: 0;
         }
 
         .clue-grid {
@@ -1231,6 +1511,15 @@
 
         .group-row {
           grid-template-columns: 1fr;
+        }
+
+        .team-monitor-controls {
+          justify-content: flex-start;
+        }
+
+        .team-clue-grid,
+        .admin-evidence-grid {
+          grid-template-columns: 1fr 1fr;
         }
 
         .locks {
@@ -1304,6 +1593,40 @@
         </div>
       </section>
 
+      <section class="panel team-monitor" aria-label="조별 수사 현황">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">조별 수사 현황</div>
+            <div class="panel-meta">TEAM EVIDENCE MONITOR</div>
+          </div>
+          <div class="team-monitor-controls">
+            <div class="team-tabs" role="tablist" aria-label="조회할 조 선택">
+              <button class="team-tab active" type="button" role="tab" aria-selected="true" data-monitor-group="1">1조</button>
+              <button class="team-tab" type="button" role="tab" aria-selected="false" data-monitor-group="2">2조</button>
+              <button class="team-tab" type="button" role="tab" aria-selected="false" data-monitor-group="3">3조</button>
+            </div>
+            <button class="team-refresh" type="button" id="refreshTeamMonitor">새로고침</button>
+          </div>
+        </div>
+        <div class="team-monitor-status" id="teamMonitorStatus" aria-live="polite">1조 현황을 불러오는 중입니다.</div>
+        <div class="team-monitor-layout">
+          <section class="team-monitor-section" aria-label="힌트 획득 현황">
+            <div class="team-section-head">
+              <div class="team-section-title">힌트 획득 현황</div>
+              <div class="team-section-count" id="teamClueCount">0 / 12</div>
+            </div>
+            <div class="team-clue-grid" id="teamClueGrid"></div>
+          </section>
+          <section class="team-monitor-section" aria-label="조별 증거사진">
+            <div class="team-section-head">
+              <div class="team-section-title">조별 증거사진</div>
+              <div class="team-section-count" id="teamEvidenceCount">0장</div>
+            </div>
+            <div class="admin-evidence-grid" id="adminEvidenceGrid"></div>
+          </section>
+        </div>
+      </section>
+
       <section class="panel matrix-board">
         <div class="panel-head">
           <div class="panel-title">용의자별 힌트 매트릭스</div>
@@ -1338,6 +1661,17 @@
         </div>
       </section>
     </main>
+
+    <section class="admin-photo-viewer" id="adminPhotoViewer" role="dialog" aria-modal="true" aria-labelledby="adminViewerTitle" hidden>
+      <div class="admin-viewer-sheet">
+        <div class="admin-viewer-head">
+          <div class="admin-viewer-title" id="adminViewerTitle">조별 증거사진</div>
+          <button class="admin-viewer-close" type="button" id="closeAdminViewer">닫기</button>
+        </div>
+        <img class="admin-viewer-image" id="adminViewerImage" alt="확대된 조별 증거사진" />
+        <div class="admin-viewer-copy" id="adminViewerCopy"></div>
+      </div>
+    </section>
 
     <script>
       const suspects = [
@@ -1641,8 +1975,20 @@
       const groupStatus = document.querySelector("#groupStatus");
       const participantStatus = document.querySelector("#participantStatus");
       const participantList = document.querySelector("#participantList");
+      const teamMonitorStatus = document.querySelector("#teamMonitorStatus");
+      const teamClueCount = document.querySelector("#teamClueCount");
+      const teamClueGrid = document.querySelector("#teamClueGrid");
+      const teamEvidenceCount = document.querySelector("#teamEvidenceCount");
+      const adminEvidenceGrid = document.querySelector("#adminEvidenceGrid");
+      const refreshTeamMonitorButton = document.querySelector("#refreshTeamMonitor");
+      const adminPhotoViewer = document.querySelector("#adminPhotoViewer");
+      const adminViewerTitle = document.querySelector("#adminViewerTitle");
+      const adminViewerImage = document.querySelector("#adminViewerImage");
+      const adminViewerCopy = document.querySelector("#adminViewerCopy");
+      const closeAdminViewerButton = document.querySelector("#closeAdminViewer");
 
       const allClues = suspects.flatMap((suspect) => suspect.clues);
+      const clueOwnerMap = new Map(suspects.flatMap((suspect) => suspect.clues.map((clue) => [clue.id, suspect.name])));
       const codeMap = new Map(allClues.map((clue) => [clue.code, clue]));
       const gameModeKey = "upupGameMode";
       const modeChannel = "BroadcastChannel" in window ? new BroadcastChannel("upup-game-mode") : null;
@@ -1650,6 +1996,12 @@
       let sharedGroups = [];
       let sharedParticipants = [];
       let sharedRecreation = { started: false };
+      let selectedMonitorGroup = 1;
+      let monitorClueIds = new Set();
+      let monitorEvidence = [];
+      let monitorEvidenceCount = 0;
+      let monitorLatestEvidenceId = "";
+      let monitorRequestInFlight = false;
 
       function normalizeGameMode(mode) {
         return mode === "crime" ? "crime" : "recreation";
@@ -1757,6 +2109,137 @@
             `;
           })
           .join("");
+      }
+
+      function formatMonitorDate(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "시간 미상";
+        return date.toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      }
+
+      function renderMonitorTabs() {
+        document.querySelectorAll("[data-monitor-group]").forEach((button) => {
+          const active = Number(button.dataset.monitorGroup) === selectedMonitorGroup;
+          button.classList.toggle("active", active);
+          button.setAttribute("aria-selected", active ? "true" : "false");
+        });
+      }
+
+      function renderMonitorClues() {
+        teamClueCount.textContent = `${monitorClueIds.size} / ${allClues.length}`;
+        teamClueGrid.innerHTML = allClues
+          .map((clue) => {
+            const acquired = monitorClueIds.has(clue.id);
+            return `
+              <div class="team-clue-item ${acquired ? "acquired" : ""}">
+                <div class="team-clue-id">${escapeHtml(clue.id)}</div>
+                <div>
+                  <div class="team-clue-name">${acquired ? escapeHtml(clue.title) : `${escapeHtml(clue.hint)} · 미획득`}</div>
+                  <div class="team-clue-owner">${escapeHtml(clueOwnerMap.get(clue.id) || "")}</div>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderMonitorEvidence() {
+        teamEvidenceCount.textContent = `${monitorEvidenceCount}장`;
+        if (!monitorEvidence.length) {
+          adminEvidenceGrid.innerHTML = `<div class="admin-evidence-empty">${selectedMonitorGroup}조가 촬영한 증거사진이 없습니다.</div>`;
+          return;
+        }
+        adminEvidenceGrid.innerHTML = monitorEvidence
+          .map(
+            (item) => `
+              <article class="admin-evidence-item">
+                <button class="admin-evidence-photo" type="button" data-admin-evidence="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.caption)} 크게 보기">
+                  <img src="${escapeHtml(item.imageData)}" alt="${escapeHtml(item.caption)}" loading="lazy" />
+                </button>
+                <div class="admin-evidence-meta">
+                  <div class="admin-evidence-caption">${escapeHtml(item.caption)}</div>
+                  <div class="admin-evidence-byline">${escapeHtml(item.author)} · ${escapeHtml(formatMonitorDate(item.createdAt))}</div>
+                </div>
+              </article>
+            `,
+          )
+          .join("");
+      }
+
+      function renderTeamMonitor() {
+        renderMonitorTabs();
+        renderMonitorClues();
+        renderMonitorEvidence();
+      }
+
+      async function fetchTeamMonitor(includeEvidence) {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+        try {
+          const response = await fetch(`/api/team?group=${selectedMonitorGroup}&evidence=${includeEvidence ? "1" : "0"}`, {
+            cache: "no-store",
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error("team api unavailable");
+          return response.json();
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
+      }
+
+      function applyTeamMonitorPayload(payload) {
+        monitorClueIds = new Set(Array.isArray(payload.clueIds) ? payload.clueIds : []);
+        monitorEvidenceCount = Math.max(0, Number(payload.evidenceCount) || 0);
+        monitorLatestEvidenceId = String(payload.latestEvidenceId || "");
+        if (Array.isArray(payload.evidence)) monitorEvidence = payload.evidence;
+        teamMonitorStatus.textContent = `${selectedMonitorGroup}조 · 힌트 ${monitorClueIds.size}/${allClues.length} · 증거사진 ${monitorEvidenceCount}장 · 자동 갱신 중`;
+        renderTeamMonitor();
+      }
+
+      async function loadTeamMonitor(forceEvidence = false) {
+        if (monitorRequestInFlight) return;
+        monitorRequestInFlight = true;
+        refreshTeamMonitorButton.disabled = true;
+        try {
+          let payload = await fetchTeamMonitor(forceEvidence);
+          const evidenceChanged =
+            !forceEvidence &&
+            (Math.max(0, Number(payload.evidenceCount) || 0) !== monitorEvidenceCount || String(payload.latestEvidenceId || "") !== monitorLatestEvidenceId);
+          if (evidenceChanged) payload = await fetchTeamMonitor(true);
+          applyTeamMonitorPayload(payload);
+        } catch {
+          teamMonitorStatus.textContent = `${selectedMonitorGroup}조 현황을 불러오지 못했습니다. 서버 연결을 확인해주세요.`;
+        } finally {
+          monitorRequestInFlight = false;
+          refreshTeamMonitorButton.disabled = false;
+        }
+      }
+
+      function selectMonitorGroup(groupNumber) {
+        const group = Math.max(1, Math.min(3, Number(groupNumber) || 1));
+        if (group === selectedMonitorGroup && monitorEvidence.length) return;
+        selectedMonitorGroup = group;
+        monitorClueIds = new Set();
+        monitorEvidence = [];
+        monitorEvidenceCount = 0;
+        monitorLatestEvidenceId = "";
+        teamMonitorStatus.textContent = `${group}조 현황을 불러오는 중입니다.`;
+        renderTeamMonitor();
+        loadTeamMonitor(true);
+      }
+
+      function openAdminEvidenceViewer(item) {
+        adminViewerTitle.textContent = `${selectedMonitorGroup}조 · ${item.caption || "증거사진"}`;
+        adminViewerImage.src = item.imageData;
+        adminViewerCopy.textContent = `${item.author || "조원"} · ${formatMonitorDate(item.createdAt)} · ${item.caption || "증거사진"}`;
+        adminPhotoViewer.hidden = false;
+        document.body.classList.add("admin-modal-open");
+      }
+
+      function closeAdminEvidenceViewer() {
+        adminPhotoViewer.hidden = true;
+        adminViewerImage.removeAttribute("src");
+        document.body.classList.remove("admin-modal-open");
       }
 
       function parseGroups(text) {
@@ -2224,6 +2707,25 @@
       resetTimerButton.addEventListener("click", () => pushSharedTimer("reset"));
       clearTimerButton.addEventListener("click", () => pushSharedTimer("clear"));
       saveGroupsButton.addEventListener("click", pushSharedGroups);
+      document.querySelector(".team-tabs").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-monitor-group]");
+        if (!button) return;
+        selectMonitorGroup(Number(button.dataset.monitorGroup));
+      });
+      refreshTeamMonitorButton.addEventListener("click", () => loadTeamMonitor(true));
+      adminEvidenceGrid.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-admin-evidence]");
+        if (!button) return;
+        const item = monitorEvidence.find((entry) => entry.id === button.dataset.adminEvidence);
+        if (item) openAdminEvidenceViewer(item);
+      });
+      closeAdminViewerButton.addEventListener("click", closeAdminEvidenceViewer);
+      adminPhotoViewer.addEventListener("click", (event) => {
+        if (event.target === adminPhotoViewer) closeAdminEvidenceViewer();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !adminPhotoViewer.hidden) closeAdminEvidenceViewer();
+      });
       participantList.addEventListener("click", (event) => {
         const button = event.target.closest("[data-assign-group]");
         if (!button) return;
@@ -2259,7 +2761,10 @@
       }
 
       syncSharedMode();
+      renderTeamMonitor();
+      loadTeamMonitor(true);
       setInterval(syncSharedMode, 1800);
+      setInterval(() => loadTeamMonitor(false), 2500);
       setInterval(renderTimerStatus, 1000);
       renderParticipantList();
       renderRecreationStatus();
