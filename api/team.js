@@ -2,7 +2,7 @@ const MODE_KEY = "crime-scene:mode";
 const EVIDENCE_KEY_PREFIX = "crime-scene:evidence:group:";
 const CLUE_KEY_PREFIX = "crime-scene:clues:group:";
 const MAX_ITEMS_PER_GROUP = 18;
-const VALID_CLUE_IDS = new Set(Array.from({ length: 12 }, (_, index) => `H${String(index + 1).padStart(2, "0")}`));
+const VALID_CLUE_IDS = new Set(["H01", "H02", "H03", "H05", "H06", "H07", "H09", "H10", "H11", "H13", "H14", "H15"]);
 
 function hasRedis() {
   return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);

@@ -1,6 +1,12 @@
 const DEFAULT_MODE = "recreation";
 const MODE_KEY = "crime-scene:mode";
 const MODE_LOCK_KEY = `${MODE_KEY}:write-lock`;
+const EVIDENCE_KEYS = [1, 2, 3].map((group) => `crime-scene:evidence:group:${group}`);
+const CLUE_KEYS = [1, 2, 3].map((group) => `crime-scene:clues:group:${group}`);
+
+function newSessionId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+}
 
 function normalizeMode(mode) {
   return mode === "crime" ? "crime" : DEFAULT_MODE;
@@ -10,6 +16,7 @@ function fallbackState() {
   globalThis.__upupGameModeState ||= {
     mode: DEFAULT_MODE,
     version: 1,
+    sessionId: "legacy",
     updatedAt: new Date().toISOString(),
     timer: defaultTimer(),
     groups: defaultGroups(),
@@ -199,24 +206,29 @@ function stateWarning() {
 }
 
 async function redisCommand(command) {
+  const [result] = await redisCommands([command]);
+  return result;
+}
+
+async function redisCommands(commands) {
   const response = await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/pipeline`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify([command]),
+    body: JSON.stringify(commands),
   });
 
   if (!response.ok) {
     throw new Error(`Redis request failed with ${response.status}`);
   }
 
-  const [result] = await response.json();
-  if (result.error) {
-    throw new Error(result.error);
-  }
-  return result.result;
+  const results = await response.json();
+  return results.map((result) => {
+    if (result.error) throw new Error(result.error);
+    return result.result;
+  });
 }
 
 function wait(milliseconds) {
@@ -263,6 +275,7 @@ async function readModeState() {
       return {
         mode: normalizeMode(parsed.mode),
         version: Number(parsed.version) || 1,
+        sessionId: parsed.sessionId || "legacy",
         updatedAt: parsed.updatedAt || new Date().toISOString(),
         timer: withLiveRemaining(parsed.timer),
         groups: normalizeGroups(parsed.groups),
@@ -293,9 +306,32 @@ async function writeModeState(payload) {
 async function writeModeStateUnlocked(payload) {
   const current = await readModeState();
   const body = payload && typeof payload === "object" ? payload : {};
+  if (body.resetAll === true) {
+    const reset = {
+      mode: DEFAULT_MODE,
+      version: current.version + 1,
+      sessionId: newSessionId(),
+      updatedAt: new Date().toISOString(),
+      timer: defaultTimer(),
+      groups: defaultGroups(),
+      participants: [],
+      recreation: defaultRecreation(),
+    };
+    if (hasRedis()) {
+      await redisCommands([
+        ["SET", MODE_KEY, JSON.stringify(reset)],
+        ["DEL", ...EVIDENCE_KEYS],
+        ["DEL", ...CLUE_KEYS],
+      ]);
+    } else {
+      globalThis.__upupGameModeState = reset;
+    }
+    return reset;
+  }
   const next = {
     mode: normalizeMode(body.mode ?? current.mode),
     version: current.version + 1,
+    sessionId: current.sessionId || "legacy",
     updatedAt: new Date().toISOString(),
     timer: nextTimer(current.timer, body.timer),
     groups: Array.isArray(body.groups) ? normalizeGroups(body.groups) : normalizeGroups(current.groups),

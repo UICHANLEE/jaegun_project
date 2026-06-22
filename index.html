@@ -164,6 +164,12 @@
         background: rgba(105, 198, 189, 0.12);
       }
 
+      .mode-button.danger {
+        border-color: rgba(223, 115, 95, 0.62);
+        color: #ffd8d0;
+        background: rgba(223, 115, 95, 0.16);
+      }
+
       .mode-status {
         min-height: 34px;
         border: 1px solid rgba(232, 196, 119, 0.24);
@@ -1378,64 +1384,6 @@
         background: linear-gradient(90deg, var(--teal), rgba(232, 196, 119, 0.78));
       }
 
-      .verdict {
-        margin-top: 1rem;
-        border: 1px solid rgba(223, 115, 95, 0.36);
-        background:
-          linear-gradient(90deg, rgba(223, 115, 95, 0.14), transparent 55%),
-          rgba(9, 13, 13, 0.78);
-      }
-
-      .verdict-inner {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 1rem;
-        align-items: center;
-        padding: 1rem;
-      }
-
-      .verdict-title {
-        color: #ffb1a2;
-        font-size: 0.9rem;
-        font-weight: 950;
-      }
-
-      .verdict-copy {
-        margin-top: 0.28rem;
-        color: var(--muted);
-        font-size: 0.86rem;
-        line-height: 1.55;
-      }
-
-      .verdict button {
-        min-width: 112px;
-        height: 44px;
-        border: 1px solid rgba(223, 115, 95, 0.6);
-        background: rgba(223, 115, 95, 0.18);
-        color: var(--text);
-        font-weight: 950;
-        cursor: pointer;
-      }
-
-      .verdict button:disabled {
-        border-color: rgba(232, 196, 119, 0.22);
-        background: rgba(255, 255, 255, 0.045);
-        color: rgba(245, 234, 215, 0.44);
-        cursor: not-allowed;
-      }
-
-      .verdict-text {
-        display: none;
-        padding: 0 1rem 1rem;
-        color: var(--text);
-        line-height: 1.75;
-        white-space: pre-line;
-      }
-
-      .verdict.open .verdict-text {
-        display: block;
-      }
-
       @media (max-width: 1020px) {
         body {
           background-attachment: scroll;
@@ -1484,8 +1432,7 @@
         }
 
         .panel-head,
-        .evidence-head,
-        .verdict-inner {
+        .evidence-head {
           align-items: flex-start;
           grid-template-columns: 1fr;
           flex-direction: column;
@@ -1549,6 +1496,7 @@
           <div class="mode-controls" aria-label="참가자 화면 전환">
             <button class="mode-button" type="button" id="startCrimeMode">크라임씬 화면으로 전환</button>
             <button class="mode-button secondary" type="button" id="resetRecreationMode">밝은 화면으로 되돌리기</button>
+            <button class="mode-button danger" type="button" id="resetAllGame">전체 초기화</button>
             <div class="mode-status" id="modeStatus">현재 참가자 화면: 확인 중</div>
           </div>
           <div class="mode-controls" aria-label="레크레이션 시작 제어">
@@ -1641,16 +1589,6 @@
         <div class="detail-layout">
           <article class="case-note" id="caseNote"></article>
           <article class="evidence" id="evidence"></article>
-        </div>
-        <div class="verdict" id="verdict">
-          <div class="verdict-inner">
-            <div>
-              <div class="verdict-title">최종 추리 봉투</div>
-              <div class="verdict-copy" id="verdictCopy">12개의 증거를 모두 열면 정답 확인이 가능합니다.</div>
-            </div>
-            <button type="button" id="verdictButton" disabled>정답 잠김</button>
-          </div>
-          <div class="verdict-text" id="verdictText"></div>
         </div>
         <div class="progress">
           <div class="progress-top">
@@ -1938,9 +1876,6 @@
         },
       ];
 
-      const verdict =
-        "진범은 전도사이자 찬양팀 리더인 홍강도입니다.\n\n핵심은 알리바이입니다. 사망추정시각에 찬양팀 연습 중이었다는 말은 박간호의 녹음에서 무너집니다. 배경의 찬양은 실제 합주가 아니라 같은 후렴이 반복 재생된 소리였습니다.\n\n범행 흐름은 이렇습니다. 홍강도는 사례비 인상 요청을 했다가 목사님에게 핀잔을 듣고 나옵니다. 목사님에게 심한 땅콩 알러지가 있다는 점과 목사님 이름의 알러지 약 위치를 알고 있었고, 목양실 컵 주변에 땅콩가루를 남겼습니다. 이후 찬양팀 연습 소리를 틀어 둔 채 알리바이를 만들었습니다.\n\n이비리는 회계 문제를 숨긴 구라범, 서신자는 정체를 숨긴 구라범, 박간호는 짜증 섞인 최초 발견자입니다.";
-
       const state = {
         clueId: null,
         viewed: new Set(),
@@ -1954,12 +1889,9 @@
       const codeMessage = document.querySelector("#codeMessage");
       const progressTextEl = document.querySelector("#progressText");
       const locksEl = document.querySelector("#locks");
-      const verdictEl = document.querySelector("#verdict");
-      const verdictButton = document.querySelector("#verdictButton");
-      const verdictText = document.querySelector("#verdictText");
-      const verdictCopy = document.querySelector("#verdictCopy");
       const startCrimeModeButton = document.querySelector("#startCrimeMode");
       const resetRecreationModeButton = document.querySelector("#resetRecreationMode");
+      const resetAllGameButton = document.querySelector("#resetAllGame");
       const modeStatus = document.querySelector("#modeStatus");
       const startRecreationButton = document.querySelector("#startRecreation");
       const pauseRecreationButton = document.querySelector("#pauseRecreation");
@@ -2031,6 +1963,8 @@
       function renderTimerStatus(timer = sharedTimer) {
         if (!timer || !timer.durationSeconds) {
           timerStatus.textContent = "타이머: --:--";
+          startTimerButton.textContent = "재생";
+          stopTimerButton.disabled = true;
           return;
         }
         const remaining = getTimerRemaining(timer);
@@ -2334,6 +2268,63 @@
           renderRecreationStatus();
         } catch {
           renderModeStatus(normalized, "이 브라우저 미리보기");
+        }
+      }
+
+      async function resetEntireGame() {
+        const confirmed = window.confirm(
+          "입장 명단, 조 편성, 타이머, 힌트 획득 기록과 모든 조의 증거사진을 삭제하고 처음 상태로 돌아갑니다. 계속할까요?",
+        );
+        if (!confirmed) return;
+
+        const originalLabel = resetAllGameButton.textContent;
+        resetAllGameButton.disabled = true;
+        resetAllGameButton.textContent = "초기화 중";
+        modeStatus.textContent = "전체 게임 데이터를 초기화하는 중입니다.";
+        try {
+          const payload = await fetchModeApi({
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ resetAll: true }),
+          });
+          lastAdminModeVersion = Number(payload.version) || lastAdminModeVersion;
+          sharedTimer = payload.timer;
+          sharedGroups = normalizeGroups(payload.groups);
+          sharedParticipants = normalizeParticipants(payload.participants);
+          sharedRecreation = payload.recreation || { started: false };
+          state.clueId = null;
+          state.viewed.clear();
+          selectedMonitorGroup = 1;
+          monitorClueIds = new Set();
+          monitorEvidence = [];
+          monitorEvidenceCount = 0;
+          monitorLatestEvidenceId = "";
+          timerMinutesInput.value = 10;
+          publishLocalMode(payload.mode, modeSourceLabel(payload.source));
+          renderGroupRosterInput(sharedGroups);
+          renderTimerStatus();
+          renderGroupStatus();
+          renderParticipantList();
+          renderRecreationStatus();
+          renderTeamMonitor();
+          render();
+          teamMonitorStatus.textContent = "전체 초기화 완료 · 1조 수사 기록 0건";
+          modeStatus.textContent = "전체 초기화 완료 · 참가자 화면: 밝은 화면";
+          if (modeChannel) {
+            modeChannel.postMessage({
+              mode: payload.mode,
+              timer: payload.timer,
+              groups: payload.groups,
+              participants: payload.participants,
+              recreation: payload.recreation,
+              sessionId: payload.sessionId,
+            });
+          }
+        } catch {
+          modeStatus.textContent = "전체 초기화 실패 · 서버 연결을 확인해주세요.";
+        } finally {
+          resetAllGameButton.disabled = false;
+          resetAllGameButton.textContent = originalLabel;
         }
       }
 
@@ -2654,15 +2645,6 @@
         locksEl.innerHTML = allClues
           .map((clue) => `<div class="lock ${state.viewed.has(clue.id) ? "open" : ""}"></div>`)
           .join("");
-        const solved = state.viewed.size === allClues.length;
-        verdictButton.disabled = !solved;
-        verdictButton.textContent = solved ? "정답 확인" : "정답 잠김";
-        verdictCopy.textContent = solved
-          ? "모든 힌트가 열렸습니다. 이제 진범의 알리바이가 왜 무너지는지 확인하세요."
-          : `증거 ${allClues.length - state.viewed.size}개가 더 필요합니다.`;
-        if (!solved) {
-          verdictEl.classList.remove("open");
-        }
       }
 
       function render() {
@@ -2672,12 +2654,6 @@
         evidenceEl.innerHTML = renderArtifact(clue);
         renderProgress();
       }
-
-      verdictText.textContent = verdict;
-      verdictButton.addEventListener("click", () => {
-        if (verdictButton.disabled) return;
-        verdictEl.classList.toggle("open");
-      });
 
       function unlockHintCode(rawCode) {
         const code = rawCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -2709,6 +2685,7 @@
 
       startCrimeModeButton.addEventListener("click", () => pushSharedMode("crime"));
       resetRecreationModeButton.addEventListener("click", () => pushSharedMode("recreation"));
+      resetAllGameButton.addEventListener("click", resetEntireGame);
       startRecreationButton.addEventListener("click", () => pushSharedRecreation(true));
       pauseRecreationButton.addEventListener("click", () => pushSharedRecreation(false));
       startTimerButton.addEventListener("click", () => pushSharedTimer("play"));

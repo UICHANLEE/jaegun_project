@@ -4,6 +4,7 @@ import json
 import math
 import re
 import threading
+import uuid
 from datetime import UTC, datetime, timedelta
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -24,7 +25,7 @@ EVIDENCE_LOCK = threading.Lock()
 PROGRESS_LOCK = threading.Lock()
 MAX_EVIDENCE_ITEMS = 18
 MAX_EVIDENCE_IMAGE_LENGTH = 200_000
-VALID_CLUE_IDS = {f"H{index:02d}" for index in range(1, 13)}
+VALID_CLUE_IDS = {"H01", "H02", "H03", "H05", "H06", "H07", "H09", "H10", "H11", "H13", "H14", "H15"}
 
 
 def normalize_mode(mode: str | None) -> str:
@@ -191,6 +192,7 @@ def read_state() -> dict[str, str | int | bool | dict]:
         return {
             "mode": normalize_mode(payload.get("mode")),
             "version": int(payload.get("version", 1)),
+            "sessionId": str(payload.get("sessionId") or "legacy"),
             "updatedAt": str(payload.get("updatedAt", "")),
             "source": "local-file",
             "timer": timer,
@@ -202,6 +204,7 @@ def read_state() -> dict[str, str | int | bool | dict]:
         return {
             "mode": "recreation",
             "version": 1,
+            "sessionId": "legacy",
             "updatedAt": "",
             "source": "local-file",
             "timer": default_timer(),
@@ -256,6 +259,7 @@ def write_state(payload: dict | None) -> dict[str, str | int | bool | dict]:
     next_state = {
         "mode": normalized,
         "version": int(current["version"]) + 1,
+        "sessionId": str(current.get("sessionId") or "legacy"),
         "updatedAt": datetime.now(UTC).isoformat(),
         "source": "local-file",
         "timer": next_timer(current["timer"], payload.get("timer")),
@@ -381,6 +385,27 @@ def team_state(group: int, include_evidence: bool = True) -> dict[str, object]:
     return payload
 
 
+def reset_all_state() -> dict[str, object]:
+    current = read_state()
+    reset: dict[str, object] = {
+        "mode": "recreation",
+        "version": int(current.get("version", 1)) + 1,
+        "sessionId": uuid.uuid4().hex,
+        "updatedAt": datetime.now(UTC).isoformat(),
+        "source": "local-file",
+        "timer": default_timer(),
+        "groups": default_groups(),
+        "participants": [],
+        "recreation": default_recreation(),
+    }
+    RUNTIME_DIR.mkdir(exist_ok=True)
+    MODE_TMP_FILE.write_text(json.dumps(reset, ensure_ascii=False, indent=2), encoding="utf-8")
+    MODE_TMP_FILE.replace(MODE_FILE)
+    write_evidence_store({})
+    write_progress_store({})
+    return reset
+
+
 class EscapeRoomHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
@@ -457,8 +482,12 @@ class EscapeRoomHandler(SimpleHTTPRequestHandler):
                     return
                 self.send_mode(200, {"group": group, "clueIds": clue_ids, "source": "local-file"})
             else:
-                with STATE_LOCK:
-                    state = write_state(payload)
+                if isinstance(payload, dict) and payload.get("resetAll") is True:
+                    with STATE_LOCK, EVIDENCE_LOCK, PROGRESS_LOCK:
+                        state = reset_all_state()
+                else:
+                    with STATE_LOCK:
+                        state = write_state(payload)
                 self.send_mode(200, state)
         except Exception:
             self.send_mode(400, {"error": "Invalid request payload"})
