@@ -59,7 +59,7 @@
     <rect x="1180" y="520" width="180" height="128" rx="10" fill="#211911" stroke="#A0BF70" stroke-opacity=".56"/>
     <text x="1210" y="566" fill="#F5EAD7" font-family="Arial, sans-serif" font-size="23" font-weight="800">최종 추리</text>
     <text x="1210" y="600" fill="#BDB09A" font-family="Arial, sans-serif" font-size="16">12개 힌트 완료</text>
-    <text x="1210" y="626" fill="#BDB09A" font-family="Arial, sans-serif" font-size="16">정답 봉투 오픈</text>
+    <text x="1210" y="626" fill="#BDB09A" font-family="Arial, sans-serif" font-size="16">범인과 수단 추리</text>
   </g>
 
   <path d="M340 274 H420" stroke="#69C6BD" stroke-width="4" marker-end="url(#arrow)"/>

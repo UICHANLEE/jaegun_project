@@ -361,15 +361,19 @@
       }
 
       .word-option {
-        min-height: 44px;
+        display: grid;
+        grid-template-columns: 28px 1fr;
+        align-items: center;
+        min-height: 58px;
         border: 1px solid rgba(37, 80, 111, 0.28);
         border-radius: 0;
-        padding: 0.42rem 0.28rem;
+        gap: 0.44rem;
+        padding: 0.44rem;
         color: #17324a;
         background: rgba(255, 255, 255, 0.74);
         font-size: 0.82rem;
         font-weight: 950;
-        text-align: center;
+        text-align: left;
       }
 
       .word-option.selected {
@@ -377,6 +381,30 @@
         color: #ffffff;
         background: linear-gradient(180deg, #ffb45d, #cf7132);
         box-shadow: 0 10px 24px rgba(207, 113, 50, 0.18);
+      }
+
+      .word-qr {
+        width: 28px;
+        aspect-ratio: 1;
+        border: 2px solid currentColor;
+        background:
+          linear-gradient(currentColor 0 0) 4px 4px / 6px 6px no-repeat,
+          linear-gradient(currentColor 0 0) 16px 4px / 4px 4px no-repeat,
+          linear-gradient(currentColor 0 0) 4px 16px / 4px 4px no-repeat,
+          linear-gradient(currentColor 0 0) 16px 16px / 7px 7px no-repeat,
+          rgba(255, 255, 255, 0.42);
+      }
+
+      .word-option-text {
+        display: grid;
+        gap: 0.12rem;
+      }
+
+      .word-option-kicker {
+        font-size: 0.58rem;
+        font-weight: 900;
+        letter-spacing: 0;
+        opacity: 0.72;
       }
 
       .word-count {
@@ -388,14 +416,32 @@
 
       .word-card {
         display: grid;
-        place-items: center;
+        grid-template-columns: auto 1fr;
+        align-items: center;
         min-height: 88px;
         border: 1px solid rgba(37, 80, 111, 0.18);
         background: rgba(255, 255, 255, 0.72);
         color: #17324a;
-        font-size: clamp(2rem, 12vw, 3.7rem);
+        gap: 0.8rem;
+        padding: 0.82rem;
+        font-size: clamp(1.9rem, 10vw, 3.4rem);
         font-weight: 950;
         line-height: 1;
+      }
+
+      .word-card .word-qr {
+        width: 58px;
+      }
+
+      .word-card-copy {
+        display: grid;
+        gap: 0.32rem;
+      }
+
+      .word-card-kicker {
+        color: #6b8498;
+        font-size: 0.72rem;
+        font-weight: 950;
       }
 
       .word-start-wait {
@@ -1113,11 +1159,11 @@
         <div class="rec-board" aria-label="레크리에이션 진행판">
           <div class="rec-row">
             <span class="rec-label">현재 순서</span>
-            <span class="rec-value">협동 그리기</span>
+            <span class="rec-value">그림그리기</span>
           </div>
           <div class="rec-row">
             <span class="rec-label">진행 방식</span>
-            <span class="rec-value">단어 전달</span>
+            <span class="rec-value">QR 제시어</span>
           </div>
           <div class="rec-row">
             <span class="rec-label">내 조</span>
@@ -1129,14 +1175,14 @@
             <div class="team"><strong>3팀</strong><span>0점</span></div>
           </div>
         </div>
-        <div class="word-draw" aria-label="협동 그리기 단어">
+        <div class="word-draw" aria-label="그림그리기 제시어 카드">
           <div class="word-draw-top">
-            <div class="rec-label">협동 그리기 단어 카드</div>
+            <div class="rec-label">그림그리기 제시어 카드(QR 코드)</div>
             <div class="word-count" id="wordCount">선택 대기</div>
           </div>
           <div class="word-start-wait" id="wordStartWait">진행자 시작 대기</div>
           <div class="word-card-grid" id="wordCardGrid"></div>
-          <div class="word-card" id="wordCard">카드를 선택하세요</div>
+          <div class="word-card" id="wordCard">제시어 카드를 선택하세요</div>
         </div>
         <div class="mode-wait" id="modeWait">진행자 신호 대기</div>
       </div>
@@ -1262,13 +1308,13 @@
               hint: "힌트1",
               type: "ITEM",
               title: "목사님 이름이 적힌 알러지 약",
-              short: "목양실 책상 아래에서 발견된 처방 약 봉투",
+              short: "목사님 이름 라벨이 붙은 알러지 약통",
               image: "assets/evidence-allergy-peanut.jpg",
-              artifactTitle: "증거 봉투 A-17",
+              artifactTitle: "목양실 비상약통",
               body:
-                "약 봉투에는 목사님 이름이 적혀 있고, 봉투 안쪽에는 흰 가루가 묻어 있습니다. 약은 평소 목사님이 급성 알러지 반응이 올 때 복용하던 것입니다.",
+                "목양실 비상약통에서 목사님 이름 라벨이 붙은 알러지 약통이 발견되었습니다. 같은 종류의 알러지 약통이 전도사님 책상 쪽 소품 사이에서도 확인됩니다.",
               readout:
-                "목사님에게 알러지가 있다는 사실을 아는 사람만 이 약의 의미를 정확히 이용할 수 있습니다.",
+                "목사님의 알러지 정보를 아는 사람이 현장에 접근했을 가능성을 보여 줍니다. 목양실 비상약통과 전도사실 약통을 함께 비교하세요.",
             },
             {
               id: "H02",
@@ -1276,13 +1322,13 @@
               hint: "힌트2",
               type: "PHOTO",
               title: "땅콩가루",
-              short: "찬양팀 간식 테이블과 목양실 컵 주변에서 같은 가루",
+              short: "비어있는 커피잔 안쪽에 남은 견과류 가루",
               image: "assets/evidence-allergy-peanut.jpg",
               artifactTitle: "현장 사진 10:18",
               body:
-                "목양실 컵받침과 찬양팀 간식 테이블에서 같은 고운 갈색 가루가 발견되었습니다. 냄새는 고소하지만, 목사님에게는 치명적인 알러지 유발 물질입니다.",
+                "목양실 책상 위의 비어있는 커피잔 안쪽에서 믹스커피 찌꺼기와 섞인 고운 갈색 가루가 발견되었습니다. 전도사실 메모지에는 '조심할 것: 땅콩, 복숭아 등'이라고 적혀 있습니다.",
               readout:
-                "단순한 간식 흔적이 아니라 약과 함께 보면 계획적인 접촉 가능성이 생깁니다.",
+                "시트 준비물 기준상 땅콩은 견과류 단서입니다. 커피잔, 땅콩가루, 알러지 약, 주의 메모가 같은 방향을 가리킵니다.",
             },
             {
               id: "H03",
@@ -1292,13 +1338,13 @@
               title: "사례비 대화 녹취",
               short: "목사님과 전도사님의 대화 일부",
               image: "assets/evidence-allergy-peanut.jpg",
-              artifactTitle: "녹취 파일 REC-1012",
+              artifactTitle: "사례비 대화 녹취 파일",
               lines: [
                 ["홍강도", "목사님, 사역이 너무 많습니다. 사례를 조금이라도 조정해 주시면 안 될까요."],
                 ["목사님", "그런 마음으로 사역하면 오래 못 버팁니다. 지금도 충분히 받고 있어요."],
                 ["홍강도", "충분하다고요? 제 몸이 망가지는 건 아무도 안 보시네요."],
               ],
-              readout: "동기는 가장 선명합니다. 다만 결정적 증거는 알러지 약과 땅콩가루까지 함께 봐야 합니다.",
+              readout: "홍강도가 사례 인상을 요청했고 목사님에게 핀잔을 들었다는 동기 단서입니다. 캘린더의 업무 과중 표시와 함께 보면 감정선이 더 선명해집니다.",
             },
           ],
         },
@@ -1316,15 +1362,15 @@
               hint: "힌트1",
               type: "AUDIO",
               title: "화내는 음성",
-              short: "목양실 문 밖에서 녹음된 높은 목소리",
+              short: "복도에서 녹음된 비리 폭로 암시 음성",
               image: "assets/evidence-finance-ledger.jpg",
-              artifactTitle: "복도 녹음 09:57",
+              artifactTitle: "복도에서 화내는 음성",
               lines: [
                 ["이비리", "목사님, 이 장부 제가 다 봤습니다. 그냥 넘어갈 문제가 아니에요."],
                 ["목사님", "예배 전에 소란 만들지 마세요."],
                 ["이비리", "오늘 끝나고 공동의회에서 말씀드릴 겁니다."],
               ],
-              readout: "목양실에 간 사실은 숨겼지만 녹음 시각은 핵심 시각보다 앞섭니다.",
+              readout: "권사님은 목사님을 찾아간 사실을 숨겼습니다. 다만 이 음성은 비리 폭로와 말다툼을 보여 주는 단서에 가깝습니다.",
             },
             {
               id: "H06",
@@ -1332,11 +1378,11 @@
               hint: "힌트2",
               type: "ITEM",
               title: "얼룩진 구겨진 돈",
-              short: "축축한 현금 다발과 커피 얼룩",
+              short: "봉투 B-04에 보관된 축축한 모형 지폐",
               image: "assets/evidence-finance-ledger.jpg",
               artifactTitle: "증거 봉투 B-04",
               body:
-                "찬장 뒤쪽에서 구겨진 현금이 발견되었습니다. 지폐는 축축하고 커피 냄새가 납니다.",
+                "봉투 B-04 안에서 구겨진 모형 지폐 여러 장이 발견되었습니다. 지폐는 축축한 얼룩이 남아 있어 누군가 급하게 숨기거나 닦아낸 흔적으로 보입니다.",
               readout: "회계 문제로 목사님을 압박했다는 증거지만, 알러지 반응과는 연결되지 않습니다.",
             },
             {
@@ -1345,16 +1391,16 @@
               hint: "힌트3",
               type: "BOOK",
               title: "회계장부",
-              short: "지출 항목 일부가 붉은 펜으로 표시됨",
+              short: "수상한 지출 내역이 표시된 재정부 장부 사본",
               image: "assets/evidence-finance-ledger.jpg",
-              artifactTitle: "재정부 장부 사본",
+              artifactTitle: "회계장부 원본 클리어파일",
               rows: [
                 ["부활절 장식비", "148,000", "확인"],
                 ["목양실 비품", "320,000", "보류"],
                 ["외부 강사 사례", "500,000", "불일치"],
                 ["찬양팀 소모품", "92,000", "확인"],
               ],
-              readout: "권사님의 거짓말은 '안 찾아갔다'는 부분입니다.",
+              readout: "회계장부는 목사님의 비리를 폭로하려던 동기를 보여 줍니다. 그러나 알러지 약이나 땅콩가루와는 직접 연결되지 않습니다.",
             },
           ],
         },
@@ -1372,15 +1418,15 @@
               hint: "힌트1",
               type: "CHAT",
               title: "신만지 교회 단톡방 캡처",
-              short: "새신자 접근 지시가 담긴 대화",
+              short: "이름을 숨기고 청년부에 들어왔다는 정황",
               image: "assets/evidence-newcomer-phone.jpg",
               artifactTitle: "휴대폰 캡처 IMG-23",
               messages: [
-                ["left", "이번 부활절 예배 때 청년부 분위기 확인해."],
+                ["left", "재건 청년부 명단과 분위기 확인해."],
                 ["right", "이름은 서신자로 말했습니다. 아직 의심은 안 받는 것 같아요."],
-                ["left", "목사와 직접 부딪히지 말고 청년들 쪽으로 들어가."],
+                ["left", "목사와 직접 부딪히지 말고 청년들 정보부터 모아."],
               ],
-              readout: "정체를 숨긴 것은 사실입니다. 하지만 내용은 잠입과 관찰에 가깝습니다.",
+              readout: "정체를 숨긴 것은 사실입니다. 본당 쪽 신만지 교회 명단 포스터와 함께 보면 소속 은폐 단서가 됩니다.",
             },
             {
               id: "H10",
@@ -1391,7 +1437,7 @@
               short: "신만지 교회 출입증, 본명 서만희",
               image: "assets/evidence-newcomer-phone.jpg",
               artifactTitle: "소지품 사진",
-              body: "지갑 안쪽에서 신만지 교회 출입증이 발견되었습니다. 표시된 본명은 서만희입니다.",
+              body: "소지품에서 신만지 교회 출입증이 발견되었습니다. 표시된 본명은 서만희, 오늘 교회에 적은 이름은 서신자입니다.",
               readout: "이름을 숨긴 명백한 거짓말입니다.",
             },
             {
@@ -1400,15 +1446,15 @@
               hint: "힌트3",
               type: "CHAT",
               title: "청년들과 목사님의 카톡",
-              short: "새신자를 조심하라는 목사님의 메시지",
+              short: "서신자 정체를 의심하게 하는 목사님의 대화",
               image: "assets/evidence-newcomer-phone.jpg",
               artifactTitle: "목사님 휴대폰 백업",
               messages: [
                 ["left", "새로 온 청년이 어디 소속인지 조금 더 확인해 보자."],
-                ["left", "예배 전에는 직접 몰아붙이지 말고 자연스럽게 얘기해."],
+                ["left", "서신자 노트에 청년들 정보가 적혀 있다는 이야기도 들었어."],
                 ["right", "네 목사님. 오늘 끝나고 같이 확인해볼게요."],
               ],
-              readout: "목사님이 새신자를 의심한 정황은 있습니다.",
+              readout: "목사님이 새신자를 의심한 정황은 있습니다. 하지만 이 단서는 정체 은폐를 보여 줄 뿐, 범행 수단과는 분리해서 보아야 합니다.",
             },
           ],
         },
@@ -1426,15 +1472,15 @@
               hint: "힌트1",
               type: "AUDIO",
               title: "혼잣말 녹음",
-              short: "BGM처럼 깔린 찬양 소리와 짜증 섞인 목소리",
+              short: "찬양 BGM 때문에 잠을 못 자는 짜증 섞인 음성",
               image: "assets/evidence-nurse-bag.jpg",
-              artifactTitle: "휴대폰 음성 메모 10:08",
+              artifactTitle: "혼잣말 녹음 파일",
               lines: [
                 ["박간호", "아 진짜... 오늘 데이인데 잠 좀 자자."],
                 ["배경음", "같은 찬양 후렴이 일정한 간격으로 반복됨."],
                 ["박간호", "연습이면 왜 똑같은 부분만 계속 틀어놔."],
               ],
-              readout: "중요한 건 욕설이 아니라 배경음입니다. 반복 재생 흔적이 있습니다.",
+              readout: "찬양 소리 때문에 예민해져 있었다는 동기처럼 보이지만, 동시에 같은 찬양 구간이 반복 재생된 배경 단서이기도 합니다.",
             },
             {
               id: "H14",
@@ -1442,7 +1488,7 @@
               hint: "힌트2",
               type: "CHAT",
               title: "10시 10분 친구와의 카톡",
-              short: "집에서 소음 때문에 잠을 못 잔다고 보낸 메시지",
+              short: "사망추정시각 근처 친구와 나눈 카톡 캡처",
               image: "assets/evidence-nurse-bag.jpg",
               artifactTitle: "카톡 백업 10:10",
               messages: [
@@ -1450,7 +1496,7 @@
                 ["left", "또 나이트 끝나고 바로 출근이야? 좀 쉬어."],
                 ["right", "10분만 더 이러면 가서 말하고 올 거야."],
               ],
-              readout: "10:10에 집에서 대화한 흔적이 있습니다.",
+              readout: "10:10에 친구와 대화한 흔적입니다. 박간호가 최초 발견자라는 사실과 함께 시간대를 맞춰 보아야 합니다.",
             },
             {
               id: "H15",
@@ -1458,21 +1504,52 @@
               hint: "힌트3",
               type: "ITEM",
               title: "하루견과",
-              short: "간호사 가방에서 발견된 밀봉 견과 봉지",
+              short: "간호사의 소지품처럼 놓여 있던 밀봉 견과 봉지",
               image: "assets/evidence-nurse-bag.jpg",
               artifactTitle: "소지품 확인 C-12",
-              body: "하루견과 봉지는 뜯기지 않았고, 구매 영수증 시각은 전날 밤 병원 편의점입니다.",
-              readout: "견과류 때문에 의심을 살 수 있지만, 현장의 땅콩가루와 직접 연결되지 않습니다.",
+              body: "하루견과 봉지는 뜯기지 않았고, 전날 밤 병원 편의점에서 산 영수증이 함께 들어 있습니다.",
+              readout: "견과류 때문에 의심을 살 수 있지만, 시트 준비물 기준상 하루견과는 간호사 소지품처럼 놓는 단서입니다. 현장의 땅콩가루와 직접 연결하려면 봉지 상태를 확인해야 합니다.",
             },
           ],
         },
       ];
 
+      const cookieRetentionSeconds = 60 * 60 * 2;
+
+      function readCookieValue(key) {
+        try {
+          const encodedKey = `${encodeURIComponent(key)}=`;
+          const entry = document.cookie
+            .split("; ")
+            .find((item) => item.startsWith(encodedKey));
+          return entry ? decodeURIComponent(entry.slice(encodedKey.length)) : "";
+        } catch {
+          return "";
+        }
+      }
+
+      function writeCookieValue(key, value) {
+        try {
+          const secureFlag = window.location.protocol === "https:" ? "; Secure" : "";
+          document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}; Max-Age=${cookieRetentionSeconds}; Path=/; SameSite=Lax${secureFlag}`;
+        } catch {
+          /* Cookies can be unavailable in some restricted browser contexts. */
+        }
+      }
+
+      function removeCookieValue(key) {
+        try {
+          document.cookie = `${encodeURIComponent(key)}=; Max-Age=0; Path=/; SameSite=Lax`;
+        } catch {
+          /* Cookies can be unavailable in some restricted browser contexts. */
+        }
+      }
+
       function readStoredValue(key, fallback = "") {
         try {
-          return localStorage.getItem(key) || fallback;
+          return localStorage.getItem(key) || readCookieValue(key) || fallback;
         } catch {
-          return fallback;
+          return readCookieValue(key) || fallback;
         }
       }
 
@@ -1482,6 +1559,7 @@
         } catch {
           /* Storage can be unavailable in some mobile private/in-app browsers. */
         }
+        writeCookieValue(key, value);
       }
 
       function removeStoredValue(key) {
@@ -1490,6 +1568,7 @@
         } catch {
           /* Storage can be unavailable in some mobile private/in-app browsers. */
         }
+        removeCookieValue(key);
       }
 
       function readStoredArray(key) {
@@ -1499,6 +1578,11 @@
         } catch {
           return [];
         }
+      }
+
+      function refreshStoredCookie(key) {
+        const value = readStoredValue(key);
+        if (value) writeCookieValue(key, value);
       }
 
       const urlParams = new URLSearchParams(window.location.search);
@@ -1571,29 +1655,14 @@
       const modeChannel = "BroadcastChannel" in window ? new BroadcastChannel("upup-game-mode") : null;
       const fastPollBaseMs = 500;
       const hiddenPollBaseMs = 5000;
-      const drawingWords = [
-        "교회",
-        "찬양",
-        "기도",
-        "목사님",
-        "커피",
-        "수첩",
-        "돈",
-        "책상",
-        "약통",
-        "카톡",
-        "신분증",
-        "땅콩",
-        "회계장부",
-        "금고",
-        "녹음기",
-      ];
+      const drawingWords = ["찻잔", "돈", "수첩"];
       let drawingWordIndex = -1;
       let sharedTimer = null;
       let sharedGroups = [];
       let sharedRecreation = { started: false };
       let participantName = readStoredValue(participantNameKey);
       let currentGameMode = normalizeGameMode(readStoredValue(gameModeKey) || readStoredValue("gameMode"));
+      [participantNameKey, gameSessionKey, gameModeKey, "gameMode", "viewedClues"].forEach(refreshStoredCookie);
       let syncTimeoutId = null;
       let lastSharedVersion = 0;
       let pendingEvidenceImage = "";
@@ -1621,7 +1690,7 @@
         state.clueId = null;
         state.viewed.clear();
         drawingWordIndex = -1;
-        wordCard.textContent = "카드를 선택하세요";
+        wordCard.textContent = "제시어 카드를 선택하세요";
         wordCount.textContent = "시작 대기";
         hintCodeInput.value = "";
         message.textContent = "해제한 힌트는 아래 목록에서 다시 볼 수 있습니다.";
@@ -2369,7 +2438,11 @@
           .map(
             (word, index) => `
               <button class="word-option ${index === drawingWordIndex ? "selected" : ""}" type="button" data-word-index="${index}">
-                ${escapeHtml(word)}
+                <span class="word-qr" aria-hidden="true"></span>
+                <span class="word-option-text">
+                  <span class="word-option-kicker">QR 제시어</span>
+                  <span>${escapeHtml(word)}</span>
+                </span>
               </button>
             `,
           )
@@ -2378,11 +2451,25 @@
         document.querySelectorAll("[data-word-index]").forEach((button) => {
           button.addEventListener("click", () => {
             drawingWordIndex = Number(button.dataset.wordIndex);
-            wordCard.textContent = drawingWords[drawingWordIndex];
+            renderSelectedWordCard();
             wordCount.textContent = `${drawingWordIndex + 1} / ${drawingWords.length}`;
             renderWordCards();
           });
         });
+      }
+
+      function renderSelectedWordCard() {
+        if (drawingWordIndex < 0 || !drawingWords[drawingWordIndex]) {
+          wordCard.textContent = "제시어 카드를 선택하세요";
+          return;
+        }
+        wordCard.innerHTML = `
+          <span class="word-qr" aria-hidden="true"></span>
+          <span class="word-card-copy">
+            <span class="word-card-kicker">그림그리기 제시어 카드(QR 코드)</span>
+            <span>${escapeHtml(drawingWords[drawingWordIndex])}</span>
+          </span>
+        `;
       }
 
       syncGameModeLoop();
