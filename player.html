@@ -1077,7 +1077,7 @@
 
       .note-editor {
         width: 100%;
-        min-height: 220px;
+        min-height: 120px;
         resize: vertical;
         border: 1px solid rgba(232, 196, 119, 0.22);
         border-radius: 4px;
@@ -1099,6 +1099,60 @@
         color: var(--muted);
         font-size: 0.72rem;
         line-height: 1.45;
+      }
+
+      .note-thread {
+        display: grid;
+        gap: 0.58rem;
+        max-height: 280px;
+        margin-bottom: 0.76rem;
+        overflow: auto;
+      }
+
+      .note-entry {
+        border: 1px solid rgba(232, 196, 119, 0.18);
+        border-left: 4px solid var(--teal);
+        border-radius: 4px;
+        padding: 0.62rem 0.68rem;
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .note-entry:nth-child(4n + 2) {
+        border-left-color: var(--gold);
+      }
+
+      .note-entry:nth-child(4n + 3) {
+        border-left-color: var(--green);
+      }
+
+      .note-entry:nth-child(4n) {
+        border-left-color: #df735f;
+      }
+
+      .note-entry-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.58rem;
+        color: var(--gold);
+        font-size: 0.72rem;
+        font-weight: 950;
+      }
+
+      .note-entry-body {
+        margin-top: 0.34rem;
+        color: var(--text);
+        font-size: 0.82rem;
+        line-height: 1.55;
+        white-space: pre-wrap;
+      }
+
+      .note-empty {
+        border: 1px dashed rgba(232, 196, 119, 0.22);
+        padding: 0.78rem;
+        color: rgba(245, 234, 215, 0.54);
+        font-size: 0.78rem;
+        text-align: center;
       }
 
       .sheet-actions {
@@ -1362,7 +1416,8 @@
           <button class="sheet-close" type="button" data-close-evidence="note">닫기</button>
         </div>
         <div class="sheet-body">
-          <textarea class="note-editor" id="teamNoteInput" maxlength="1200" placeholder="이 인물에 대한 의심점, 알리바이, 반박 근거를 적어보세요."></textarea>
+          <div class="note-thread" id="teamNoteEntries"></div>
+          <textarea class="note-editor" id="teamNoteInput" maxlength="1200" placeholder="새 메모 추가: 의심점, 알리바이, 반박 근거를 적어보세요."></textarea>
           <div class="note-meta" id="teamNoteMeta">같은 조원에게만 공유됩니다.</div>
           <div class="field-status" id="teamNoteStatus" aria-live="polite"></div>
         </div>
@@ -1743,6 +1798,7 @@
       const teamNoteSheet = document.querySelector("#teamNoteSheet");
       const teamNoteTitle = document.querySelector("#teamNoteTitle");
       const teamNoteSubtitle = document.querySelector("#teamNoteSubtitle");
+      const teamNoteEntries = document.querySelector("#teamNoteEntries");
       const teamNoteInput = document.querySelector("#teamNoteInput");
       const teamNoteMeta = document.querySelector("#teamNoteMeta");
       const teamNoteStatus = document.querySelector("#teamNoteStatus");
@@ -1964,17 +2020,54 @@
         return suspects.find((suspect) => suspect.id === suspectId) || null;
       }
 
+      function noteItems(note) {
+        if (Array.isArray(note?.items)) return note.items;
+        const content = String(note?.content || "").trim();
+        return content
+          ? [
+              {
+                id: note.updatedAt || "legacy-note",
+                author: note.updatedBy || "조원",
+                content,
+                createdAt: note.updatedAt || "",
+              },
+            ]
+          : [];
+      }
+
+      function renderNoteEntries(items) {
+        if (!items.length) {
+          teamNoteEntries.innerHTML = `<div class="note-empty">아직 작성된 메모가 없습니다.</div>`;
+          return;
+        }
+        teamNoteEntries.innerHTML = items
+          .map(
+            (item) => `
+              <article class="note-entry">
+                <div class="note-entry-head">
+                  <span>${escapeHtml(item.author || "조원")}</span>
+                  <span>${escapeHtml(formatEvidenceDate(item.createdAt))}</span>
+                </div>
+                <div class="note-entry-body">${escapeHtml(item.content || "")}</div>
+              </article>
+            `,
+          )
+          .join("");
+      }
+
       function renderTeamNoteSheet() {
         const suspect = findSuspectById(activeNoteSuspectId);
         if (!suspect) return;
         const group = findParticipantGroup();
         const note = teamNotes[suspect.id] || {};
+        const items = noteItems(note);
+        const latest = items.at(-1);
         teamNoteTitle.textContent = `${suspect.name} 추리 메모`;
         teamNoteSubtitle.textContent = group ? `${group.number}조 공동 기록` : "조 배정 필요";
-        if (document.activeElement !== teamNoteInput) teamNoteInput.value = note.content || "";
-        teamNoteMeta.textContent = note.updatedAt
-          ? `마지막 수정: ${note.updatedBy || "조원"} · ${formatEvidenceDate(note.updatedAt)}`
-          : "아직 작성된 메모가 없습니다.";
+        renderNoteEntries(items);
+        teamNoteMeta.textContent = latest
+          ? `최근 메모: ${latest.author || "조원"} · ${formatEvidenceDate(latest.createdAt)}`
+          : "같은 조원에게만 공유됩니다.";
       }
 
       function openTeamNote(suspectId) {
@@ -2001,6 +2094,12 @@
           teamNoteStatus.classList.add("error");
           return;
         }
+        const content = teamNoteInput.value.trim();
+        if (!content) {
+          teamNoteStatus.textContent = "저장할 메모를 입력해주세요.";
+          teamNoteStatus.classList.add("error");
+          return;
+        }
         saveTeamNoteButton.disabled = true;
         teamNoteStatus.textContent = "메모를 저장하는 중입니다.";
         teamNoteStatus.classList.remove("error");
@@ -2011,11 +2110,12 @@
             body: JSON.stringify({
               name: participantName,
               clueIds: [...state.viewed].sort(),
-              note: { suspectId: suspect.id, content: teamNoteInput.value },
+              note: { suspectId: suspect.id, content },
             }),
           });
           mergeTeamClueIds(payload.clueIds);
           mergeTeamNotes(payload.notes);
+          teamNoteInput.value = "";
           teamNoteStatus.textContent = "같은 조원에게 메모가 공유되었습니다.";
           teamNoteStatus.classList.remove("error");
           renderTeamNoteSheet();
@@ -2129,6 +2229,14 @@
                 id,
                 {
                   content: String(note?.content || ""),
+                  items: Array.isArray(note?.items)
+                    ? note.items.map((item) => ({
+                        id: String(item?.id || ""),
+                        author: String(item?.author || item?.updatedBy || ""),
+                        content: String(item?.content || ""),
+                        createdAt: String(item?.createdAt || item?.updatedAt || ""),
+                      }))
+                    : [],
                   updatedBy: String(note?.updatedBy || ""),
                   updatedAt: String(note?.updatedAt || ""),
                 },
@@ -2432,7 +2540,7 @@
           .map((suspect) => {
             const opened = suspect.clues.filter((clue) => state.viewed.has(clue.id)).length;
             const note = teamNotes[suspect.id] || {};
-            const hasNote = Boolean(String(note.content || "").trim());
+            const hasNote = noteItems(note).length > 0;
             return `
               <article class="panel suspect">
                 <button class="suspect-head suspect-profile-button" type="button" data-suspect-note="${escapeHtml(suspect.id)}">

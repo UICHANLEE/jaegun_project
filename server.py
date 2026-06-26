@@ -29,6 +29,7 @@ NOTES_LOCK = threading.Lock()
 MAX_EVIDENCE_ITEMS = 18
 MAX_EVIDENCE_IMAGE_LENGTH = 200_000
 MAX_NOTE_LENGTH = 1200
+MAX_NOTE_ITEMS_PER_SUSPECT = 30
 VALID_CLUE_IDS = {"H01", "H02", "H03", "H05", "H06", "H07", "H09", "H10", "H11", "H13", "H14", "H15"}
 VALID_SUSPECT_IDS = {"P01", "P02", "P03", "P04"}
 
@@ -129,6 +130,23 @@ def next_participants(current_participants: object, payload: object) -> list[dic
             existing["joinedAt"] = existing.get("joinedAt") or datetime.now(UTC).isoformat()
         else:
             participants.append({"name": name, "joinedAt": datetime.now(UTC).isoformat()})
+
+    if payload.get("action") == "rename":
+        old_key = normalize_name_key(payload.get("oldName"))
+        new_name = normalize_name(payload.get("newName"))
+        new_key = normalize_name_key(new_name)
+        if not old_key or not new_key:
+            return participants
+        target = next((item for item in participants if normalize_name_key(item["name"]) == old_key), None)
+        if target is None:
+            return participants
+        participants = [
+            item
+            for item in participants
+            if normalize_name_key(item["name"]) == old_key or normalize_name_key(item["name"]) != new_key
+        ]
+        target["name"] = new_name
+        target["joinedAt"] = target.get("joinedAt") or datetime.now(UTC).isoformat()
 
     if payload.get("action") == "clear":
         participants = []
@@ -378,23 +396,57 @@ def normalize_note_content(value: object) -> str:
     return str(value or "").replace("\r\n", "\n").replace("\r", "\n")[:MAX_NOTE_LENGTH]
 
 
-def normalize_notes(values: object) -> dict[str, dict[str, str]]:
+def normalize_note_items(note: object) -> list[dict[str, str]]:
+    note = note if isinstance(note, dict) else {"content": note}
+    if isinstance(note.get("items"), list):
+        source = note["items"]
+    elif normalize_note_content(note.get("content")).strip():
+        source = [
+            {
+                "id": str(note.get("updatedAt") or datetime.now(UTC).isoformat()),
+                "author": str(note.get("updatedBy") or ""),
+                "content": str(note.get("content") or ""),
+                "createdAt": str(note.get("updatedAt") or ""),
+            }
+        ]
+    else:
+        source = []
+    items = []
+    for index, item in enumerate(source):
+        item = item if isinstance(item, dict) else {}
+        content = normalize_note_content(item.get("content")).strip()
+        if not content:
+            continue
+        items.append(
+            {
+                "id": str(item.get("id") or f"{item.get('createdAt') or 'note'}-{index}")[:80],
+                "author": str(item.get("author") or item.get("updatedBy") or "")[:40],
+                "content": content,
+                "createdAt": str(item.get("createdAt") or item.get("updatedAt") or ""),
+            }
+        )
+    return items[-MAX_NOTE_ITEMS_PER_SUSPECT:]
+
+
+def normalize_notes(values: object) -> dict[str, dict[str, object]]:
     source = values if isinstance(values, dict) else {}
-    notes: dict[str, dict[str, str]] = {}
+    notes: dict[str, dict[str, object]] = {}
     for suspect_id, raw_note in source.items():
         key = str(suspect_id or "").upper()
         if key not in VALID_SUSPECT_IDS:
             continue
         note = raw_note if isinstance(raw_note, dict) else {"content": raw_note}
+        items = normalize_note_items(note)
+        latest = items[-1] if items else {}
         notes[key] = {
-            "content": normalize_note_content(note.get("content")),
-            "updatedBy": str(note.get("updatedBy") or "")[:40],
-            "updatedAt": str(note.get("updatedAt") or ""),
+            "items": items,
+            "updatedBy": str(latest.get("author") or note.get("updatedBy") or "")[:40],
+            "updatedAt": str(latest.get("createdAt") or note.get("updatedAt") or ""),
         }
     return notes
 
 
-def read_notes_store() -> dict[str, dict[str, dict[str, str]]]:
+def read_notes_store() -> dict[str, dict[str, dict[str, object]]]:
     try:
         payload = json.loads(NOTES_FILE.read_text(encoding="utf-8"))
         return payload if isinstance(payload, dict) else {}
@@ -402,24 +454,38 @@ def read_notes_store() -> dict[str, dict[str, dict[str, str]]]:
         return {}
 
 
-def write_notes_store(store: dict[str, dict[str, dict[str, str]]]) -> None:
+def write_notes_store(store: dict[str, dict[str, dict[str, object]]]) -> None:
     RUNTIME_DIR.mkdir(exist_ok=True)
     NOTES_TMP_FILE.write_text(json.dumps(store, ensure_ascii=False), encoding="utf-8")
     NOTES_TMP_FILE.replace(NOTES_FILE)
 
 
-def add_note_for_participant(payload: object, group: int) -> dict[str, dict[str, str]]:
+def add_note_for_participant(payload: object, group: int) -> dict[str, dict[str, object]]:
     payload = payload if isinstance(payload, dict) else {}
     note = payload.get("note") if isinstance(payload.get("note"), dict) else {}
     suspect_id = str(note.get("suspectId") or payload.get("suspectId") or "").upper()
     if suspect_id not in VALID_SUSPECT_IDS:
         return normalize_notes(read_notes_store().get(str(group), {}))
+    content = normalize_note_content(note.get("content", payload.get("content"))).strip()
+    if not content:
+        return normalize_notes(read_notes_store().get(str(group), {}))
     store = read_notes_store()
     group_notes = normalize_notes(store.get(str(group), {}))
+    current_items = group_notes.get(suspect_id, {}).get("items", [])
+    created_at = datetime.now(UTC).isoformat()
+    next_items = [
+        *(current_items if isinstance(current_items, list) else []),
+        {
+            "id": f"{uuid.uuid4().hex[:10]}-{len(current_items) if isinstance(current_items, list) else 0}",
+            "author": str(payload.get("name") or "")[:40],
+            "content": content,
+            "createdAt": created_at,
+        },
+    ][-MAX_NOTE_ITEMS_PER_SUSPECT:]
     group_notes[suspect_id] = {
-        "content": normalize_note_content(note.get("content", payload.get("content"))),
+        "items": next_items,
         "updatedBy": str(payload.get("name") or "")[:40],
-        "updatedAt": datetime.now(UTC).isoformat(),
+        "updatedAt": created_at,
     }
     store[str(group)] = group_notes
     write_notes_store(store)

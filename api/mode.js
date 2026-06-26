@@ -90,6 +90,18 @@ function nextParticipants(currentParticipants, payload) {
     }
   }
 
+  if (payload.action === "rename") {
+    const oldKey = normalizeNameKey(payload.oldName);
+    const newName = normalizeName(payload.newName);
+    const newKey = normalizeNameKey(newName);
+    if (!oldKey || !newKey) return participants;
+    const target = participants.find((participant) => normalizeNameKey(participant.name) === oldKey);
+    if (!target) return participants;
+    participants = participants.filter((participant) => normalizeNameKey(participant.name) !== newKey || normalizeNameKey(participant.name) === oldKey);
+    target.name = newName;
+    target.joinedAt = target.joinedAt || new Date().toISOString();
+  }
+
   if (payload.action === "clear") {
     participants = [];
   }

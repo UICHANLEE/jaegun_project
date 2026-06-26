@@ -296,10 +296,12 @@
 
       .assign-buttons {
         display: flex;
+        flex-wrap: wrap;
         gap: 0.34rem;
       }
 
-      .assign-button {
+      .assign-button,
+      .participant-edit {
         min-width: 40px;
         min-height: 34px;
         border: 1px solid rgba(105, 198, 189, 0.34);
@@ -308,6 +310,11 @@
         font-size: 0.76rem;
         font-weight: 950;
         cursor: pointer;
+      }
+
+      .participant-edit {
+        border-color: rgba(232, 196, 119, 0.28);
+        background: rgba(232, 196, 119, 0.08);
       }
 
       .assign-button.active {
@@ -553,6 +560,18 @@
         font-size: 0.76rem;
         line-height: 1.5;
         white-space: pre-wrap;
+      }
+
+      .team-note-entry + .team-note-entry {
+        margin-top: 0.58rem;
+        border-top: 1px solid rgba(232, 196, 119, 0.14);
+        padding-top: 0.58rem;
+      }
+
+      .team-note-author {
+        color: var(--teal);
+        font-size: 0.7rem;
+        font-weight: 950;
       }
 
       .team-note-empty {
@@ -2102,6 +2121,7 @@
                   <div class="participant-group">${group ? `${group.number}조` : "?조"}</div>
                 </div>
                 <div class="assign-buttons">
+                  <button class="participant-edit" type="button" data-edit-participant="${escapeHtml(participant.name)}">수정</button>
                   ${[1, 2, 3]
                     .map(
                       (number) => `
@@ -2122,6 +2142,21 @@
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return "시간 미상";
         return date.toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      }
+
+      function noteItems(note) {
+        if (Array.isArray(note?.items)) return note.items;
+        const content = String(note?.content || "").trim();
+        return content
+          ? [
+              {
+                id: note.updatedAt || "legacy-note",
+                author: note.updatedBy || "조원",
+                content,
+                createdAt: note.updatedAt || "",
+              },
+            ]
+          : [];
       }
 
       function renderMonitorTabs() {
@@ -2174,13 +2209,14 @@
       }
 
       function renderMonitorNotes() {
-        const writtenCount = suspects.filter((suspect) => String(monitorNotes[suspect.id]?.content || "").trim()).length;
+        const writtenCount = suspects.filter((suspect) => noteItems(monitorNotes[suspect.id]).length).length;
         teamNoteCount.textContent = `${writtenCount} / ${suspects.length}`;
         teamNoteList.innerHTML = suspects
           .map((suspect) => {
             const note = monitorNotes[suspect.id] || {};
-            const content = String(note.content || "").trim();
-            const meta = note.updatedAt ? `${note.updatedBy || "조원"} · ${formatMonitorDate(note.updatedAt)}` : "작성 전";
+            const items = noteItems(note);
+            const latest = items.at(-1);
+            const meta = latest ? `최근: ${latest.author || "조원"} · ${formatMonitorDate(latest.createdAt)}` : "작성 전";
             return `
               <article class="team-note-item">
                 <div class="team-note-head">
@@ -2188,7 +2224,20 @@
                   <span>${escapeHtml(suspect.id)}</span>
                 </div>
                 <div class="team-note-meta">${escapeHtml(meta)}</div>
-                <div class="team-note-body ${content ? "" : "team-note-empty"}">${content ? escapeHtml(content) : "아직 메모가 없습니다."}</div>
+                <div class="team-note-body ${items.length ? "" : "team-note-empty"}">${
+                  items.length
+                    ? items
+                        .map(
+                          (item) => `
+                            <div class="team-note-entry">
+                              <div class="team-note-author">${escapeHtml(item.author || "조원")} · ${escapeHtml(formatMonitorDate(item.createdAt))}</div>
+                              <div>${escapeHtml(item.content || "")}</div>
+                            </div>
+                          `,
+                        )
+                        .join("")
+                    : "아직 메모가 없습니다."
+                }</div>
               </article>
             `;
           })
@@ -2223,7 +2272,7 @@
         monitorLatestEvidenceId = String(payload.latestEvidenceId || "");
         if (Array.isArray(payload.evidence)) monitorEvidence = payload.evidence;
         monitorNotes = payload.notes && typeof payload.notes === "object" ? payload.notes : {};
-        const noteCount = suspects.filter((suspect) => String(monitorNotes[suspect.id]?.content || "").trim()).length;
+        const noteCount = suspects.filter((suspect) => noteItems(monitorNotes[suspect.id]).length).length;
         teamMonitorStatus.textContent = `${selectedMonitorGroup}조 · 힌트 ${monitorClueIds.size}/${allClues.length} · 증거사진 ${monitorEvidenceCount}장 · 메모 ${noteCount}/${suspects.length} · 자동 갱신 중`;
         renderTeamMonitor();
       }
@@ -2529,6 +2578,50 @@
         pushSharedGroups();
       }
 
+      async function renameParticipant(oldName) {
+        const cleanOldName = String(oldName || "").trim();
+        if (!cleanOldName) return;
+        const newName = window.prompt("참가자 이름을 수정하세요.", cleanOldName);
+        if (newName === null) return;
+        const cleanNewName = String(newName || "").trim();
+        if (!cleanNewName || normalizeGroupName(cleanNewName) === normalizeGroupName(cleanOldName)) return;
+
+        const groups = normalizeGroups(sharedGroups).map((group) => ({
+          number: group.number,
+          names: group.names.map((name) => (normalizeGroupName(name) === normalizeGroupName(cleanOldName) ? cleanNewName : name)),
+        }));
+        sharedGroups = normalizeGroups(groups);
+        sharedParticipants = normalizeParticipants(sharedParticipants).map((participant) =>
+          normalizeGroupName(participant.name) === normalizeGroupName(cleanOldName) ? { ...participant, name: cleanNewName } : participant,
+        );
+        groupRosterInput.value = groupsToText(sharedGroups);
+        renderGroupStatus();
+        renderParticipantList();
+        participantStatus.textContent = "입장 명단: 이름 저장 중";
+
+        try {
+          const payload = await fetchModeApi({
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              participant: { action: "rename", oldName: cleanOldName, newName: cleanNewName },
+              groups: sharedGroups,
+            }),
+          });
+          lastAdminModeVersion = Number(payload.version) || lastAdminModeVersion;
+          sharedGroups = normalizeGroups(payload.groups);
+          sharedParticipants = normalizeParticipants(payload.participants);
+          groupRosterInput.value = groupsToText(sharedGroups);
+          renderGroupStatus();
+          renderParticipantList();
+          if (modeChannel) {
+            modeChannel.postMessage({ mode: payload.mode, timer: payload.timer, groups: payload.groups, participants: payload.participants, recreation: payload.recreation });
+          }
+        } catch {
+          participantStatus.textContent = "입장 명단: 이름 저장 실패";
+        }
+      }
+
       function escapeHtml(value) {
         return String(value)
           .replaceAll("&", "&amp;")
@@ -2821,6 +2914,11 @@
         if (event.key === "Escape" && !adminPhotoViewer.hidden) closeAdminEvidenceViewer();
       });
       participantList.addEventListener("click", (event) => {
+        const editButton = event.target.closest("[data-edit-participant]");
+        if (editButton) {
+          renameParticipant(editButton.dataset.editParticipant);
+          return;
+        }
         const button = event.target.closest("[data-assign-group]");
         if (!button) return;
         assignParticipantToGroup(button.dataset.participant, Number(button.dataset.assignGroup));

@@ -4,6 +4,7 @@ const CLUE_KEY_PREFIX = "crime-scene:clues:group:";
 const NOTE_KEY_PREFIX = "crime-scene:notes:group:";
 const MAX_ITEMS_PER_GROUP = 18;
 const MAX_NOTE_LENGTH = 1200;
+const MAX_NOTE_ITEMS_PER_SUSPECT = 30;
 const VALID_CLUE_IDS = new Set(["H01", "H02", "H03", "H05", "H06", "H07", "H09", "H10", "H11", "H13", "H14", "H15"]);
 const VALID_SUSPECT_IDS = new Set(["P01", "P02", "P03", "P04"]);
 
@@ -54,6 +55,30 @@ function normalizeNoteContent(value) {
     .slice(0, MAX_NOTE_LENGTH);
 }
 
+function normalizeNoteItems(note) {
+  const sourceItems = Array.isArray(note?.items)
+    ? note.items
+    : normalizeNoteContent(note?.content)
+      ? [
+          {
+            id: String(note?.updatedAt || Date.now()),
+            author: note?.updatedBy || "",
+            content: note?.content || "",
+            createdAt: note?.updatedAt || "",
+          },
+        ]
+      : [];
+  return sourceItems
+    .map((item, index) => ({
+      id: String(item?.id || `${item?.createdAt || "note"}-${index}`).slice(0, 80),
+      author: String(item?.author || item?.updatedBy || "").trim().slice(0, 40),
+      content: normalizeNoteContent(item?.content),
+      createdAt: String(item?.createdAt || item?.updatedAt || ""),
+    }))
+    .filter((item) => item.content)
+    .slice(-MAX_NOTE_ITEMS_PER_SUSPECT);
+}
+
 function normalizeNotes(values) {
   const entries = Array.isArray(values)
     ? values.reduce((result, value, index, source) => {
@@ -75,13 +100,14 @@ function normalizeNotes(values) {
             note = { content: rawNote };
           }
         }
-        const content = normalizeNoteContent(note?.content);
+        const items = normalizeNoteItems(note);
+        const latest = items.at(-1) || null;
         return [
           id,
           {
-            content,
-            updatedBy: String(note?.updatedBy || "").trim().slice(0, 40),
-            updatedAt: String(note?.updatedAt || ""),
+            items,
+            updatedBy: String(latest?.author || note?.updatedBy || "").trim().slice(0, 40),
+            updatedAt: String(latest?.createdAt || note?.updatedAt || ""),
           },
         ];
       })
@@ -93,12 +119,15 @@ function normalizeIncomingNote(body, author) {
   const note = body?.note && typeof body.note === "object" ? body.note : {};
   const suspectId = String(note.suspectId || body?.suspectId || "").toUpperCase();
   if (!VALID_SUSPECT_IDS.has(suspectId)) return null;
+  const content = normalizeNoteContent(note.content ?? body?.content).trim();
+  if (!content) return null;
   return {
     suspectId,
-    value: {
-      content: normalizeNoteContent(note.content ?? body?.content),
-      updatedBy: String(author || "").trim().slice(0, 40),
-      updatedAt: new Date().toISOString(),
+    item: {
+      id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`,
+      author: String(author || "").trim().slice(0, 40),
+      content,
+      createdAt: new Date().toISOString(),
     },
   };
 }
@@ -208,7 +237,12 @@ export default async function handler(request, response) {
       const incomingNote = normalizeIncomingNote(request.body, name);
       const commands = [];
       if (incomingNote) {
-        commands.push(["HSET", noteKey, incomingNote.suspectId, JSON.stringify(incomingNote.value)]);
+        const currentRawNote = await redisCommand(["HGET", noteKey, incomingNote.suspectId]);
+        const currentNote = normalizeNotes({ [incomingNote.suspectId]: currentRawNote })[incomingNote.suspectId] || { items: [] };
+        const nextNote = {
+          items: [...currentNote.items, incomingNote.item].slice(-MAX_NOTE_ITEMS_PER_SUSPECT),
+        };
+        commands.push(["HSET", noteKey, incomingNote.suspectId, JSON.stringify(nextNote)]);
       }
       if (clueIds.length) {
         commands.push(["SADD", clueKey, ...clueIds]);
