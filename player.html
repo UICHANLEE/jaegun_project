@@ -2268,18 +2268,17 @@
                       <div class="evidence-audio-label">실제 통화 녹음</div>
                       <audio controls preload="metadata" src="${escapeHtml(clue.audioSrc)}"></audio>
                     </div>`
-                  : ""
+                  : clue.lines
+                      .map(
+                        ([speaker, speech]) => `
+                          <div class="line">
+                            <div class="speaker">${escapeHtml(speaker)}</div>
+                            <div>${escapeHtml(speech)}</div>
+                          </div>
+                        `,
+                      )
+                      .join("")
               }
-              ${clue.lines
-                .map(
-                  ([speaker, speech]) => `
-                    <div class="line">
-                      <div class="speaker">${escapeHtml(speaker)}</div>
-                      <div>${escapeHtml(speech)}</div>
-                    </div>
-                  `,
-                )
-                .join("")}
             </div>
           `;
         } else if (clue.messages) {

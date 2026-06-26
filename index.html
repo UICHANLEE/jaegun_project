@@ -2582,27 +2582,26 @@
         if (clue.render === "audio") {
           artifact = `
             <div class="artifact audio">
-              <div class="wave">${waveBars()}</div>
               ${
                 clue.audioSrc
                   ? `<div class="evidence-audio">
                       <div class="evidence-audio-label">실제 통화 녹음</div>
                       <audio controls preload="metadata" src="${escapeHtml(clue.audioSrc)}"></audio>
                     </div>`
-                  : ""
+                  : `<div class="wave">${waveBars()}</div>
+                    <div class="transcript">
+                      ${clue.lines
+                        .map(
+                          ([speaker, speech]) => `
+                            <div class="line">
+                              <div class="speaker">${escapeHtml(speaker)}</div>
+                              <div class="speech">${escapeHtml(speech)}</div>
+                            </div>
+                          `,
+                        )
+                        .join("")}
+                    </div>`
               }
-              <div class="transcript">
-                ${clue.lines
-                  .map(
-                    ([speaker, speech]) => `
-                      <div class="line">
-                        <div class="speaker">${escapeHtml(speaker)}</div>
-                        <div class="speech">${escapeHtml(speech)}</div>
-                      </div>
-                    `,
-                  )
-                  .join("")}
-              </div>
             </div>
           `;
         }
