@@ -772,6 +772,13 @@
         object-fit: cover;
       }
 
+      .photo-strip.full img {
+        max-height: 520px;
+        aspect-ratio: auto;
+        object-fit: contain;
+        background: #111;
+      }
+
       .photo-strip figcaption {
         padding: 0.46rem 0.18rem 0.08rem;
         color: var(--paper-ink);
@@ -1492,6 +1499,7 @@
               short: "찬양 BGM 때문에 잠을 못 자는 짜증 섞인 음성",
               image: "assets/evidence-nurse-bag.jpg",
               artifactTitle: "혼잣말 녹음 파일",
+              audioSrc: "assets/park-ganho-memo.m4a",
               lines: [
                 ["박간호", "아 진짜... 오늘 데이인데 잠 좀 자자."],
                 ["배경음", "같은 찬양 후렴이 일정한 간격으로 반복됨."],
@@ -1504,16 +1512,13 @@
               code: "RHEMA20",
               hint: "힌트2",
               type: "CHAT",
-              title: "10시 10분 친구와의 카톡",
-              short: "사망추정시각 근처 친구와 나눈 카톡 캡처",
-              image: "assets/evidence-nurse-bag.jpg",
-              artifactTitle: "카톡 백업 10:10",
-              messages: [
-                ["right", "나 오늘 데이인데 옆 교회 찬양소리 때문에 잠을 못 자."],
-                ["left", "또 나이트 끝나고 바로 출근이야? 좀 쉬어."],
-                ["right", "10분만 더 이러면 가서 말하고 올 거야."],
-              ],
-              readout: "10:10에 친구와 대화한 흔적입니다. 박간호가 최초 발견자라는 사실과 함께 시간대를 맞춰 보아야 합니다.",
+              title: "친구와의 카톡대화",
+              short: "교회에 찾아가기 직전 친구와 나눈 대화 캡처",
+              image: "assets/park-ganho-chat.jpg",
+              artifactTitle: "카톡 캡처 10:14",
+              imageMode: "full",
+              imageOnly: true,
+              readout: "박간호가 소음 때문에 교회로 가겠다고 말한 대화입니다. 최초 발견자라는 진술과 교회로 이동한 이유를 함께 확인하세요.",
             },
             {
               id: "H15",
@@ -1686,6 +1691,8 @@
       let teamEvidenceItems = [];
       let lastTeamProgressSignature = "";
       let teamProgressRetryAfter = 0;
+      let lastTeamClueFetchAt = 0;
+      let teamClueFetchRetryAfter = 0;
 
       function normalizeGameMode(mode) {
         return mode === "crime" ? "crime" : "recreation";
@@ -1715,6 +1722,8 @@
         teamEvidenceItems = [];
         lastTeamProgressSignature = "";
         teamProgressRetryAfter = 0;
+        lastTeamClueFetchAt = 0;
+        teamClueFetchRetryAfter = 0;
         closeAllEvidenceOverlays();
         renderWordCards();
         renderParticipantIdentity();
@@ -1795,6 +1804,7 @@
         if (playerGroupValue.textContent !== groupText) playerGroupValue.textContent = groupText;
         renderEvidenceAvailability();
         syncTeamClueProgress();
+        syncTeamCluesFromServer(true);
       }
 
       function renderEvidenceAvailability() {
@@ -1936,6 +1946,40 @@
         }
       }
 
+      function mergeTeamClueIds(clueIds) {
+        if (!Array.isArray(clueIds)) return false;
+        const beforeSize = state.viewed.size;
+        clueIds.forEach((id) => {
+          const clueId = String(id || "");
+          if (validClueIds.has(clueId)) state.viewed.add(clueId);
+        });
+        if (state.viewed.size === beforeSize) return false;
+        writeStoredValue("viewedClues", JSON.stringify([...state.viewed]));
+        if (currentGameMode === "crime") {
+          message.textContent = "같은 조원이 획득한 힌트가 동기화되었습니다.";
+          message.classList.remove("error");
+        }
+        render();
+        return true;
+      }
+
+      async function syncTeamCluesFromServer(force = false) {
+        const group = findParticipantGroup();
+        if (!participantName || !group) return;
+        const now = Date.now();
+        const throttleMs = document.hidden ? 8000 : 2200;
+        if (!force && now - lastTeamClueFetchAt < throttleMs) return;
+        if (now < teamClueFetchRetryAfter) return;
+        lastTeamClueFetchAt = now;
+        try {
+          const payload = await evidenceApi(`/api/team?group=${group.number}&evidence=0`);
+          teamClueFetchRetryAfter = 0;
+          mergeTeamClueIds(payload.clueIds);
+        } catch {
+          teamClueFetchRetryAfter = Date.now() + 5000;
+        }
+      }
+
       async function syncTeamClueProgress() {
         const group = findParticipantGroup();
         if (!participantName || !group) return;
@@ -1945,12 +1989,13 @@
         if (Date.now() < teamProgressRetryAfter) return;
         lastTeamProgressSignature = signature;
         try {
-          await evidenceApi("/api/team", {
+          const payload = await evidenceApi("/api/team", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name: participantName, clueIds }),
           });
           teamProgressRetryAfter = 0;
+          mergeTeamClueIds(payload.clueIds);
         } catch {
           lastTeamProgressSignature = "";
           teamProgressRetryAfter = Date.now() + 5000;
@@ -2152,6 +2197,7 @@
         } catch {
           applyGameMode(readStoredValue(gameModeKey) || readStoredValue("gameMode") || "recreation", "대기");
         } finally {
+          await syncTeamCluesFromServer();
           window.clearTimeout(timeoutId);
         }
       }
@@ -2172,6 +2218,7 @@
 
       document.addEventListener("visibilitychange", () => {
         window.clearTimeout(syncTimeoutId);
+        if (!document.hidden) syncTeamCluesFromServer(true);
         syncTimeoutId = window.setTimeout(syncGameModeLoop, document.hidden ? 1000 : 50);
       });
 
@@ -2259,7 +2306,9 @@
         }
 
         let artifact = "";
-        if (clue.lines) {
+        if (clue.imageOnly) {
+          artifact = "";
+        } else if (clue.lines) {
           artifact = `
             <div class="artifact">
               ${
@@ -2305,7 +2354,7 @@
             <div class="evidence-id">${escapeHtml(clue.id)}</div>
           </div>
           <div class="evidence-body">
-            <figure class="photo-strip">
+            <figure class="photo-strip ${clue.imageMode === "full" ? "full" : ""}">
               <img src="${escapeHtml(clue.image)}" alt="${escapeHtml(clue.title)} 증거 이미지" loading="lazy" decoding="async" />
               <figcaption>${escapeHtml(clue.artifactTitle)}</figcaption>
             </figure>
@@ -2452,6 +2501,8 @@
         teamEvidenceItems = [];
         lastTeamProgressSignature = "";
         teamProgressRetryAfter = 0;
+        lastTeamClueFetchAt = 0;
+        teamClueFetchRetryAfter = 0;
         closeAllEvidenceOverlays();
         renderParticipantIdentity();
         requestAnimationFrame(() => participantNameInput.focus());

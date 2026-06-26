@@ -1171,6 +1171,13 @@
         border: 1px solid rgba(32, 26, 19, 0.16);
       }
 
+      .evidence-photo-strip.full img {
+        max-height: 520px;
+        aspect-ratio: auto;
+        object-fit: contain;
+        background: #111;
+      }
+
       .evidence-photo-strip figcaption {
         padding: 0.58rem 0.22rem 0.12rem;
         color: var(--paper-ink);
@@ -1848,6 +1855,7 @@
               render: "audio",
               artifactTitle: "혼잣말 녹음 파일",
               image: "assets/evidence-nurse-bag.jpg",
+              audioSrc: "assets/park-ganho-memo.m4a",
               lines: [
                 ["박간호", "아 진짜... 오늘 데이인데 잠 좀 자자."],
                 ["배경음", "같은 찬양 후렴이 일정한 간격으로 반복됨."],
@@ -1861,18 +1869,15 @@
               code: "RHEMA20",
               hint: "힌트2",
               type: "CHAT",
-              title: "10시 10분 친구와의 카톡",
-              short: "사망추정시각 근처 친구와 나눈 카톡 캡처",
+              title: "친구와의 카톡대화",
+              short: "교회에 찾아가기 직전 친구와 나눈 대화 캡처",
               render: "chat",
-              artifactTitle: "카톡 백업 10:10",
-              image: "assets/evidence-nurse-bag.jpg",
-              messages: [
-                ["right", "나 오늘 데이인데 옆 교회 찬양소리 때문에 잠을 못 자."],
-                ["left", "또 나이트 끝나고 바로 출근이야? 좀 쉬어."],
-                ["right", "10분만 더 이러면 가서 말하고 올 거야."],
-              ],
+              artifactTitle: "카톡 캡처 10:14",
+              image: "assets/park-ganho-chat.jpg",
+              imageMode: "full",
+              imageOnly: true,
               readout:
-                "10:10에 친구와 대화한 흔적입니다. 박간호가 최초 발견자라는 사실과 함께 시간대를 맞춰 보아야 합니다.",
+                "박간호가 소음 때문에 교회로 가겠다고 말한 대화입니다. 최초 발견자라는 진술과 교회로 이동한 이유를 함께 확인하세요.",
             },
             {
               id: "H15",
@@ -2571,7 +2576,7 @@
         `;
         const imageBlock = clue.image
           ? `
-            <figure class="evidence-photo-strip">
+            <figure class="evidence-photo-strip ${clue.imageMode === "full" ? "full" : ""}">
               <img src="${escapeHtml(clue.image)}" alt="${escapeHtml(clue.title)} 증거 사진" loading="lazy" decoding="async" />
               <figcaption>${escapeHtml(clue.artifactTitle)}</figcaption>
             </figure>
@@ -2579,7 +2584,9 @@
           : "";
 
         let artifact = "";
-        if (clue.render === "audio") {
+        if (clue.imageOnly) {
+          artifact = "";
+        } else if (clue.render === "audio") {
           artifact = `
             <div class="artifact audio">
               ${
