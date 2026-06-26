@@ -19,13 +19,18 @@ EVIDENCE_FILE = RUNTIME_DIR / "evidence.json"
 EVIDENCE_TMP_FILE = RUNTIME_DIR / "evidence.json.tmp"
 PROGRESS_FILE = RUNTIME_DIR / "progress.json"
 PROGRESS_TMP_FILE = RUNTIME_DIR / "progress.json.tmp"
+NOTES_FILE = RUNTIME_DIR / "notes.json"
+NOTES_TMP_FILE = RUNTIME_DIR / "notes.json.tmp"
 PORT = 8123
 STATE_LOCK = threading.Lock()
 EVIDENCE_LOCK = threading.Lock()
 PROGRESS_LOCK = threading.Lock()
+NOTES_LOCK = threading.Lock()
 MAX_EVIDENCE_ITEMS = 18
 MAX_EVIDENCE_IMAGE_LENGTH = 200_000
+MAX_NOTE_LENGTH = 1200
 VALID_CLUE_IDS = {"H01", "H02", "H03", "H05", "H06", "H07", "H09", "H10", "H11", "H13", "H14", "H15"}
+VALID_SUSPECT_IDS = {"P01", "P02", "P03", "P04"}
 
 
 def normalize_mode(mode: str | None) -> str:
@@ -369,13 +374,67 @@ def add_clues_for_participant(payload: object) -> tuple[int | None, list[str], s
     return group, clue_ids, None
 
 
+def normalize_note_content(value: object) -> str:
+    return str(value or "").replace("\r\n", "\n").replace("\r", "\n")[:MAX_NOTE_LENGTH]
+
+
+def normalize_notes(values: object) -> dict[str, dict[str, str]]:
+    source = values if isinstance(values, dict) else {}
+    notes: dict[str, dict[str, str]] = {}
+    for suspect_id, raw_note in source.items():
+        key = str(suspect_id or "").upper()
+        if key not in VALID_SUSPECT_IDS:
+            continue
+        note = raw_note if isinstance(raw_note, dict) else {"content": raw_note}
+        notes[key] = {
+            "content": normalize_note_content(note.get("content")),
+            "updatedBy": str(note.get("updatedBy") or "")[:40],
+            "updatedAt": str(note.get("updatedAt") or ""),
+        }
+    return notes
+
+
+def read_notes_store() -> dict[str, dict[str, dict[str, str]]]:
+    try:
+        payload = json.loads(NOTES_FILE.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+
+
+def write_notes_store(store: dict[str, dict[str, dict[str, str]]]) -> None:
+    RUNTIME_DIR.mkdir(exist_ok=True)
+    NOTES_TMP_FILE.write_text(json.dumps(store, ensure_ascii=False), encoding="utf-8")
+    NOTES_TMP_FILE.replace(NOTES_FILE)
+
+
+def add_note_for_participant(payload: object, group: int) -> dict[str, dict[str, str]]:
+    payload = payload if isinstance(payload, dict) else {}
+    note = payload.get("note") if isinstance(payload.get("note"), dict) else {}
+    suspect_id = str(note.get("suspectId") or payload.get("suspectId") or "").upper()
+    if suspect_id not in VALID_SUSPECT_IDS:
+        return normalize_notes(read_notes_store().get(str(group), {}))
+    store = read_notes_store()
+    group_notes = normalize_notes(store.get(str(group), {}))
+    group_notes[suspect_id] = {
+        "content": normalize_note_content(note.get("content", payload.get("content"))),
+        "updatedBy": str(payload.get("name") or "")[:40],
+        "updatedAt": datetime.now(UTC).isoformat(),
+    }
+    store[str(group)] = group_notes
+    write_notes_store(store)
+    return group_notes
+
+
 def team_state(group: int, include_evidence: bool = True) -> dict[str, object]:
     evidence = read_evidence_store().get(str(group), [])
     evidence = evidence if isinstance(evidence, list) else []
     clue_ids = normalize_clue_ids(read_progress_store().get(str(group), []))
+    notes = normalize_notes(read_notes_store().get(str(group), {}))
     payload: dict[str, object] = {
         "group": group,
         "clueIds": clue_ids,
+        "notes": notes,
         "evidenceCount": len(evidence),
         "latestEvidenceId": str(evidence[0].get("id") or "") if evidence and isinstance(evidence[0], dict) else "",
         "source": "local-file",
@@ -403,6 +462,7 @@ def reset_all_state() -> dict[str, object]:
     MODE_TMP_FILE.replace(MODE_FILE)
     write_evidence_store({})
     write_progress_store({})
+    write_notes_store({})
     return reset
 
 
@@ -448,7 +508,7 @@ class EscapeRoomHandler(SimpleHTTPRequestHandler):
                 self.send_mode(400, {"error": "Valid group number required"})
                 return
             include_evidence = query.get("evidence", ["1"])[0] != "0"
-            with EVIDENCE_LOCK, PROGRESS_LOCK:
+            with EVIDENCE_LOCK, PROGRESS_LOCK, NOTES_LOCK:
                 payload = team_state(group, include_evidence)
             self.send_mode(200, payload)
             return
@@ -475,15 +535,17 @@ class EscapeRoomHandler(SimpleHTTPRequestHandler):
                     return
                 self.send_mode(201, {"group": group, "item": item, "source": "local-file"})
             elif path == "/api/team":
-                with PROGRESS_LOCK:
+                with PROGRESS_LOCK, NOTES_LOCK:
                     group, clue_ids, error = add_clues_for_participant(payload)
                 if error:
                     self.send_mode(403, {"error": error})
                     return
-                self.send_mode(200, {"group": group, "clueIds": clue_ids, "source": "local-file"})
+                with NOTES_LOCK:
+                    notes = add_note_for_participant(payload, group) if group is not None else {}
+                self.send_mode(200, {"group": group, "clueIds": clue_ids, "notes": notes, "source": "local-file"})
             else:
                 if isinstance(payload, dict) and payload.get("resetAll") is True:
-                    with STATE_LOCK, EVIDENCE_LOCK, PROGRESS_LOCK:
+                    with STATE_LOCK, EVIDENCE_LOCK, PROGRESS_LOCK, NOTES_LOCK:
                         state = reset_all_state()
                 else:
                     with STATE_LOCK:

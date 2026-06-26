@@ -3,6 +3,7 @@ const MODE_KEY = "crime-scene:mode";
 const MODE_LOCK_KEY = `${MODE_KEY}:write-lock`;
 const EVIDENCE_KEYS = [1, 2, 3].map((group) => `crime-scene:evidence:group:${group}`);
 const CLUE_KEYS = [1, 2, 3].map((group) => `crime-scene:clues:group:${group}`);
+const NOTE_KEYS = [1, 2, 3].map((group) => `crime-scene:notes:group:${group}`);
 
 function newSessionId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
@@ -322,6 +323,7 @@ async function writeModeStateUnlocked(payload) {
         ["SET", MODE_KEY, JSON.stringify(reset)],
         ["DEL", ...EVIDENCE_KEYS],
         ["DEL", ...CLUE_KEYS],
+        ["DEL", ...NOTE_KEYS],
       ]);
     } else {
       globalThis.__upupGameModeState = reset;

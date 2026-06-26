@@ -1,8 +1,11 @@
 const MODE_KEY = "crime-scene:mode";
 const EVIDENCE_KEY_PREFIX = "crime-scene:evidence:group:";
 const CLUE_KEY_PREFIX = "crime-scene:clues:group:";
+const NOTE_KEY_PREFIX = "crime-scene:notes:group:";
 const MAX_ITEMS_PER_GROUP = 18;
+const MAX_NOTE_LENGTH = 1200;
 const VALID_CLUE_IDS = new Set(["H01", "H02", "H03", "H05", "H06", "H07", "H09", "H10", "H11", "H13", "H14", "H15"]);
+const VALID_SUSPECT_IDS = new Set(["P01", "P02", "P03", "P04"]);
 
 function hasRedis() {
   return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
@@ -43,6 +46,61 @@ function normalizeClueIds(values) {
   return [...new Set((Array.isArray(values) ? values : []).map((value) => String(value || "").toUpperCase()))]
     .filter((value) => VALID_CLUE_IDS.has(value))
     .sort();
+}
+
+function normalizeNoteContent(value) {
+  return String(value ?? "")
+    .replace(/\r\n?/g, "\n")
+    .slice(0, MAX_NOTE_LENGTH);
+}
+
+function normalizeNotes(values) {
+  const entries = Array.isArray(values)
+    ? values.reduce((result, value, index, source) => {
+        if (index % 2 === 0) result.push([value, source[index + 1]]);
+        return result;
+      }, [])
+    : Object.entries(values && typeof values === "object" ? values : {});
+
+  return Object.fromEntries(
+    entries
+      .map(([suspectId, rawNote]) => {
+        const id = String(suspectId || "").toUpperCase();
+        if (!VALID_SUSPECT_IDS.has(id)) return null;
+        let note = rawNote;
+        if (typeof rawNote === "string") {
+          try {
+            note = JSON.parse(rawNote);
+          } catch {
+            note = { content: rawNote };
+          }
+        }
+        const content = normalizeNoteContent(note?.content);
+        return [
+          id,
+          {
+            content,
+            updatedBy: String(note?.updatedBy || "").trim().slice(0, 40),
+            updatedAt: String(note?.updatedAt || ""),
+          },
+        ];
+      })
+      .filter(Boolean),
+  );
+}
+
+function normalizeIncomingNote(body, author) {
+  const note = body?.note && typeof body.note === "object" ? body.note : {};
+  const suspectId = String(note.suspectId || body?.suspectId || "").toUpperCase();
+  if (!VALID_SUSPECT_IDS.has(suspectId)) return null;
+  return {
+    suspectId,
+    value: {
+      content: normalizeNoteContent(note.content ?? body?.content),
+      updatedBy: String(author || "").trim().slice(0, 40),
+      updatedAt: new Date().toISOString(),
+    },
+  };
 }
 
 function parseEvidenceItems(values) {
@@ -102,17 +160,20 @@ export default async function handler(request, response) {
       const includeEvidence = String(request.query?.evidence ?? "1") !== "0";
       const evidenceKey = `${EVIDENCE_KEY_PREFIX}${group}`;
       const clueKey = `${CLUE_KEY_PREFIX}${group}`;
+      const noteKey = `${NOTE_KEY_PREFIX}${group}`;
       const commands = includeEvidence
         ? [
             ["LRANGE", evidenceKey, 0, MAX_ITEMS_PER_GROUP - 1],
             ["LLEN", evidenceKey],
             ["LINDEX", evidenceKey, 0],
             ["SMEMBERS", clueKey],
+            ["HGETALL", noteKey],
           ]
         : [
             ["LLEN", evidenceKey],
             ["LINDEX", evidenceKey, 0],
             ["SMEMBERS", clueKey],
+            ["HGETALL", noteKey],
           ];
       const results = await redisCommands(commands);
       const evidence = includeEvidence ? results[0] : null;
@@ -121,9 +182,11 @@ export default async function handler(request, response) {
       const latestEvidenceRaw = results[offset + 1];
       const latestEvidenceId = parseEvidenceItems(latestEvidenceRaw ? [latestEvidenceRaw] : [])[0]?.id || "";
       const clueIds = results[offset + 2];
+      const notes = results[offset + 3];
       response.status(200).json({
         group,
         clueIds: normalizeClueIds(clueIds),
+        notes: normalizeNotes(notes),
         evidenceCount,
         latestEvidenceId,
         ...(includeEvidence ? { evidence: parseEvidenceItems(evidence) } : {}),
@@ -141,15 +204,20 @@ export default async function handler(request, response) {
       }
       const clueIds = normalizeClueIds(request.body?.clueIds);
       const clueKey = `${CLUE_KEY_PREFIX}${group}`;
-      const commands = clueIds.length
-        ? [
-            ["SADD", clueKey, ...clueIds],
-            ["SMEMBERS", clueKey],
-          ]
-        : [["SMEMBERS", clueKey]];
+      const noteKey = `${NOTE_KEY_PREFIX}${group}`;
+      const incomingNote = normalizeIncomingNote(request.body, name);
+      const commands = [];
+      if (incomingNote) {
+        commands.push(["HSET", noteKey, incomingNote.suspectId, JSON.stringify(incomingNote.value)]);
+      }
+      if (clueIds.length) {
+        commands.push(["SADD", clueKey, ...clueIds]);
+      }
+      commands.push(["SMEMBERS", clueKey], ["HGETALL", noteKey]);
       const results = await redisCommands(commands);
-      const storedClueIds = results.at(-1);
-      response.status(200).json({ group, clueIds: normalizeClueIds(storedClueIds), source: "redis" });
+      const storedClueIds = results.at(-2);
+      const storedNotes = results.at(-1);
+      response.status(200).json({ group, clueIds: normalizeClueIds(storedClueIds), notes: normalizeNotes(storedNotes), source: "redis" });
       return;
     }
   } catch (error) {

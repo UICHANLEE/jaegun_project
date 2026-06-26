@@ -379,7 +379,7 @@
 
       .team-monitor-layout {
         display: grid;
-        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.35fr);
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 1fr);
         min-height: 310px;
       }
 
@@ -519,6 +519,45 @@
         margin-top: 0.16rem;
         color: var(--muted);
         font-size: 0.64rem;
+      }
+
+      .team-note-list {
+        display: grid;
+        gap: 0.56rem;
+      }
+
+      .team-note-item {
+        border: 1px solid rgba(232, 196, 119, 0.18);
+        padding: 0.64rem;
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .team-note-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.6rem;
+        color: var(--gold);
+        font-size: 0.78rem;
+        font-weight: 950;
+      }
+
+      .team-note-meta {
+        margin-top: 0.18rem;
+        color: var(--muted);
+        font-size: 0.66rem;
+      }
+
+      .team-note-body {
+        margin-top: 0.48rem;
+        color: var(--text);
+        font-size: 0.76rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+
+      .team-note-empty {
+        color: rgba(245, 234, 215, 0.46);
+        font-style: italic;
       }
 
       body.admin-modal-open {
@@ -1596,6 +1635,13 @@
             </div>
             <div class="admin-evidence-grid" id="adminEvidenceGrid"></div>
           </section>
+          <section class="team-monitor-section" aria-label="인물별 추리 메모">
+            <div class="team-section-head">
+              <div class="team-section-title">인물별 추리 메모</div>
+              <div class="team-section-count" id="teamNoteCount">0 / 4</div>
+            </div>
+            <div class="team-note-list" id="teamNoteList"></div>
+          </section>
         </div>
       </section>
 
@@ -1935,6 +1981,8 @@
       const teamClueGrid = document.querySelector("#teamClueGrid");
       const teamEvidenceCount = document.querySelector("#teamEvidenceCount");
       const adminEvidenceGrid = document.querySelector("#adminEvidenceGrid");
+      const teamNoteCount = document.querySelector("#teamNoteCount");
+      const teamNoteList = document.querySelector("#teamNoteList");
       const refreshTeamMonitorButton = document.querySelector("#refreshTeamMonitor");
       const adminPhotoViewer = document.querySelector("#adminPhotoViewer");
       const adminViewerTitle = document.querySelector("#adminViewerTitle");
@@ -1956,6 +2004,7 @@
       let monitorEvidence = [];
       let monitorEvidenceCount = 0;
       let monitorLatestEvidenceId = "";
+      let monitorNotes = {};
       let monitorRequestInFlight = false;
       let lastAdminModeVersion = 0;
 
@@ -2124,10 +2173,33 @@
           .join("");
       }
 
+      function renderMonitorNotes() {
+        const writtenCount = suspects.filter((suspect) => String(monitorNotes[suspect.id]?.content || "").trim()).length;
+        teamNoteCount.textContent = `${writtenCount} / ${suspects.length}`;
+        teamNoteList.innerHTML = suspects
+          .map((suspect) => {
+            const note = monitorNotes[suspect.id] || {};
+            const content = String(note.content || "").trim();
+            const meta = note.updatedAt ? `${note.updatedBy || "조원"} · ${formatMonitorDate(note.updatedAt)}` : "작성 전";
+            return `
+              <article class="team-note-item">
+                <div class="team-note-head">
+                  <span>${escapeHtml(suspect.name)}</span>
+                  <span>${escapeHtml(suspect.id)}</span>
+                </div>
+                <div class="team-note-meta">${escapeHtml(meta)}</div>
+                <div class="team-note-body ${content ? "" : "team-note-empty"}">${content ? escapeHtml(content) : "아직 메모가 없습니다."}</div>
+              </article>
+            `;
+          })
+          .join("");
+      }
+
       function renderTeamMonitor() {
         renderMonitorTabs();
         renderMonitorClues();
         renderMonitorEvidence();
+        renderMonitorNotes();
       }
 
       async function fetchTeamMonitor(includeEvidence) {
@@ -2150,7 +2222,9 @@
         monitorEvidenceCount = Math.max(0, Number(payload.evidenceCount) || 0);
         monitorLatestEvidenceId = String(payload.latestEvidenceId || "");
         if (Array.isArray(payload.evidence)) monitorEvidence = payload.evidence;
-        teamMonitorStatus.textContent = `${selectedMonitorGroup}조 · 힌트 ${monitorClueIds.size}/${allClues.length} · 증거사진 ${monitorEvidenceCount}장 · 자동 갱신 중`;
+        monitorNotes = payload.notes && typeof payload.notes === "object" ? payload.notes : {};
+        const noteCount = suspects.filter((suspect) => String(monitorNotes[suspect.id]?.content || "").trim()).length;
+        teamMonitorStatus.textContent = `${selectedMonitorGroup}조 · 힌트 ${monitorClueIds.size}/${allClues.length} · 증거사진 ${monitorEvidenceCount}장 · 메모 ${noteCount}/${suspects.length} · 자동 갱신 중`;
         renderTeamMonitor();
       }
 
@@ -2181,6 +2255,7 @@
         monitorEvidence = [];
         monitorEvidenceCount = 0;
         monitorLatestEvidenceId = "";
+        monitorNotes = {};
         teamMonitorStatus.textContent = `${group}조 현황을 불러오는 중입니다.`;
         renderTeamMonitor();
         loadTeamMonitor(true);
@@ -2322,6 +2397,7 @@
           monitorEvidence = [];
           monitorEvidenceCount = 0;
           monitorLatestEvidenceId = "";
+          monitorNotes = {};
           timerMinutesInput.value = 10;
           publishLocalMode(payload.mode, modeSourceLabel(payload.source));
           renderGroupRosterInput(sharedGroups);
