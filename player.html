@@ -791,6 +791,22 @@
         background: var(--paper);
       }
 
+      .evidence-audio {
+        display: grid;
+        gap: 0.42rem;
+        margin-bottom: 0.72rem;
+      }
+
+      .evidence-audio audio {
+        width: 100%;
+      }
+
+      .evidence-audio-label {
+        color: var(--gold);
+        font-size: 0.76rem;
+        font-weight: 900;
+      }
+
       .line {
         display: grid;
         gap: 0.16rem;
@@ -1339,6 +1355,7 @@
               short: "목사님과 전도사님의 대화 일부",
               image: "assets/evidence-allergy-peanut.jpg",
               artifactTitle: "사례비 대화 녹취 파일",
+              audioSrc: "assets/pastor-minister-call.m4a",
               lines: [
                 ["홍강도", "목사님, 사역이 너무 많습니다. 사례를 조금이라도 조정해 주시면 안 될까요."],
                 ["목사님", "그런 마음으로 사역하면 오래 못 버팁니다. 지금도 충분히 받고 있어요."],
@@ -2245,6 +2262,14 @@
         if (clue.lines) {
           artifact = `
             <div class="artifact">
+              ${
+                clue.audioSrc
+                  ? `<div class="evidence-audio">
+                      <div class="evidence-audio-label">실제 통화 녹음</div>
+                      <audio controls preload="metadata" src="${escapeHtml(clue.audioSrc)}"></audio>
+                    </div>`
+                  : ""
+              }
               ${clue.lines
                 .map(
                   ([speaker, speech]) => `
