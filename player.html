@@ -877,6 +877,30 @@
           rgba(8, 13, 13, 0.82);
       }
 
+      .hint-button.attention-pulse,
+      .field-action.attention-pulse,
+      .gallery-item.attention-pulse {
+        position: relative;
+        border-color: rgba(255, 213, 118, 0.95);
+        animation: attentionRing 1.05s ease-in-out infinite;
+      }
+
+      .hint-button.attention-pulse::after,
+      .field-action.attention-pulse::after {
+        position: absolute;
+        inset: -5px;
+        pointer-events: none;
+        border: 2px solid rgba(255, 213, 118, 0.72);
+        border-radius: 6px;
+        content: "";
+        animation: attentionHalo 1.05s ease-in-out infinite;
+      }
+
+      .hint-button.attention-pulse .hint-no {
+        border-color: rgba(255, 213, 118, 0.88);
+        color: #ffd576;
+      }
+
       .hint-no {
         display: grid;
         width: 48px;
@@ -1098,6 +1122,12 @@
       .sheet-button.secondary {
         color: var(--text);
         background: rgba(255, 255, 255, 0.055);
+      }
+
+      .field-action.attention-pulse {
+        color: #1b1309;
+        background:
+          linear-gradient(180deg, #ffe6a3, #d6963d);
       }
 
       .field-action:disabled,
@@ -1344,6 +1374,10 @@
         background: rgba(255, 255, 255, 0.035);
       }
 
+      .gallery-item.attention-pulse {
+        box-shadow: 0 0 0 3px rgba(255, 213, 118, 0.18);
+      }
+
       .gallery-photo {
         display: block;
         width: 100%;
@@ -1501,6 +1535,34 @@
         50% {
           filter: contrast(1.4);
           transform: translateX(2px);
+        }
+      }
+
+      @keyframes attentionRing {
+        0%,
+        100% {
+          box-shadow:
+            0 0 0 0 rgba(255, 213, 118, 0.5),
+            0 0 0 rgba(255, 213, 118, 0);
+          transform: translateY(0);
+        }
+        50% {
+          box-shadow:
+            0 0 0 4px rgba(255, 213, 118, 0.18),
+            0 0 24px rgba(255, 213, 118, 0.34);
+          transform: translateY(-1px);
+        }
+      }
+
+      @keyframes attentionHalo {
+        0%,
+        100% {
+          opacity: 0.25;
+          transform: scale(0.98);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.03);
         }
       }
     </style>
@@ -2083,6 +2145,9 @@
       let teamEvidenceItems = [];
       let teamNotes = {};
       let activeNoteSuspectId = "";
+      let attentionClueIds = new Set();
+      let attentionEvidenceIds = new Set();
+      let latestKnownEvidenceId = "";
       let lastTeamProgressSignature = "";
       let teamProgressRetryAfter = 0;
       let lastTeamClueFetchAt = 0;
@@ -2116,6 +2181,9 @@
         teamEvidenceItems = [];
         teamNotes = {};
         activeNoteSuspectId = "";
+        attentionClueIds = new Set();
+        attentionEvidenceIds = new Set();
+        latestKnownEvidenceId = "";
         lastTeamProgressSignature = "";
         teamProgressRetryAfter = 0;
         lastTeamClueFetchAt = 0;
@@ -2462,14 +2530,56 @@
         }
       }
 
+      function markClueAttention(clueIds) {
+        const ids = (Array.isArray(clueIds) ? clueIds : [clueIds]).filter((id) => validClueIds.has(String(id || "")));
+        if (!ids.length) return;
+        ids.forEach((id) => attentionClueIds.add(String(id)));
+        window.setTimeout(() => {
+          ids.forEach((id) => attentionClueIds.delete(String(id)));
+          renderSuspects();
+        }, 9000);
+      }
+
+      function markEvidenceAttention(evidenceId) {
+        const id = String(evidenceId || "");
+        if (!id) return;
+        attentionEvidenceIds.add(id);
+        openGalleryButton.classList.add("attention-pulse");
+        evidenceShareStatus.textContent = "새 증거가 우리 조 증거함에 도착했습니다.";
+        evidenceShareStatus.classList.remove("error");
+        window.setTimeout(() => {
+          attentionEvidenceIds.delete(id);
+          openGalleryButton.classList.toggle("attention-pulse", attentionEvidenceIds.size > 0);
+          if (!attentionEvidenceIds.size) renderTeamEvidence();
+        }, 12000);
+      }
+
+      function applyTeamEvidenceSignal(payload) {
+        const latestEvidenceId = String(payload?.latestEvidenceId || "");
+        if (!latestEvidenceId) return;
+        if (!latestKnownEvidenceId) {
+          latestKnownEvidenceId = latestEvidenceId;
+          return;
+        }
+        if (latestEvidenceId !== latestKnownEvidenceId) {
+          latestKnownEvidenceId = latestEvidenceId;
+          markEvidenceAttention(latestEvidenceId);
+        }
+      }
+
       function mergeTeamClueIds(clueIds) {
         if (!Array.isArray(clueIds)) return false;
         const beforeSize = state.viewed.size;
+        const addedIds = [];
         clueIds.forEach((id) => {
           const clueId = String(id || "");
-          if (validClueIds.has(clueId)) state.viewed.add(clueId);
+          if (validClueIds.has(clueId) && !state.viewed.has(clueId)) {
+            state.viewed.add(clueId);
+            addedIds.push(clueId);
+          }
         });
         if (state.viewed.size === beforeSize) return false;
+        markClueAttention(addedIds);
         writeStoredValue("viewedClues", JSON.stringify([...state.viewed]));
         if (currentGameMode === "crime") {
           message.textContent = "같은 조원이 획득한 힌트가 동기화되었습니다.";
@@ -2530,6 +2640,7 @@
         try {
           const payload = await evidenceApi(`/api/team?group=${group.number}&evidence=0`);
           teamClueFetchRetryAfter = 0;
+          applyTeamEvidenceSignal(payload);
           mergeTeamClueIds(payload.clueIds);
           mergeTeamNotes(payload.notes);
         } catch {
@@ -2579,7 +2690,7 @@
         teamGalleryGrid.innerHTML = teamEvidenceItems
           .map(
             (item) => `
-              <article class="gallery-item">
+              <article class="gallery-item ${attentionEvidenceIds.has(String(item.id || "")) ? "attention-pulse" : ""}">
                 <button class="gallery-photo" type="button" data-team-evidence="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.caption)} 크게 보기">
                   <img src="${escapeHtml(item.imageData)}" alt="${escapeHtml(item.caption)}" loading="lazy" decoding="async" />
                 </button>
@@ -2606,6 +2717,7 @@
         try {
           const payload = await evidenceApi(`/api/evidence?name=${encodeURIComponent(participantName)}`);
           teamEvidenceItems = Array.isArray(payload.items) ? payload.items : [];
+          if (!latestKnownEvidenceId && teamEvidenceItems[0]?.id) latestKnownEvidenceId = String(teamEvidenceItems[0].id);
           renderTeamEvidence();
         } catch (error) {
           teamGalleryStatus.textContent = error.status === 403 ? "관리자에게 조 배정을 요청해주세요." : "증거함을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.";
@@ -2621,6 +2733,8 @@
           return;
         }
         evidenceShareStatus.classList.remove("error");
+        attentionEvidenceIds.clear();
+        openGalleryButton.classList.remove("attention-pulse");
         openEvidenceOverlay(teamGallerySheet);
         await loadTeamEvidence();
       }
@@ -2822,8 +2936,9 @@
                   ${suspect.clues
                     .map((clue) => {
                       const openedClue = state.viewed.has(clue.id);
+                      const attention = attentionClueIds.has(clue.id) ? "attention-pulse" : "";
                       return `
-                        <button class="hint-button ${openedClue ? "open" : ""}" type="button" data-clue="${clue.id}">
+                        <button class="hint-button ${openedClue ? "open" : ""} ${attention}" type="button" data-clue="${clue.id}">
                           <span class="hint-no">${clue.hint}</span>
                           <span>
                             <span class="hint-title">${openedClue ? clue.title : clue.hint}</span>
@@ -2853,6 +2968,7 @@
               render();
               return;
             }
+            attentionClueIds.delete(id);
             state.clueId = id;
             message.textContent = "해제한 힌트를 다시 열람 중입니다.";
             message.classList.remove("error");
@@ -2958,6 +3074,7 @@
           return false;
         }
         state.viewed.add(clue.id);
+        markClueAttention(clue.id);
         state.clueId = clue.id;
         message.textContent = `${code} 코드가 승인되었습니다.`;
         message.classList.remove("error");
@@ -3084,6 +3201,9 @@
         teamEvidenceItems = [];
         teamNotes = {};
         activeNoteSuspectId = "";
+        attentionClueIds = new Set();
+        attentionEvidenceIds = new Set();
+        latestKnownEvidenceId = "";
         lastTeamProgressSignature = "";
         teamProgressRetryAfter = 0;
         lastTeamClueFetchAt = 0;
