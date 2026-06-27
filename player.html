@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>목양실 10:12 참가자</title>
+    <title>우리 사이에 비밀은 있어 참가자</title>
     <style>
       :root {
         color-scheme: dark;
@@ -34,6 +34,9 @@
           url("assets/church-case-bg.jpg") center / cover fixed,
           #090b0a;
         font-family:
+          "Pretendard Variable",
+          Pretendard,
+          SUIT,
           "Noto Sans KR",
           "Apple SD Gothic Neo",
           system-ui,
@@ -44,10 +47,16 @@
       }
 
       body[data-mode="recreation"] {
-        color: #15324a;
+        color: #163145;
         background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.24)),
-          linear-gradient(135deg, #fff7d6 0%, #d9f4ff 52%, #f8e6ff 100%);
+          radial-gradient(circle at 18% 14%, rgba(255, 222, 122, 0.54), transparent 15rem),
+          radial-gradient(circle at 90% 8%, rgba(104, 207, 205, 0.34), transparent 16rem),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(246, 251, 255, 0.34)),
+          linear-gradient(135deg, #fff7d6 0%, #dff7ff 52%, #fff0f6 100%);
+      }
+
+      body.mode-switching {
+        overflow: hidden;
       }
 
       body::before {
@@ -92,6 +101,113 @@
         transition:
           opacity 700ms ease,
           transform 900ms ease;
+      }
+
+      .welcome-flash,
+      .crime-transition {
+        position: fixed;
+        inset: 0;
+        z-index: 180;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+        opacity: 0;
+      }
+
+      .welcome-flash {
+        background:
+          radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.2) 42%, transparent 70%),
+          linear-gradient(135deg, rgba(255, 244, 180, 0.72), rgba(187, 241, 255, 0.72));
+      }
+
+      body.welcome-active .welcome-flash {
+        animation: welcomeIn 1200ms ease both;
+      }
+
+      .welcome-card {
+        width: min(82vw, 360px);
+        border: 1px solid rgba(37, 80, 111, 0.18);
+        padding: 1.1rem;
+        background: rgba(255, 255, 255, 0.88);
+        color: #17324a;
+        box-shadow: 0 30px 80px rgba(50, 85, 112, 0.28);
+        text-align: center;
+      }
+
+      .welcome-card strong {
+        display: block;
+        color: #ff8a3c;
+        font-size: 1.45rem;
+        font-weight: 950;
+      }
+
+      .welcome-card span {
+        display: block;
+        margin-top: 0.28rem;
+        color: #45647c;
+        font-size: 0.86rem;
+        font-weight: 900;
+      }
+
+      .crime-transition {
+        background:
+          linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.82)),
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.18) 0 1px, transparent 1px 4px),
+          #030505;
+      }
+
+      body.mode-switching .crime-transition {
+        animation: transitionFlash 1550ms steps(2, end) both;
+      }
+
+      .transition-copy {
+        position: relative;
+        width: min(88vw, 480px);
+        border: 1px solid rgba(232, 196, 119, 0.36);
+        padding: 1.1rem;
+        color: var(--text);
+        background: rgba(6, 9, 9, 0.86);
+        text-align: center;
+        box-shadow: 0 28px 90px rgba(0, 0, 0, 0.78);
+        overflow: hidden;
+      }
+
+      .transition-copy::before {
+        display: block;
+        margin-bottom: 0.52rem;
+        color: var(--muted);
+        content: "SIGNAL LOST";
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+        font-weight: 950;
+      }
+
+      .transition-title {
+        display: block;
+        font-size: clamp(2.1rem, 12vw, 4rem);
+        font-weight: 950;
+        line-height: 1.05;
+      }
+
+      .transition-title .before {
+        color: rgba(245, 234, 215, 0.48);
+        text-decoration: line-through;
+        text-decoration-thickness: 0.12em;
+      }
+
+      .transition-title .after {
+        display: block;
+        margin-top: 0.22rem;
+      }
+
+      .secret-emphasis {
+        display: inline-block;
+        color: #ff735f;
+        text-shadow: 0 0 24px rgba(255, 115, 95, 0.5);
+      }
+
+      body.mode-switching .secret-emphasis {
+        animation: secretPulse 360ms steps(2, end) 3;
       }
 
       .recreation-top {
@@ -201,6 +317,14 @@
         font-weight: 950;
       }
 
+      .name-subtitle {
+        margin: -0.28rem 0 0;
+        color: #58728a;
+        font-size: 0.82rem;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+
       .name-form {
         display: grid;
         grid-template-columns: 1fr auto;
@@ -250,7 +374,7 @@
         display: grid;
         align-content: center;
         gap: 1rem;
-        width: min(100%, 520px);
+        width: min(100%, 540px);
         margin: 0 auto;
         padding: 26px 0 34px;
       }
@@ -259,14 +383,30 @@
         margin: 0;
         color: #18324a;
         font-family:
+          "Pretendard Variable",
+          Pretendard,
+          SUIT,
           "Noto Sans KR",
           "Apple SD Gothic Neo",
           system-ui,
           sans-serif;
-        font-size: clamp(2.15rem, 10vw, 3rem);
+        font-size: clamp(2.35rem, 11vw, 3.8rem);
         line-height: 1.08;
         word-break: keep-all;
         text-shadow: none;
+      }
+
+      .secret-title {
+        display: inline;
+      }
+
+      .secret-title .secret-word-soft {
+        display: inline-block;
+        color: #2f8bb0;
+        text-decoration: underline;
+        text-decoration-color: rgba(255, 172, 73, 0.72);
+        text-decoration-thickness: 0.12em;
+        text-underline-offset: 0.14em;
       }
 
       .rec-lead {
@@ -275,6 +415,10 @@
         font-size: 1.02rem;
         font-weight: 800;
         line-height: 1.6;
+      }
+
+      .rec-lead strong {
+        color: #ff8a3c;
       }
 
       .rec-board {
@@ -505,9 +649,22 @@
 
       h1 {
         margin: 0.85rem 0 0.55rem;
-        font-family: Georgia, "Times New Roman", serif;
+        font-family:
+          "Pretendard Variable",
+          Pretendard,
+          SUIT,
+          "Noto Sans KR",
+          "Apple SD Gothic Neo",
+          sans-serif;
         font-size: clamp(2.45rem, 14vw, 4rem);
-        line-height: 0.94;
+        line-height: 1.02;
+        word-break: keep-all;
+      }
+
+      .case-title-mark {
+        display: inline-block;
+        color: #ff735f;
+        text-shadow: 0 0 26px rgba(255, 115, 95, 0.36);
       }
 
       .lead {
@@ -1260,12 +1417,113 @@
           border-radius: 6px;
         }
       }
+
+      @media (max-width: 420px) {
+        .recreation-screen {
+          padding: 14px;
+        }
+
+        .recreation-top {
+          align-items: stretch;
+        }
+
+        .rec-badge,
+        .change-name {
+          min-height: 38px;
+        }
+
+        .rec-board,
+        .word-draw {
+          padding: 0.76rem;
+        }
+
+        .rec-row {
+          grid-template-columns: 1fr;
+          gap: 0.2rem;
+          padding: 0.42rem 0;
+        }
+
+        .rec-value {
+          text-align: left;
+        }
+
+        .team-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .word-card-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @keyframes welcomeIn {
+        0% {
+          opacity: 0;
+          transform: scale(1.04);
+        }
+        18%,
+        72% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(0.98);
+        }
+      }
+
+      @keyframes transitionFlash {
+        0%,
+        100% {
+          opacity: 0;
+        }
+        8%,
+        18%,
+        30%,
+        44%,
+        60%,
+        82% {
+          opacity: 1;
+        }
+        24%,
+        38%,
+        52% {
+          opacity: 0.36;
+        }
+      }
+
+      @keyframes secretPulse {
+        0%,
+        100% {
+          filter: none;
+          transform: translateX(0);
+        }
+        50% {
+          filter: contrast(1.4);
+          transform: translateX(2px);
+        }
+      }
     </style>
   </head>
   <body data-mode="recreation">
+    <div class="welcome-flash" aria-hidden="true">
+      <div class="welcome-card">
+        <strong>환영합니다</strong>
+        <span>우리 사이에 비밀은 없어</span>
+      </div>
+    </div>
+    <div class="crime-transition" aria-hidden="true">
+      <div class="transition-copy">
+        <span class="transition-title">
+          <span class="before">비밀은 없어</span>
+          <span class="after">비밀은 <span class="secret-emphasis">있어</span></span>
+        </span>
+      </div>
+    </div>
     <section class="name-gate" id="nameGate" aria-label="참가자 이름 입력">
       <div class="name-card">
-        <div class="name-title">참가자 이름</div>
+        <div class="name-title">우리 사이에 비밀은 없어</div>
+        <p class="name-subtitle">이름을 입력하고 조별 레크레이션에 입장하세요.</p>
         <form class="name-form" id="nameForm">
           <input id="participantNameInput" autocomplete="name" placeholder="이름 입력" />
           <button type="submit">입장</button>
@@ -1283,8 +1541,8 @@
       </div>
       <div class="recreation-stage">
         <div>
-          <h1>재건 레크리에이션</h1>
-          <p class="rec-lead">청년부 팀 미션</p>
+          <h1 class="secret-title">우리 사이에 비밀은 <span class="secret-word-soft">없어</span></h1>
+          <p class="rec-lead">환영합니다. 오늘은 조별로 움직이고 서로 이야기하며 가까워지는 <strong>협동 그림그리기</strong>로 시작합니다.</p>
         </div>
         <div class="rec-board" aria-label="레크리에이션 진행판">
           <div class="rec-row">
@@ -1293,7 +1551,7 @@
           </div>
           <div class="rec-row">
             <span class="rec-label">진행 방식</span>
-            <span class="rec-value">QR 제시어</span>
+            <span class="rec-value">QR 제시어 카드</span>
           </div>
           <div class="rec-row">
             <span class="rec-label">내 조</span>
@@ -1319,9 +1577,9 @@
     </section>
     <main class="app">
       <section class="hero">
-        <div class="kicker">참가자 페이지</div>
-        <h1>목양실 10:12</h1>
-        <p class="lead">힌트코드를 입력해 증거를 해제하고, 네 인물의 알리바이를 비교하세요.</p>
+        <div class="kicker">조별 수사팀</div>
+        <h1>우리 사이에 비밀은 <span class="case-title-mark">있어</span></h1>
+        <p class="lead">목양실에서 발생한 사건을 조사하세요. 힌트코드를 입력해 증거를 해제하고, 네 인물의 알리바이와 거짓말을 비교하세요.</p>
       </section>
 
       <section class="panel field-kit" aria-label="조별 현장 증거 수집">
@@ -1875,14 +2133,21 @@
 
       function applyGameMode(mode, source = "로컬") {
         const normalized = normalizeGameMode(mode);
+        const previousMode = currentGameMode;
         const modeChanged = currentGameMode !== normalized || document.body.dataset.mode !== normalized;
         currentGameMode = normalized;
         if (modeChanged) document.body.dataset.mode = normalized;
         if (readStoredValue(gameModeKey) !== normalized) writeStoredValue(gameModeKey, normalized);
         if (readStoredValue("gameMode") !== normalized) writeStoredValue("gameMode", normalized);
         if (document.body.dataset.modeSource !== source) document.body.dataset.modeSource = source;
-        const waitText = normalized === "crime" ? "사건 화면으로 전환 중" : `진행자 신호 대기 · ${source}`;
+        const waitText = normalized === "crime" ? "사건 발생. 조별 수사 화면으로 전환되었습니다." : `진행자 신호 대기 · ${source}`;
         if (modeWait.textContent !== waitText) modeWait.textContent = waitText;
+        if (modeChanged && previousMode === "recreation" && normalized === "crime") {
+          document.body.classList.remove("mode-switching");
+          void document.body.offsetWidth;
+          document.body.classList.add("mode-switching");
+          window.setTimeout(() => document.body.classList.remove("mode-switching"), 1650);
+        }
         if (normalized !== "crime") closeAllEvidenceOverlays();
       }
 
@@ -2407,6 +2672,10 @@
         participantName = String(rawName || "").trim();
         if (participantName) {
           writeStoredValue(participantNameKey, participantName);
+          document.body.classList.remove("welcome-active");
+          void document.body.offsetWidth;
+          document.body.classList.add("welcome-active");
+          window.setTimeout(() => document.body.classList.remove("welcome-active"), 1300);
         } else {
           removeStoredValue(participantNameKey);
         }

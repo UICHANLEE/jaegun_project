@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>목양실 10:12</title>
+    <title>우리 사이에 비밀은 있어</title>
     <style>
       :root {
         color-scheme: dark;
@@ -43,6 +43,9 @@
           url("assets/church-case-bg.jpg") center / cover fixed,
           #0a0d0c;
         font-family:
+          "Pretendard Variable",
+          Pretendard,
+          SUIT,
           "Noto Sans KR",
           "Apple SD Gothic Neo",
           system-ui,
@@ -114,6 +117,11 @@
         font-weight: 900;
         letter-spacing: 0.06em;
         text-transform: uppercase;
+      }
+
+      .title-mark {
+        color: #ff735f;
+        text-shadow: 0 0 28px rgba(255, 115, 95, 0.36);
       }
 
       .page-links {
@@ -1566,9 +1574,9 @@
       <section class="hero">
         <div>
           <div class="case-kicker"><span class="case-dot"></span> 관리자 콘솔</div>
-          <h1>목양실 10:12</h1>
+          <h1>우리 사이에 비밀은 <span class="title-mark">있어</span></h1>
           <p class="lead">
-            부활절 예배 전, 목사님이 목양실에서 쓰러진 채 발견되었습니다. 네 명의 인물, 열두 개의 증거, 그리고 서로 다른 거짓말. 증거를 모두 열어 사망추정시각과 조작된 알리바이를 맞춰 보세요.
+            6월 큰모임은 밝은 레크레이션으로 시작해 목양실 사건으로 전환됩니다. 참가자를 조별 수사팀으로 배정하고, 화면 전환과 타이머, 힌트 획득, 증거사진, 추리 메모를 이곳에서 확인하세요.
           </p>
           <div class="page-links">
             <a class="page-link" href="player.html">참가자용 모바일 페이지</a>
@@ -1576,8 +1584,8 @@
             <a class="page-link" href="docs/APP_FLOW.md">앱 흐름도</a>
           </div>
           <div class="mode-controls" aria-label="참가자 화면 전환">
-            <button class="mode-button" type="button" id="startCrimeMode">크라임씬 화면으로 전환</button>
-            <button class="mode-button secondary" type="button" id="resetRecreationMode">밝은 화면으로 되돌리기</button>
+            <button class="mode-button" type="button" id="startCrimeMode">사건 화면으로 전환</button>
+            <button class="mode-button secondary" type="button" id="resetRecreationMode">레크레이션 화면으로 되돌리기</button>
             <button class="mode-button danger" type="button" id="resetAllGame">전체 초기화</button>
             <div class="mode-status" id="modeStatus">현재 참가자 화면: 확인 중</div>
           </div>
@@ -2032,7 +2040,7 @@
       }
 
       function renderModeStatus(mode, source = "로컬") {
-        const label = normalizeGameMode(mode) === "crime" ? "크라임씬 화면" : "밝은 화면";
+        const label = normalizeGameMode(mode) === "crime" ? "사건 수사 화면" : "레크레이션 화면";
         modeStatus.textContent = `현재 참가자 화면: ${label} (${source})`;
       }
 
@@ -2457,7 +2465,7 @@
           renderTeamMonitor();
           render();
           teamMonitorStatus.textContent = "전체 초기화 완료 · 1조 수사 기록 0건";
-          modeStatus.textContent = "전체 초기화 완료 · 참가자 화면: 밝은 화면";
+          modeStatus.textContent = "전체 초기화 완료 · 참가자 화면: 레크레이션 화면";
           if (modeChannel) {
             modeChannel.postMessage({
               mode: payload.mode,
