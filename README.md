@@ -18,8 +18,8 @@ python3 server.py
 
 접속:
 
-- 관리자: <http://localhost:8123/index.html>
-- 참가자: <http://localhost:8123/player.html>
+- 참가자: <http://localhost:8123/>
+- 관리자: <http://localhost:8123/jaegunadmin.html>
 - 미리보기: <http://localhost:8123/preview.html>
 
 휴대폰 테스트는 같은 와이파이에서 맥의 IP를 사용합니다.
@@ -28,7 +28,7 @@ python3 server.py
 ifconfig en0
 ```
 
-예: `http://192.168.x.x:8123/player.html`
+예: `http://192.168.x.x:8123/`
 
 ## Vercel 배포
 
@@ -57,8 +57,8 @@ UPSTASH_REDIS_REST_TOKEN=
 
 ## 운영 흐름
 
-1. 참가자들은 `player.html`에 접속해 밝은 레크레이션 화면을 봅니다.
-2. 관리자는 `index.html`에서 `크라임씬으로 전환`을 누릅니다.
+1. 참가자들은 기본 링크(`/`)에 접속해 밝은 레크레이션 화면을 봅니다.
+2. 관리자는 `jaegunadmin.html`에서 `크라임씬으로 전환`을 누릅니다.
 3. `/api/mode` 상태가 `crime`으로 바뀝니다.
 4. 참가자 휴대폰은 각자 폴링 주기에 따라 1초 안팎으로 크라임씬 화면으로 전환됩니다.
 5. 참가자는 현장에서 얻은 힌트코드를 입력해 12개 힌트를 해제합니다.
@@ -68,8 +68,9 @@ UPSTASH_REDIS_REST_TOKEN=
 
 ```text
 .
-├── index.html          # 관리자 페이지
-├── player.html         # 참가자 모바일 페이지
+├── index.html          # 참가자 기본 페이지
+├── player.html         # 참가자 모바일 페이지 백업 경로
+├── jaegunadmin.html    # 관리자 페이지
 ├── preview.html        # 관리자/참가자 분할 미리보기
 ├── server.py           # 로컬 실행 서버 + 모드 API
 ├── api/mode.js         # Vercel 서버리스 모드 API

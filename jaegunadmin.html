@@ -1,0 +1,2970 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>우리 사이에 비밀은 없어..?</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090b0a;
+        --paper: #efe3c9;
+        --paper-ink: #201a13;
+        --panel: rgba(9, 13, 13, 0.82);
+        --panel-solid: rgba(14, 19, 18, 0.96);
+        --panel-soft: rgba(28, 31, 27, 0.72);
+        --line: rgba(232, 196, 119, 0.3);
+        --line-bright: rgba(232, 196, 119, 0.58);
+        --text: #f5ead7;
+        --muted: #bdb09a;
+        --gold: #e6ba61;
+        --teal: #69c6bd;
+        --green: #a0bf70;
+        --red: #df735f;
+        --blue: #8aa8d8;
+        --shadow: rgba(0, 0, 0, 0.58);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        color: var(--text);
+        background:
+          linear-gradient(90deg, rgba(4, 6, 6, 0.72), rgba(4, 6, 6, 0.28) 46%, rgba(4, 6, 6, 0.82)),
+          linear-gradient(rgba(5, 7, 7, 0.18), rgba(5, 7, 7, 0.9)),
+          url("assets/church-case-bg.jpg") center / cover fixed,
+          #0a0d0c;
+        font-family:
+          "Pretendard Variable",
+          Pretendard,
+          SUIT,
+          "Noto Sans KR",
+          "Apple SD Gothic Neo",
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        content: "";
+        background:
+          radial-gradient(circle at 12% 18%, rgba(232, 196, 119, 0.18), transparent 22rem),
+          radial-gradient(circle at 84% 24%, rgba(105, 198, 189, 0.22), transparent 24rem),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+          linear-gradient(rgba(255, 255, 255, 0.023) 1px, transparent 1px);
+        background-size: auto, auto, 54px 54px, 54px 54px;
+      }
+
+      body::after {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        content: "";
+        background:
+          repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 5px),
+          linear-gradient(0deg, rgba(0, 0, 0, 0.58), transparent 36%, rgba(0, 0, 0, 0.42));
+        opacity: 0.7;
+      }
+
+      button {
+        border: 0;
+        color: inherit;
+        font: inherit;
+      }
+
+      .app {
+        width: min(1240px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 36px 0 52px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+        gap: 1.4rem;
+        align-items: end;
+        min-height: 340px;
+        padding: 28px 0 22px;
+      }
+
+      .case-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        min-height: 34px;
+        padding: 0.42rem 0.7rem;
+        border: 1px solid rgba(232, 196, 119, 0.42);
+        background: rgba(6, 9, 9, 0.62);
+        box-shadow: 0 14px 34px var(--shadow);
+        color: var(--gold);
+        font-size: 0.78rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .title-mark {
+        color: #ff735f;
+        text-shadow: 0 0 28px rgba(255, 115, 95, 0.36);
+      }
+
+      .page-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-top: 1rem;
+      }
+
+      .page-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        border: 1px solid rgba(105, 198, 189, 0.36);
+        padding: 0 0.68rem;
+        color: var(--text);
+        background: rgba(105, 198, 189, 0.12);
+        font-size: 0.78rem;
+        font-weight: 900;
+        text-decoration: none;
+      }
+
+      .mode-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.55rem;
+        margin-top: 0.85rem;
+      }
+
+      .mode-button {
+        display: inline-flex;
+        align-items: center;
+        min-height: 40px;
+        border: 1px solid rgba(232, 196, 119, 0.48);
+        padding: 0 0.82rem;
+        color: #1b1309;
+        background: linear-gradient(180deg, #efd08c, #bd813b);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+        font-size: 0.82rem;
+        font-weight: 950;
+        cursor: pointer;
+      }
+
+      .mode-button.secondary {
+        border-color: rgba(105, 198, 189, 0.4);
+        color: var(--text);
+        background: rgba(105, 198, 189, 0.12);
+      }
+
+      .mode-button.danger {
+        border-color: rgba(223, 115, 95, 0.62);
+        color: #ffd8d0;
+        background: rgba(223, 115, 95, 0.16);
+      }
+
+      .mode-status {
+        min-height: 34px;
+        border: 1px solid rgba(232, 196, 119, 0.24);
+        padding: 0.42rem 0.66rem;
+        color: var(--muted);
+        background: rgba(6, 9, 9, 0.62);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .timer-controls {
+        display: grid;
+        grid-template-columns: auto minmax(96px, 128px) auto auto auto auto minmax(180px, 1fr);
+        gap: 0.55rem;
+        align-items: center;
+        max-width: 780px;
+        margin-top: 0.65rem;
+      }
+
+      .timer-label {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .timer-input {
+        height: 40px;
+        min-width: 0;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        border-radius: 0;
+        padding: 0 0.7rem;
+        color: var(--text);
+        background: rgba(6, 9, 9, 0.68);
+        font: inherit;
+        font-weight: 900;
+        outline: none;
+      }
+
+      .timer-status {
+        min-height: 40px;
+        border: 1px solid rgba(105, 198, 189, 0.28);
+        padding: 0.55rem 0.7rem;
+        color: var(--teal);
+        background: rgba(105, 198, 189, 0.1);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.82rem;
+        font-weight: 900;
+      }
+
+      .group-controls {
+        display: grid;
+        gap: 0.55rem;
+        max-width: 780px;
+        margin-top: 0.7rem;
+      }
+
+      .group-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.55rem;
+        align-items: start;
+      }
+
+      .group-textarea {
+        width: 100%;
+        min-height: 92px;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        border-radius: 0;
+        padding: 0.72rem 0.78rem;
+        color: var(--text);
+        background: rgba(6, 9, 9, 0.68);
+        font: inherit;
+        font-size: 0.84rem;
+        font-weight: 800;
+        line-height: 1.55;
+        outline: none;
+        resize: vertical;
+      }
+
+      .group-status {
+        min-height: 34px;
+        border: 1px solid rgba(232, 196, 119, 0.24);
+        padding: 0.42rem 0.66rem;
+        color: var(--muted);
+        background: rgba(6, 9, 9, 0.62);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .participant-controls {
+        display: grid;
+        gap: 0.55rem;
+        max-width: 780px;
+        margin-top: 0.7rem;
+      }
+
+      .participant-list {
+        display: grid;
+        gap: 0.45rem;
+      }
+
+      .participant-row {
+        display: grid;
+        grid-template-columns: minmax(120px, 1fr) auto;
+        gap: 0.55rem;
+        align-items: center;
+        border: 1px solid rgba(232, 196, 119, 0.22);
+        padding: 0.52rem;
+        background: rgba(6, 9, 9, 0.54);
+      }
+
+      .participant-name {
+        color: var(--text);
+        font-size: 0.86rem;
+        font-weight: 900;
+        line-height: 1.35;
+      }
+
+      .participant-group {
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+      }
+
+      .assign-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.34rem;
+      }
+
+      .assign-button,
+      .participant-edit {
+        min-width: 40px;
+        min-height: 34px;
+        border: 1px solid rgba(105, 198, 189, 0.34);
+        color: var(--text);
+        background: rgba(105, 198, 189, 0.12);
+        font-size: 0.76rem;
+        font-weight: 950;
+        cursor: pointer;
+      }
+
+      .participant-edit {
+        border-color: rgba(232, 196, 119, 0.28);
+        background: rgba(232, 196, 119, 0.08);
+      }
+
+      .assign-button.active {
+        border-color: rgba(232, 196, 119, 0.68);
+        color: #1b1309;
+        background: linear-gradient(180deg, #efd08c, #bd813b);
+      }
+
+      .team-monitor {
+        margin-bottom: 14px;
+        overflow: hidden;
+      }
+
+      .team-monitor-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.48rem;
+      }
+
+      .team-tabs {
+        display: inline-grid;
+        grid-template-columns: repeat(3, 1fr);
+        border: 1px solid rgba(105, 198, 189, 0.34);
+      }
+
+      .team-tab {
+        min-width: 58px;
+        min-height: 38px;
+        border-right: 1px solid rgba(105, 198, 189, 0.26);
+        color: var(--text);
+        background: rgba(105, 198, 189, 0.08);
+        font-size: 0.78rem;
+        font-weight: 950;
+        cursor: pointer;
+      }
+
+      .team-tab:last-child {
+        border-right: 0;
+      }
+
+      .team-tab.active {
+        color: #1b1309;
+        background: linear-gradient(180deg, #efd08c, #bd813b);
+      }
+
+      .team-refresh {
+        min-height: 40px;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        padding: 0 0.74rem;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.045);
+        font-size: 0.78rem;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .team-monitor-status {
+        min-height: 38px;
+        padding: 0.52rem 0.9rem;
+        border-top: 1px solid rgba(232, 196, 119, 0.18);
+        border-bottom: 1px solid rgba(232, 196, 119, 0.18);
+        color: var(--muted);
+        background: rgba(6, 9, 9, 0.48);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .team-monitor-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 1fr);
+        min-height: 310px;
+      }
+
+      .team-monitor-section {
+        min-width: 0;
+        padding: 0.9rem;
+      }
+
+      .team-monitor-section + .team-monitor-section {
+        border-left: 1px solid rgba(232, 196, 119, 0.18);
+      }
+
+      .team-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        margin-bottom: 0.72rem;
+      }
+
+      .team-section-title {
+        color: var(--gold);
+        font-size: 0.86rem;
+        font-weight: 950;
+      }
+
+      .team-section-count {
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.76rem;
+        font-weight: 900;
+      }
+
+      .team-clue-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.42rem;
+      }
+
+      .team-clue-item {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 0.5rem;
+        align-items: center;
+        min-height: 58px;
+        border: 1px solid rgba(232, 196, 119, 0.16);
+        padding: 0.5rem;
+        color: rgba(245, 234, 215, 0.48);
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .team-clue-item.acquired {
+        border-color: rgba(105, 198, 189, 0.48);
+        color: var(--text);
+        background: rgba(105, 198, 189, 0.11);
+      }
+
+      .team-clue-id {
+        display: grid;
+        min-height: 30px;
+        place-items: center;
+        border: 1px solid currentColor;
+        color: inherit;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.68rem;
+        font-weight: 950;
+      }
+
+      .team-clue-name {
+        overflow: hidden;
+        font-size: 0.76rem;
+        font-weight: 900;
+        line-height: 1.35;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .team-clue-owner {
+        margin-top: 0.12rem;
+        color: var(--muted);
+        font-size: 0.66rem;
+      }
+
+      .admin-evidence-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.56rem;
+      }
+
+      .admin-evidence-empty {
+        display: grid;
+        grid-column: 1 / -1;
+        min-height: 180px;
+        place-items: center;
+        border: 1px dashed rgba(232, 196, 119, 0.2);
+        color: var(--muted);
+        font-size: 0.8rem;
+        text-align: center;
+      }
+
+      .admin-evidence-item {
+        overflow: hidden;
+        border: 1px solid rgba(232, 196, 119, 0.18);
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .admin-evidence-photo {
+        display: block;
+        width: 100%;
+        border: 0;
+        padding: 0;
+        background: #050707;
+        cursor: pointer;
+      }
+
+      .admin-evidence-photo img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+      }
+
+      .admin-evidence-meta {
+        padding: 0.5rem;
+      }
+
+      .admin-evidence-caption {
+        overflow: hidden;
+        color: var(--text);
+        font-size: 0.72rem;
+        font-weight: 900;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .admin-evidence-byline {
+        margin-top: 0.16rem;
+        color: var(--muted);
+        font-size: 0.64rem;
+      }
+
+      .team-note-list {
+        display: grid;
+        gap: 0.56rem;
+      }
+
+      .team-note-item {
+        border: 1px solid rgba(232, 196, 119, 0.18);
+        padding: 0.64rem;
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .team-note-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.6rem;
+        color: var(--gold);
+        font-size: 0.78rem;
+        font-weight: 950;
+      }
+
+      .team-note-meta {
+        margin-top: 0.18rem;
+        color: var(--muted);
+        font-size: 0.66rem;
+      }
+
+      .team-note-body {
+        margin-top: 0.48rem;
+        color: var(--text);
+        font-size: 0.76rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+
+      .team-note-entry + .team-note-entry {
+        margin-top: 0.58rem;
+        border-top: 1px solid rgba(232, 196, 119, 0.14);
+        padding-top: 0.58rem;
+      }
+
+      .team-note-author {
+        color: var(--teal);
+        font-size: 0.7rem;
+        font-weight: 950;
+      }
+
+      .team-note-empty {
+        color: rgba(245, 234, 215, 0.46);
+        font-style: italic;
+      }
+
+      body.admin-modal-open {
+        overflow: hidden;
+      }
+
+      .admin-photo-viewer {
+        position: fixed;
+        inset: 0;
+        z-index: 120;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        background: rgba(3, 5, 5, 0.86);
+        backdrop-filter: blur(12px);
+      }
+
+      .admin-photo-viewer[hidden] {
+        display: none;
+      }
+
+      .admin-viewer-sheet {
+        width: min(760px, 100%);
+        max-height: 90vh;
+        overflow: auto;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        background: #0d1211;
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.7);
+      }
+
+      .admin-viewer-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 56px;
+        padding: 0.72rem 0.84rem;
+        border-bottom: 1px solid rgba(232, 196, 119, 0.18);
+      }
+
+      .admin-viewer-title {
+        color: var(--gold);
+        font-size: 0.9rem;
+        font-weight: 950;
+      }
+
+      .admin-viewer-close {
+        min-height: 36px;
+        border: 1px solid rgba(232, 196, 119, 0.3);
+        padding: 0 0.65rem;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.05);
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .admin-viewer-image {
+        display: block;
+        width: 100%;
+        max-height: 70vh;
+        background: #050707;
+        object-fit: contain;
+      }
+
+      .admin-viewer-copy {
+        padding: 0.75rem 0.84rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.5;
+      }
+
+      .case-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--red);
+        box-shadow: 0 0 18px rgba(223, 115, 95, 0.9);
+      }
+
+      h1 {
+        max-width: 780px;
+        margin: 1rem 0 0.85rem;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(3.1rem, 7vw, 6.8rem);
+        line-height: 0.92;
+        letter-spacing: 0;
+        text-shadow: 0 20px 70px rgba(0, 0, 0, 0.76);
+      }
+
+      .lead {
+        max-width: 720px;
+        margin: 0;
+        color: #d7ccb7;
+        font-size: 1.08rem;
+        line-height: 1.75;
+      }
+
+      .case-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border: 1px solid rgba(232, 196, 119, 0.28);
+        background: rgba(7, 11, 11, 0.72);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(14px);
+      }
+
+      .stat {
+        min-height: 86px;
+        padding: 0.9rem;
+        border-right: 1px solid rgba(232, 196, 119, 0.18);
+      }
+
+      .stat:last-child {
+        border-right: 0;
+      }
+
+      .stat-value {
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 1.35rem;
+        font-weight: 900;
+      }
+
+      .stat-label {
+        margin-top: 0.28rem;
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.4;
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+        gap: 1rem;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.045), transparent 20%),
+          var(--panel);
+        box-shadow: 0 22px 70px rgba(0, 0, 0, 0.46);
+        backdrop-filter: blur(16px);
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 54px;
+        padding: 0.9rem 1rem;
+        border-bottom: 1px solid rgba(232, 196, 119, 0.2);
+        background: rgba(4, 7, 7, 0.44);
+      }
+
+      .panel-title {
+        color: var(--gold);
+        font-size: 0.88rem;
+        font-weight: 900;
+      }
+
+      .panel-meta {
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.75rem;
+      }
+
+      .suspects {
+        display: grid;
+        gap: 0.64rem;
+        padding: 0.8rem;
+      }
+
+      .suspect-card {
+        width: 100%;
+        min-height: 112px;
+        padding: 0;
+        border: 1px solid rgba(232, 196, 119, 0.22);
+        background: rgba(10, 15, 15, 0.7);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .suspect-card.active {
+        border-color: rgba(105, 198, 189, 0.72);
+        background:
+          linear-gradient(90deg, rgba(105, 198, 189, 0.18), transparent 64%),
+          rgba(13, 20, 19, 0.9);
+      }
+
+      .suspect-card.culprit.active {
+        border-color: rgba(223, 115, 95, 0.8);
+        background:
+          linear-gradient(90deg, rgba(223, 115, 95, 0.16), transparent 64%),
+          rgba(13, 20, 19, 0.9);
+      }
+
+      .suspect-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        min-height: 34px;
+        padding: 0 0.72rem;
+        border-bottom: 1px solid rgba(232, 196, 119, 0.16);
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .suspect-card.culprit .suspect-top {
+        color: #ffad9d;
+      }
+
+      .suspect-name {
+        padding: 0.74rem 0.72rem 0.24rem;
+        color: var(--text);
+        font-size: 1rem;
+        font-weight: 950;
+        line-height: 1.36;
+      }
+
+      .suspect-role {
+        padding: 0 0.72rem 0.72rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.45;
+      }
+
+      .workspace {
+        min-height: 720px;
+      }
+
+      .matrix-board {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .clue-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(230px, 1fr));
+        gap: 0.72rem;
+        padding: 0.9rem;
+        overflow-x: auto;
+      }
+
+      .person-column {
+        min-width: 0;
+        border: 1px solid rgba(232, 196, 119, 0.24);
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.04), transparent 22%),
+          rgba(8, 12, 12, 0.74);
+      }
+
+      .person-head {
+        min-height: 92px;
+        padding: 0.82rem;
+        border-bottom: 1px solid rgba(232, 196, 119, 0.18);
+        background: rgba(5, 8, 8, 0.48);
+      }
+
+      .person-portrait {
+        position: relative;
+        margin-bottom: 0.72rem;
+        border: 1px solid rgba(232, 196, 119, 0.22);
+        background: rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .person-portrait::after {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        content: "";
+        background:
+          linear-gradient(180deg, transparent 44%, rgba(0, 0, 0, 0.58)),
+          repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 1px, transparent 1px 5px);
+      }
+
+      .person-portrait img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 5;
+        object-fit: cover;
+      }
+
+      .person-id {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .person-name {
+        margin-top: 0.62rem;
+        color: var(--text);
+        font-size: 1.28rem;
+        font-weight: 950;
+        line-height: 1.18;
+      }
+
+      .person-role {
+        margin-top: 0.28rem;
+        color: var(--muted);
+        font-size: 0.76rem;
+        line-height: 1.38;
+      }
+
+      .matrix-clues {
+        display: grid;
+        gap: 0.48rem;
+        padding: 0.62rem;
+      }
+
+      .matrix-clue {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.62rem;
+        width: 100%;
+        min-height: 74px;
+        padding: 0.68rem;
+        border: 1px solid rgba(232, 196, 119, 0.18);
+        background: rgba(5, 8, 8, 0.58);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .matrix-clue:hover,
+      .matrix-clue.active {
+        border-color: rgba(105, 198, 189, 0.7);
+        background:
+          linear-gradient(90deg, rgba(105, 198, 189, 0.16), transparent 70%),
+          rgba(9, 15, 15, 0.9);
+      }
+
+      .matrix-clue.viewed {
+        border-color: rgba(160, 191, 112, 0.42);
+      }
+
+      .matrix-clue.locked .clue-title,
+      .matrix-clue.locked .clue-sub {
+        color: rgba(245, 234, 215, 0.5);
+      }
+
+      .clue-number {
+        display: grid;
+        width: 48px;
+        height: 34px;
+        place-items: center;
+        border: 1px solid rgba(105, 198, 189, 0.42);
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.7rem;
+        font-weight: 950;
+      }
+
+      .clue-title {
+        color: var(--text);
+        font-size: 0.86rem;
+        font-weight: 900;
+        line-height: 1.34;
+      }
+
+      .clue-sub {
+        margin-top: 0.18rem;
+        color: var(--muted);
+        font-size: 0.72rem;
+        line-height: 1.34;
+      }
+
+      .detail-layout {
+        display: grid;
+        grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1fr);
+        gap: 1rem;
+        padding: 0 0.9rem 0.9rem;
+      }
+
+      .code-console {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) auto;
+        gap: 0.62rem;
+        padding: 0 0.9rem 0.9rem;
+      }
+
+      .code-console input {
+        width: 100%;
+        min-width: 0;
+        height: 48px;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        border-radius: 0;
+        padding: 0 0.9rem;
+        color: var(--text);
+        background: rgba(3, 6, 6, 0.62);
+        font: inherit;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        outline: none;
+        text-transform: uppercase;
+      }
+
+      .code-console input:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 3px rgba(105, 198, 189, 0.16);
+      }
+
+      .code-console button {
+        min-width: 104px;
+        height: 48px;
+        border: 1px solid rgba(232, 196, 119, 0.5);
+        background: linear-gradient(180deg, #efd08c, #bd813b);
+        color: #18120b;
+        font-weight: 950;
+        cursor: pointer;
+      }
+
+      .code-message {
+        min-height: 28px;
+        padding: 0 0.9rem 0.8rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.5;
+      }
+
+      .code-message.error {
+        color: #ffb8aa;
+      }
+
+      .case-note {
+        border: 1px solid rgba(232, 196, 119, 0.22);
+        background: rgba(8, 12, 12, 0.72);
+      }
+
+      .case-note-inner {
+        padding: 1rem;
+      }
+
+      .case-note-portrait {
+        float: right;
+        width: min(38%, 150px);
+        margin: 0 0 0.8rem 1rem;
+        border: 1px solid rgba(232, 196, 119, 0.26);
+        background: rgba(0, 0, 0, 0.3);
+      }
+
+      .case-note-portrait img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 5;
+        object-fit: cover;
+      }
+
+      .case-note h2 {
+        margin: 0 0 0.55rem;
+        font-size: 2rem;
+        line-height: 1.05;
+      }
+
+      .case-note p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .dossier {
+        display: grid;
+        grid-template-columns: minmax(0, 0.95fr) minmax(330px, 1.05fr);
+        gap: 0.95rem;
+        padding: 1rem;
+      }
+
+      .profile {
+        min-height: 330px;
+        border: 1px solid rgba(232, 196, 119, 0.2);
+        background:
+          linear-gradient(145deg, rgba(232, 196, 119, 0.08), transparent 42%),
+          rgba(8, 12, 12, 0.7);
+      }
+
+      .profile-main {
+        padding: 1rem;
+      }
+
+      .profile-label {
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.75rem;
+        font-weight: 900;
+      }
+
+      .profile h2 {
+        margin: 0.55rem 0 0.35rem;
+        font-size: clamp(1.7rem, 4vw, 2.7rem);
+        line-height: 1.05;
+      }
+
+      .profile-sub {
+        color: var(--muted);
+        font-size: 0.96rem;
+        line-height: 1.55;
+      }
+
+      .profile-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-top: 1px solid rgba(232, 196, 119, 0.16);
+      }
+
+      .profile-field {
+        min-height: 82px;
+        padding: 0.82rem 1rem;
+        border-right: 1px solid rgba(232, 196, 119, 0.16);
+        border-bottom: 1px solid rgba(232, 196, 119, 0.16);
+      }
+
+      .profile-field:nth-child(2n) {
+        border-right: 0;
+      }
+
+      .field-name {
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .field-value {
+        margin-top: 0.28rem;
+        color: var(--text);
+        font-size: 0.9rem;
+        line-height: 1.48;
+      }
+
+      .hint-picker {
+        display: grid;
+        gap: 0.62rem;
+      }
+
+      .hint-button {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 0.72rem;
+        align-items: center;
+        width: 100%;
+        min-height: 66px;
+        padding: 0.72rem;
+        border: 1px solid rgba(232, 196, 119, 0.22);
+        background: rgba(9, 13, 13, 0.72);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .hint-button:hover,
+      .hint-button.active {
+        border-color: rgba(105, 198, 189, 0.68);
+        background:
+          linear-gradient(90deg, rgba(105, 198, 189, 0.14), transparent 70%),
+          rgba(11, 17, 16, 0.9);
+      }
+
+      .hint-button.viewed .hint-state {
+        color: var(--green);
+      }
+
+      .hint-type {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border: 1px solid rgba(105, 198, 189, 0.42);
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .hint-name {
+        color: var(--text);
+        font-size: 0.92rem;
+        font-weight: 900;
+        line-height: 1.35;
+      }
+
+      .hint-desc {
+        margin-top: 0.18rem;
+        color: var(--muted);
+        font-size: 0.76rem;
+        line-height: 1.36;
+      }
+
+      .hint-state {
+        color: rgba(245, 234, 215, 0.46);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+      }
+
+      .evidence {
+        min-height: 494px;
+        border: 1px solid rgba(232, 196, 119, 0.22);
+        background:
+          linear-gradient(90deg, rgba(105, 198, 189, 0.075), transparent 48%),
+          var(--panel-solid);
+      }
+
+      .evidence-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 50px;
+        padding: 0.82rem 0.95rem;
+        border-bottom: 1px solid rgba(232, 196, 119, 0.18);
+      }
+
+      .evidence-title {
+        color: var(--gold);
+        font-size: 0.9rem;
+        font-weight: 950;
+        line-height: 1.4;
+      }
+
+      .evidence-id {
+        flex: 0 0 auto;
+        color: var(--teal);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.74rem;
+      }
+
+      .evidence-body {
+        padding: 1rem;
+      }
+
+      .evidence-photo-strip {
+        margin: 0 0 1rem;
+        padding: 0.55rem;
+        background: rgba(239, 227, 201, 0.94);
+        box-shadow: 0 18px 38px rgba(0, 0, 0, 0.36);
+        transform: rotate(-0.35deg);
+      }
+
+      .evidence-photo-strip img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        border: 1px solid rgba(32, 26, 19, 0.16);
+      }
+
+      .evidence-photo-strip.full img {
+        max-height: 520px;
+        aspect-ratio: auto;
+        object-fit: contain;
+        background: #111;
+      }
+
+      .evidence-photo-strip figcaption {
+        padding: 0.58rem 0.22rem 0.12rem;
+        color: var(--paper-ink);
+        font-size: 0.78rem;
+        font-weight: 900;
+        line-height: 1.45;
+      }
+
+      .empty-evidence {
+        display: grid;
+        min-height: 410px;
+        place-items: center;
+        border: 1px dashed rgba(232, 196, 119, 0.24);
+        color: rgba(245, 234, 215, 0.56);
+        text-align: center;
+        line-height: 1.7;
+      }
+
+      .artifact {
+        min-height: 330px;
+      }
+
+      .artifact.audio {
+        border: 1px solid rgba(105, 198, 189, 0.24);
+        background:
+          linear-gradient(180deg, rgba(105, 198, 189, 0.13), transparent 38%),
+          rgba(4, 9, 9, 0.74);
+      }
+
+      .wave {
+        display: flex;
+        align-items: center;
+        gap: 0.22rem;
+        height: 92px;
+        padding: 0 1rem;
+        border-bottom: 1px solid rgba(105, 198, 189, 0.18);
+      }
+
+      .wave span {
+        width: 5px;
+        height: calc(16px + var(--h) * 1px);
+        background: linear-gradient(180deg, var(--teal), rgba(232, 196, 119, 0.82));
+        box-shadow: 0 0 12px rgba(105, 198, 189, 0.28);
+      }
+
+      .transcript {
+        padding: 1rem;
+      }
+
+      .evidence-audio {
+        display: grid;
+        gap: 0.42rem;
+        padding: 1rem;
+        border-bottom: 1px solid rgba(105, 198, 189, 0.18);
+      }
+
+      .evidence-audio audio {
+        width: 100%;
+      }
+
+      .evidence-audio-label {
+        color: var(--gold);
+        font-size: 0.76rem;
+        font-weight: 900;
+      }
+
+      .line {
+        display: grid;
+        grid-template-columns: 82px 1fr;
+        gap: 0.72rem;
+        margin-bottom: 0.8rem;
+        line-height: 1.62;
+      }
+
+      .speaker {
+        color: var(--teal);
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .speech {
+        color: var(--text);
+      }
+
+      .artifact.photo,
+      .artifact.chat,
+      .artifact.item,
+      .artifact.book {
+        color: var(--paper-ink);
+        background: var(--paper);
+        box-shadow: 0 20px 42px rgba(0, 0, 0, 0.36);
+      }
+
+      .artifact.photo {
+        padding: 0.82rem;
+        transform: rotate(-0.7deg);
+      }
+
+      .photo-frame {
+        min-height: 230px;
+        border: 1px solid rgba(32, 26, 19, 0.22);
+        background:
+          radial-gradient(circle at 74% 28%, rgba(128, 73, 45, 0.3), transparent 48px),
+          linear-gradient(135deg, rgba(28, 31, 27, 0.1), rgba(28, 31, 27, 0.26)),
+          repeating-linear-gradient(0deg, rgba(32, 26, 19, 0.08) 0 1px, transparent 1px 12px);
+      }
+
+      .photo-caption {
+        padding-top: 0.78rem;
+        font-size: 0.92rem;
+        font-weight: 900;
+        line-height: 1.55;
+      }
+
+      .artifact.chat {
+        padding: 0.88rem;
+      }
+
+      .chat-top {
+        padding-bottom: 0.65rem;
+        border-bottom: 1px solid rgba(32, 26, 19, 0.2);
+        font-size: 0.82rem;
+        font-weight: 900;
+      }
+
+      .bubble {
+        width: fit-content;
+        max-width: 86%;
+        margin-top: 0.68rem;
+        padding: 0.62rem 0.72rem;
+        border: 1px solid rgba(32, 26, 19, 0.18);
+        background: rgba(255, 255, 255, 0.48);
+        font-size: 0.9rem;
+        line-height: 1.55;
+      }
+
+      .bubble.right {
+        margin-left: auto;
+        background: rgba(232, 196, 119, 0.55);
+      }
+
+      .artifact.item {
+        padding: 1rem;
+      }
+
+      .evidence-tag {
+        display: inline-flex;
+        min-height: 28px;
+        align-items: center;
+        padding: 0 0.52rem;
+        border: 1px solid rgba(32, 26, 19, 0.3);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .item-sketch {
+        display: grid;
+        min-height: 190px;
+        place-items: center;
+        margin: 1rem 0;
+        border: 1px solid rgba(32, 26, 19, 0.18);
+        background:
+          radial-gradient(circle at 55% 45%, rgba(32, 26, 19, 0.13), transparent 58px),
+          repeating-linear-gradient(45deg, rgba(32, 26, 19, 0.08) 0 8px, transparent 8px 18px);
+        color: rgba(32, 26, 19, 0.66);
+        font-size: 2rem;
+        font-weight: 950;
+      }
+
+      .artifact.book {
+        padding: 0.9rem;
+      }
+
+      .ledger-row {
+        display: grid;
+        grid-template-columns: 1fr 90px 70px;
+        gap: 0.6rem;
+        padding: 0.58rem 0;
+        border-bottom: 1px solid rgba(32, 26, 19, 0.18);
+        font-size: 0.82rem;
+      }
+
+      .ledger-row strong {
+        color: #781f16;
+      }
+
+      .readout {
+        margin-top: 0.9rem;
+        padding: 0.92rem;
+        border-left: 3px solid var(--teal);
+        background: rgba(105, 198, 189, 0.1);
+        color: var(--text);
+        line-height: 1.7;
+      }
+
+      .readout strong {
+        color: var(--gold);
+      }
+
+      .progress {
+        display: grid;
+        gap: 0.65rem;
+        padding: 0 1rem 1rem;
+      }
+
+      .progress-top {
+        display: flex;
+        justify-content: space-between;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .locks {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 0.32rem;
+      }
+
+      .lock {
+        height: 9px;
+        border: 1px solid rgba(232, 196, 119, 0.24);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .lock.open {
+        border-color: rgba(105, 198, 189, 0.78);
+        background: linear-gradient(90deg, var(--teal), rgba(232, 196, 119, 0.78));
+      }
+
+      @media (max-width: 1020px) {
+        body {
+          background-attachment: scroll;
+        }
+
+        .hero,
+        .board,
+        .dossier,
+        .detail-layout,
+        .team-monitor-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .team-monitor-section + .team-monitor-section {
+          border-top: 1px solid rgba(232, 196, 119, 0.18);
+          border-left: 0;
+        }
+
+        .clue-grid {
+          grid-template-columns: repeat(4, minmax(230px, 1fr));
+        }
+
+        .workspace {
+          min-height: 0;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .app {
+          width: min(100% - 22px, 1240px);
+          padding-top: 22px;
+        }
+
+        .hero {
+          min-height: 0;
+        }
+
+        .case-stats,
+        .profile-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .stat,
+        .profile-field {
+          border-right: 0;
+        }
+
+        .panel-head,
+        .evidence-head {
+          align-items: flex-start;
+          grid-template-columns: 1fr;
+          flex-direction: column;
+        }
+
+        .line {
+          grid-template-columns: 1fr;
+          gap: 0.18rem;
+        }
+
+        .code-console {
+          grid-template-columns: 1fr;
+        }
+
+        .timer-controls {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .timer-label,
+        .timer-status {
+          grid-column: 1 / -1;
+        }
+
+        .group-row {
+          grid-template-columns: 1fr;
+        }
+
+        .team-monitor-controls {
+          justify-content: flex-start;
+        }
+
+        .team-clue-grid,
+        .admin-evidence-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .locks {
+          grid-template-columns: repeat(6, 1fr);
+        }
+
+        .clue-grid {
+          grid-template-columns: repeat(4, minmax(230px, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <section class="hero">
+        <div>
+          <div class="case-kicker"><span class="case-dot"></span> 관리자 콘솔</div>
+          <h1>우리 사이에 비밀은 <span class="title-mark">없어..?</span></h1>
+          <p class="lead">
+            6월 큰모임은 밝은 레크레이션으로 시작해 목양실 사건으로 전환됩니다. 참가자를 조별 수사팀으로 배정하고, 화면 전환과 타이머, 힌트 획득, 증거사진, 추리 메모를 이곳에서 확인하세요.
+          </p>
+          <div class="page-links">
+            <a class="page-link" href="./">참가자용 모바일 페이지</a>
+            <a class="page-link" href="./?reset=1">참가자 힌트 초기화 링크</a>
+            <a class="page-link" href="docs/APP_FLOW.md">앱 흐름도</a>
+          </div>
+          <div class="mode-controls" aria-label="참가자 화면 전환">
+            <button class="mode-button" type="button" id="startCrimeMode">사건 화면으로 전환</button>
+            <button class="mode-button secondary" type="button" id="resetRecreationMode">레크레이션 화면으로 되돌리기</button>
+            <button class="mode-button danger" type="button" id="resetAllGame">전체 초기화</button>
+            <div class="mode-status" id="modeStatus">현재 참가자 화면: 확인 중</div>
+          </div>
+          <div class="mode-controls" aria-label="레크레이션 시작 제어">
+            <button class="mode-button" type="button" id="startRecreation">레크레이션 시작</button>
+            <button class="mode-button secondary" type="button" id="pauseRecreation">제시어 숨김</button>
+            <div class="mode-status" id="recreationStatus">레크레이션: 확인 중</div>
+          </div>
+          <div class="timer-controls" aria-label="참가자 타이머 설정">
+            <label class="timer-label" for="timerMinutes">타이머</label>
+            <input class="timer-input" id="timerMinutes" type="number" min="1" max="180" step="1" value="10" aria-label="타이머 분" />
+            <button class="mode-button" type="button" id="startTimer">재생</button>
+            <button class="mode-button secondary" type="button" id="stopTimer">일시정지</button>
+            <button class="mode-button secondary" type="button" id="resetTimer">초기화</button>
+            <button class="mode-button secondary" type="button" id="clearTimer">숨김</button>
+            <div class="timer-status" id="timerStatus">타이머: --:--</div>
+          </div>
+          <div class="group-controls" aria-label="참가자 조 편성">
+            <div class="group-row">
+              <textarea class="group-textarea" id="groupRosterInput" spellcheck="false" placeholder="1조: 김하늘, 박민준&#10;2조: 이서연, 최지호&#10;3조: 정다은, 오유찬"></textarea>
+              <button class="mode-button" type="button" id="saveGroups">조 저장</button>
+            </div>
+            <div class="group-status" id="groupStatus">조 편성: 확인 중</div>
+          </div>
+          <div class="participant-controls" aria-label="입장 참가자 조 배정">
+            <div class="group-status" id="participantStatus">입장 명단: 확인 중</div>
+            <div class="participant-list" id="participantList"></div>
+          </div>
+        </div>
+        <div class="case-stats" aria-label="사건 요약">
+          <div class="stat">
+            <div class="stat-value">4</div>
+            <div class="stat-label">조사 대상 인물</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">12</div>
+            <div class="stat-label">획득 가능한 힌트</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">10:12</div>
+            <div class="stat-label">추정 핵심 시각</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel team-monitor" aria-label="조별 수사 현황">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">조별 수사 현황</div>
+            <div class="panel-meta">TEAM EVIDENCE MONITOR</div>
+          </div>
+          <div class="team-monitor-controls">
+            <div class="team-tabs" role="tablist" aria-label="조회할 조 선택">
+              <button class="team-tab active" type="button" role="tab" aria-selected="true" data-monitor-group="1">1조</button>
+              <button class="team-tab" type="button" role="tab" aria-selected="false" data-monitor-group="2">2조</button>
+              <button class="team-tab" type="button" role="tab" aria-selected="false" data-monitor-group="3">3조</button>
+            </div>
+            <button class="team-refresh" type="button" id="refreshTeamMonitor">새로고침</button>
+          </div>
+        </div>
+        <div class="team-monitor-status" id="teamMonitorStatus" aria-live="polite">1조 현황을 불러오는 중입니다.</div>
+        <div class="team-monitor-layout">
+          <section class="team-monitor-section" aria-label="힌트 획득 현황">
+            <div class="team-section-head">
+              <div class="team-section-title">힌트 획득 현황</div>
+              <div class="team-section-count" id="teamClueCount">0 / 12</div>
+            </div>
+            <div class="team-clue-grid" id="teamClueGrid"></div>
+          </section>
+          <section class="team-monitor-section" aria-label="조별 증거사진">
+            <div class="team-section-head">
+              <div class="team-section-title">조별 증거사진</div>
+              <div class="team-section-count" id="teamEvidenceCount">0장</div>
+            </div>
+            <div class="admin-evidence-grid" id="adminEvidenceGrid"></div>
+          </section>
+          <section class="team-monitor-section" aria-label="인물별 추리 메모">
+            <div class="team-section-head">
+              <div class="team-section-title">인물별 추리 메모</div>
+              <div class="team-section-count" id="teamNoteCount">0 / 4</div>
+            </div>
+            <div class="team-note-list" id="teamNoteList"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="panel matrix-board">
+        <div class="panel-head">
+          <div class="panel-title">용의자별 힌트 매트릭스</div>
+          <div class="panel-meta">4 PERSONS × 3 HINTS</div>
+        </div>
+        <div class="clue-grid" id="clueGrid"></div>
+        <form class="code-console" id="codeForm">
+          <input id="hintCodeInput" autocomplete="off" spellcheck="false" placeholder="힌트 코드 입력" />
+          <button type="submit">해제</button>
+        </form>
+        <div class="code-message" id="codeMessage">힌트는 코드 입력으로만 열립니다. 잠긴 칸을 눌러도 내용은 공개되지 않습니다.</div>
+        <div class="detail-layout">
+          <article class="case-note" id="caseNote"></article>
+          <article class="evidence" id="evidence"></article>
+        </div>
+        <div class="progress">
+          <div class="progress-top">
+            <span>열람한 증거</span>
+            <span id="progressText">0 / 12</span>
+          </div>
+          <div class="locks" id="locks" aria-hidden="true"></div>
+        </div>
+      </section>
+    </main>
+
+    <section class="admin-photo-viewer" id="adminPhotoViewer" role="dialog" aria-modal="true" aria-labelledby="adminViewerTitle" hidden>
+      <div class="admin-viewer-sheet">
+        <div class="admin-viewer-head">
+          <div class="admin-viewer-title" id="adminViewerTitle">조별 증거사진</div>
+          <button class="admin-viewer-close" type="button" id="closeAdminViewer">닫기</button>
+        </div>
+        <img class="admin-viewer-image" id="adminViewerImage" alt="확대된 조별 증거사진" />
+        <div class="admin-viewer-copy" id="adminViewerCopy"></div>
+      </div>
+    </section>
+
+    <script>
+      const suspects = [
+        {
+          id: "P01",
+          name: "홍강도",
+          role: "전도사 / 찬양팀 리더",
+          age: "32세",
+          gender: "남성",
+          portrait: "assets/portrait-hong-gangdo.jpg",
+          summary: "너무 많은 사역으로 지치고 병든 나",
+          alibi: "사망추정시각에는 찬양팀 연습을 인도하고 있었다고 주장.",
+          motive: "사례를 올려달라고 요청하다가 핀잔만 듣고 나옴.",
+          clues: [
+            {
+              id: "H01",
+              code: "SILOAM73",
+              hint: "힌트1",
+              type: "ITEM",
+              title: "목사님 이름이 적힌 알러지 약",
+              short: "목사님 이름 라벨이 붙은 알러지 약통",
+              render: "item",
+              sketch: "RX",
+              artifactTitle: "목양실 비상약통",
+              image: "assets/evidence-allergy-peanut.jpg",
+              body:
+                "목양실 비상약통에서 목사님 이름 라벨이 붙은 알러지 약통이 발견되었습니다. 같은 종류의 알러지 약통이 전도사님 책상 쪽 소품 사이에서도 확인됩니다.",
+              readout:
+                "약통은 목사님의 알러지 정보를 아는 사람이 현장에 접근했을 가능성을 보여 줍니다. 목양실 비상약통과 전도사실 약통을 함께 비교하세요.",
+            },
+            {
+              id: "H02",
+              code: "KAIROS18",
+              hint: "힌트2",
+              type: "PHOTO",
+              title: "땅콩가루",
+              short: "비어있는 커피잔 안쪽에 남은 견과류 가루",
+              render: "photo",
+              artifactTitle: "현장 사진 10:18",
+              image: "assets/evidence-allergy-peanut.jpg",
+              body:
+                "목양실 책상 위의 비어있는 커피잔 안쪽에서 믹스커피 찌꺼기와 섞인 고운 갈색 가루가 발견되었습니다. 전도사실 메모지에는 '조심할 것: 땅콩, 복숭아 등'이라고 적혀 있습니다.",
+              readout:
+                "시트 준비물 기준상 땅콩은 견과류 단서입니다. 커피잔, 땅콩가루, 알러지 약, 주의 메모가 같은 방향을 가리킵니다.",
+            },
+            {
+              id: "H03",
+              code: "MARAH52",
+              hint: "힌트3",
+              type: "AUDIO",
+              title: "사례비 대화 녹취",
+              short: "목사님과 전도사님의 대화 일부",
+              render: "audio",
+              artifactTitle: "사례비 대화 녹취 파일",
+              audioSrc: "assets/pastor-minister-call.m4a",
+              lines: [
+                ["홍강도", "목사님, 사역이 너무 많습니다. 사례를 조금이라도 조정해 주시면 안 될까요."],
+                ["목사님", "그런 마음으로 사역하면 오래 못 버팁니다. 지금도 충분히 받고 있어요."],
+                ["홍강도", "충분하다고요? 제 몸이 망가지는 건 아무도 안 보시네요."],
+              ],
+              readout:
+                "홍강도가 사례 인상을 요청했고 목사님에게 핀잔을 들었다는 동기 단서입니다. 캘린더의 업무 과중 표시와 함께 보면 감정선이 더 선명해집니다.",
+            },
+          ],
+        },
+        {
+          id: "P02",
+          name: "이비리",
+          role: "재정부 권사님",
+          age: "55세",
+          gender: "여성",
+          portrait: "assets/portrait-lee-biri.jpg",
+          summary: "불의를 보면 참지 않음",
+          alibi: "사건 시간대에는 식사 당번으로 주방에 있었다고 주장.",
+          motive: "목사님의 비리를 알고 폭로하겠다고 찾아감.",
+          clues: [
+            {
+              id: "H05",
+              code: "EBEN47",
+              hint: "힌트1",
+              type: "AUDIO",
+              title: "화내는 음성",
+              short: "복도에서 녹음된 비리 폭로 암시 음성",
+              render: "audio",
+              artifactTitle: "복도에서 화내는 음성",
+              audioSrc: "assets/lee-biri-argument.m4a",
+              lines: [
+                ["이비리", "목사님, 이 장부 제가 다 봤습니다. 그냥 넘어갈 문제가 아니에요."],
+                ["목사님", "예배 전에 소란 만들지 마세요."],
+                ["이비리", "오늘 끝나고 공동의회에서 말씀드릴 겁니다."],
+              ],
+              readout:
+                "권사님은 목사님을 찾아간 사실을 숨겼습니다. 다만 이 음성은 비리 폭로와 말다툼을 보여 주는 단서에 가깝습니다.",
+            },
+            {
+              id: "H06",
+              code: "TITHE68",
+              hint: "힌트2",
+              type: "ITEM",
+              title: "얼룩진 구겨진 돈",
+              short: "봉투 B-04에 보관된 축축한 모형 지폐",
+              render: "item",
+              sketch: "₩",
+              artifactTitle: "증거 봉투 B-04",
+              image: "assets/evidence-finance-ledger.jpg",
+              body:
+                "봉투 B-04 안에서 구겨진 모형 지폐 여러 장이 발견되었습니다. 지폐는 축축한 얼룩이 남아 있어 누군가 급하게 숨기거나 닦아낸 흔적으로 보입니다.",
+              readout:
+                "돈은 권사님이 회계 문제로 목사님을 압박했다는 증거입니다. 그러나 알러지 반응이나 땅콩가루와는 연결되지 않습니다.",
+            },
+            {
+              id: "H07",
+              code: "LEDGER31",
+              hint: "힌트3",
+              type: "BOOK",
+              title: "회계장부",
+              short: "수상한 지출 내역이 표시된 재정부 장부 사본",
+              render: "book",
+              artifactTitle: "회계장부 원본 클리어파일",
+              image: "assets/evidence-finance-ledger.jpg",
+              rows: [
+                ["부활절 장식비", "148,000", "확인"],
+                ["목양실 비품", "320,000", "보류"],
+                ["외부 강사 사례", "500,000", "불일치"],
+                ["찬양팀 소모품", "92,000", "확인"],
+              ],
+              readout:
+                "회계장부는 목사님의 비리를 폭로하려던 동기를 보여 줍니다. 그러나 알러지 약이나 땅콩가루와는 직접 연결되지 않습니다.",
+            },
+          ],
+        },
+        {
+          id: "P03",
+          name: "서신자",
+          role: "신도(?)",
+          age: "23세",
+          gender: "여성",
+          portrait: "assets/portrait-seo-shinja.jpg",
+          summary: "얼마 전에 새로 온 새신자",
+          alibi: "청년 모임 중 화장실에 갔고, 가는 길에 목양실에서 큰 소리를 들었다고 주장.",
+          motive: "최근 청년들과 관계가 좋지 못해 목사님을 찾아갔지만 나의 문제라고 꾸중을 들음.",
+          clues: [
+            {
+              id: "H09",
+              code: "DAMAS12",
+              hint: "힌트1",
+              type: "CHAT",
+              title: "신만지 교회 단톡방 캡처",
+              short: "외부 교회 단톡방에서 확인된 폐쇄적 지침",
+              render: "chat",
+              artifactTitle: "신만지 교회 단톡방 캡처 10:47",
+              image: "assets/seo-shinja-group-chat.jpg",
+              imageMode: "full",
+              imageOnly: true,
+              readout:
+                "서신자가 숨기고 있던 외부 공동체와 연결되는 단서입니다. 교회 밖 관계와 신분 은폐 정황은 강하지만, 범행 수단과 직접 연결되는 증거인지 따로 판단해야 합니다.",
+            },
+            {
+              id: "H10",
+              code: "TALITHA86",
+              hint: "힌트2",
+              type: "PHOTO",
+              title: "신분증",
+              short: "신만지 교회 출입증, 본명 서만희",
+              render: "photo",
+              artifactTitle: "소지품 사진",
+              image: "assets/evidence-newcomer-phone.jpg",
+              body:
+                "소지품에서 신만지 교회 출입증이 발견되었습니다. 표시된 본명은 서만희, 오늘 교회에 적은 이름은 서신자입니다.",
+              readout:
+                "이름을 숨긴 명백한 거짓말입니다. 다만 거짓 신분은 살인 증거가 아니라 별개의 목적을 보여 줍니다.",
+            },
+            {
+              id: "H11",
+              code: "GALIL27",
+              hint: "힌트3",
+              type: "CHAT",
+              title: "청년들 평가 카톡",
+              short: "담임목사님에게 전한 서신자 관찰 내용",
+              render: "chat",
+              artifactTitle: "담임목사님 카톡 캡처 10:45",
+              image: "assets/seo-shinja-youth-feedback.jpg",
+              imageMode: "full",
+              imageOnly: true,
+              readout:
+                "서신자가 청년들의 신앙과 태도를 관찰해 담임목사님에게 평가하듯 전달한 대화입니다. 정체 은폐와 정보 수집 정황은 강하지만, 범행 수단과는 분리해서 판단해야 합니다.",
+            },
+          ],
+        },
+        {
+          id: "P04",
+          name: "박간호",
+          role: "간호사",
+          age: "24세",
+          gender: "여성",
+          portrait: "assets/portrait-park-ganho.jpg",
+          summary: "최초 발견자",
+          alibi: "10:10 친구와 카톡을 주고받았고, 이후 교회에 와 목사님을 발견했다고 진술.",
+          motive: "3연속 나이트 근무를 한 후 다음날 데이 근무를 위해 잠을 청하지만 들려오는 옆 교회 찬양소리.",
+          clues: [
+            {
+              id: "H13",
+              code: "SHALOM64",
+              hint: "힌트1",
+              type: "AUDIO",
+              title: "혼잣말 녹음",
+              short: "찬양 BGM 때문에 잠을 못 자는 짜증 섞인 음성",
+              render: "audio",
+              artifactTitle: "혼잣말 녹음 파일",
+              audioSrc: "assets/park-ganho-memo.m4a",
+              lines: [
+                ["박간호", "아 진짜... 오늘 데이인데 잠 좀 자자."],
+                ["배경음", "같은 찬양 후렴이 일정한 간격으로 반복됨."],
+                ["박간호", "연습이면 왜 똑같은 부분만 계속 틀어놔."],
+              ],
+              readout:
+                "찬양 소리 때문에 예민해져 있었다는 동기처럼 보이지만, 동시에 같은 찬양 구간이 반복 재생된 배경 단서이기도 합니다.",
+            },
+            {
+              id: "H14",
+              code: "RHEMA20",
+              hint: "힌트2",
+              type: "CHAT",
+              title: "친구와의 카톡대화",
+              short: "교회에 찾아가기 직전 친구와 나눈 대화 캡처",
+              render: "chat",
+              artifactTitle: "카톡 캡처 10:14",
+              image: "assets/park-ganho-chat.jpg",
+              imageMode: "full",
+              imageOnly: true,
+              readout:
+                "박간호가 소음 때문에 교회로 가겠다고 말한 대화입니다. 최초 발견자라는 진술과 교회로 이동한 이유를 함께 확인하세요.",
+            },
+            {
+              id: "H15",
+              code: "MANNA57",
+              hint: "힌트3",
+              type: "ITEM",
+              title: "하루견과",
+              short: "간호사의 소지품처럼 놓여 있던 밀봉 견과 봉지",
+              render: "item",
+              sketch: "NUT",
+              artifactTitle: "소지품 확인 C-12",
+              image: "assets/evidence-nurse-bag.jpg",
+              body:
+                "박간호의 가방에서 하루견과 봉지가 발견되었습니다. 봉지는 뜯기지 않았고, 전날 밤 병원 편의점에서 산 영수증이 함께 들어 있습니다.",
+              readout:
+                "견과류 때문에 의심을 살 수 있지만, 시트 준비물 기준상 하루견과는 간호사 소지품처럼 놓는 단서입니다. 현장의 땅콩가루와 직접 연결하려면 봉지 상태를 확인해야 합니다.",
+            },
+          ],
+        },
+      ];
+
+      const state = {
+        clueId: null,
+        viewed: new Set(),
+      };
+
+      const clueGridEl = document.querySelector("#clueGrid");
+      const caseNoteEl = document.querySelector("#caseNote");
+      const evidenceEl = document.querySelector("#evidence");
+      const codeForm = document.querySelector("#codeForm");
+      const hintCodeInput = document.querySelector("#hintCodeInput");
+      const codeMessage = document.querySelector("#codeMessage");
+      const progressTextEl = document.querySelector("#progressText");
+      const locksEl = document.querySelector("#locks");
+      const startCrimeModeButton = document.querySelector("#startCrimeMode");
+      const resetRecreationModeButton = document.querySelector("#resetRecreationMode");
+      const resetAllGameButton = document.querySelector("#resetAllGame");
+      const modeStatus = document.querySelector("#modeStatus");
+      const startRecreationButton = document.querySelector("#startRecreation");
+      const pauseRecreationButton = document.querySelector("#pauseRecreation");
+      const recreationStatus = document.querySelector("#recreationStatus");
+      const timerMinutesInput = document.querySelector("#timerMinutes");
+      const startTimerButton = document.querySelector("#startTimer");
+      const stopTimerButton = document.querySelector("#stopTimer");
+      const resetTimerButton = document.querySelector("#resetTimer");
+      const clearTimerButton = document.querySelector("#clearTimer");
+      const timerStatus = document.querySelector("#timerStatus");
+      const groupRosterInput = document.querySelector("#groupRosterInput");
+      const saveGroupsButton = document.querySelector("#saveGroups");
+      const groupStatus = document.querySelector("#groupStatus");
+      const participantStatus = document.querySelector("#participantStatus");
+      const participantList = document.querySelector("#participantList");
+      const teamMonitorStatus = document.querySelector("#teamMonitorStatus");
+      const teamClueCount = document.querySelector("#teamClueCount");
+      const teamClueGrid = document.querySelector("#teamClueGrid");
+      const teamEvidenceCount = document.querySelector("#teamEvidenceCount");
+      const adminEvidenceGrid = document.querySelector("#adminEvidenceGrid");
+      const teamNoteCount = document.querySelector("#teamNoteCount");
+      const teamNoteList = document.querySelector("#teamNoteList");
+      const refreshTeamMonitorButton = document.querySelector("#refreshTeamMonitor");
+      const adminPhotoViewer = document.querySelector("#adminPhotoViewer");
+      const adminViewerTitle = document.querySelector("#adminViewerTitle");
+      const adminViewerImage = document.querySelector("#adminViewerImage");
+      const adminViewerCopy = document.querySelector("#adminViewerCopy");
+      const closeAdminViewerButton = document.querySelector("#closeAdminViewer");
+
+      const allClues = suspects.flatMap((suspect) => suspect.clues);
+      const clueOwnerMap = new Map(suspects.flatMap((suspect) => suspect.clues.map((clue) => [clue.id, suspect.name])));
+      const codeMap = new Map(allClues.map((clue) => [clue.code, clue]));
+      const gameModeKey = "upupGameMode";
+      const modeChannel = "BroadcastChannel" in window ? new BroadcastChannel("upup-game-mode") : null;
+      let sharedTimer = null;
+      let sharedGroups = [];
+      let sharedParticipants = [];
+      let sharedRecreation = { started: false };
+      let selectedMonitorGroup = 1;
+      let monitorClueIds = new Set();
+      let monitorEvidence = [];
+      let monitorEvidenceCount = 0;
+      let monitorLatestEvidenceId = "";
+      let monitorNotes = {};
+      let monitorRequestInFlight = false;
+      let lastAdminModeVersion = 0;
+
+      function normalizeGameMode(mode) {
+        return mode === "crime" ? "crime" : "recreation";
+      }
+
+      function renderModeStatus(mode, source = "로컬") {
+        const label = normalizeGameMode(mode) === "crime" ? "사건 수사 화면" : "레크레이션 화면";
+        modeStatus.textContent = `현재 참가자 화면: ${label} (${source})`;
+      }
+
+      function formatSeconds(totalSeconds) {
+        const safeSeconds = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+        const minutes = Math.floor(safeSeconds / 60);
+        const seconds = safeSeconds % 60;
+        return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      }
+
+      function getTimerRemaining(timer) {
+        if (!timer) return 0;
+        if (timer.running && timer.endsAt) {
+          return Math.max(0, Math.ceil((new Date(timer.endsAt).getTime() - Date.now()) / 1000));
+        }
+        return Math.max(0, Number(timer.remainingSeconds) || 0);
+      }
+
+      function renderTimerStatus(timer = sharedTimer) {
+        if (!timer || !timer.durationSeconds) {
+          timerStatus.textContent = "타이머: --:--";
+          startTimerButton.textContent = "재생";
+          stopTimerButton.disabled = true;
+          return;
+        }
+        const remaining = getTimerRemaining(timer);
+        const label = timer.running && remaining > 0 ? "진행 중" : remaining <= 0 ? "종료" : "정지";
+        timerStatus.textContent = `타이머: ${formatSeconds(remaining)} · ${label}`;
+        startTimerButton.textContent = !timer.running && remaining > 0 && remaining < timer.durationSeconds ? "계속" : "재생";
+        stopTimerButton.disabled = !timer.running || remaining <= 0;
+      }
+
+      function normalizeGroupName(name) {
+        return String(name || "").replace(/\s+/g, "").toLowerCase();
+      }
+
+      function normalizeGroups(groups) {
+        const source = Array.isArray(groups) && groups.length ? groups : [1, 2, 3].map((number) => ({ number, names: [] }));
+        return source
+          .map((group, index) => ({
+            number: Math.max(1, Number(group.number) || index + 1),
+            names: [...new Map((group.names || []).map((name) => [normalizeGroupName(name), String(name || "").trim()])).values()].filter(Boolean),
+          }))
+          .sort((a, b) => a.number - b.number);
+      }
+
+      function normalizeParticipants(participants) {
+        const seen = new Set();
+        return (Array.isArray(participants) ? participants : [])
+          .map((participant) => ({
+            name: String(participant?.name || "").trim(),
+            joinedAt: participant?.joinedAt || "",
+          }))
+          .filter((participant) => {
+            const key = normalizeGroupName(participant.name);
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+      }
+
+      function findGroupForName(name, groups = sharedGroups) {
+        const key = normalizeGroupName(name);
+        return normalizeGroups(groups).find((group) => group.names.some((item) => normalizeGroupName(item) === key)) || null;
+      }
+
+      function renderRecreationStatus(recreation = sharedRecreation) {
+        recreationStatus.textContent = `레크레이션: ${recreation?.started ? "제시어 공개 중" : "시작 대기"}`;
+      }
+
+      function renderParticipantList() {
+        const participants = normalizeParticipants(sharedParticipants);
+        participantStatus.textContent = `입장 명단: ${participants.length}명`;
+        if (!participants.length) {
+          participantList.innerHTML = `<div class="group-status">아직 입장한 참가자가 없습니다.</div>`;
+          return;
+        }
+
+        participantList.innerHTML = participants
+          .map((participant) => {
+            const group = findGroupForName(participant.name);
+            return `
+              <div class="participant-row">
+                <div>
+                  <div class="participant-name">${escapeHtml(participant.name)}</div>
+                  <div class="participant-group">${group ? `${group.number}조` : "?조"}</div>
+                </div>
+                <div class="assign-buttons">
+                  <button class="participant-edit" type="button" data-edit-participant="${escapeHtml(participant.name)}">수정</button>
+                  ${[1, 2, 3]
+                    .map(
+                      (number) => `
+                        <button class="assign-button ${group?.number === number ? "active" : ""}" type="button" data-assign-group="${number}" data-participant="${escapeHtml(participant.name)}">
+                          ${number}조
+                        </button>
+                      `,
+                    )
+                    .join("")}
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function formatMonitorDate(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "시간 미상";
+        return date.toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      }
+
+      function noteItems(note) {
+        if (Array.isArray(note?.items)) return note.items;
+        const content = String(note?.content || "").trim();
+        return content
+          ? [
+              {
+                id: note.updatedAt || "legacy-note",
+                author: note.updatedBy || "조원",
+                content,
+                createdAt: note.updatedAt || "",
+              },
+            ]
+          : [];
+      }
+
+      function renderMonitorTabs() {
+        document.querySelectorAll("[data-monitor-group]").forEach((button) => {
+          const active = Number(button.dataset.monitorGroup) === selectedMonitorGroup;
+          button.classList.toggle("active", active);
+          button.setAttribute("aria-selected", active ? "true" : "false");
+        });
+      }
+
+      function renderMonitorClues() {
+        teamClueCount.textContent = `${monitorClueIds.size} / ${allClues.length}`;
+        teamClueGrid.innerHTML = allClues
+          .map((clue) => {
+            const acquired = monitorClueIds.has(clue.id);
+            return `
+              <div class="team-clue-item ${acquired ? "acquired" : ""}">
+                <div class="team-clue-id">${escapeHtml(clue.id)}</div>
+                <div>
+                  <div class="team-clue-name">${acquired ? escapeHtml(clue.title) : `${escapeHtml(clue.hint)} · 미획득`}</div>
+                  <div class="team-clue-owner">${escapeHtml(clueOwnerMap.get(clue.id) || "")}</div>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderMonitorEvidence() {
+        teamEvidenceCount.textContent = `${monitorEvidenceCount}장`;
+        if (!monitorEvidence.length) {
+          adminEvidenceGrid.innerHTML = `<div class="admin-evidence-empty">${selectedMonitorGroup}조가 촬영한 증거사진이 없습니다.</div>`;
+          return;
+        }
+        adminEvidenceGrid.innerHTML = monitorEvidence
+          .map(
+            (item) => `
+              <article class="admin-evidence-item">
+                <button class="admin-evidence-photo" type="button" data-admin-evidence="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.caption)} 크게 보기">
+                  <img src="${escapeHtml(item.imageData)}" alt="${escapeHtml(item.caption)}" loading="lazy" decoding="async" />
+                </button>
+                <div class="admin-evidence-meta">
+                  <div class="admin-evidence-caption">${escapeHtml(item.caption)}</div>
+                  <div class="admin-evidence-byline">${escapeHtml(item.author)} · ${escapeHtml(formatMonitorDate(item.createdAt))}</div>
+                </div>
+              </article>
+            `,
+          )
+          .join("");
+      }
+
+      function renderMonitorNotes() {
+        const writtenCount = suspects.filter((suspect) => noteItems(monitorNotes[suspect.id]).length).length;
+        teamNoteCount.textContent = `${writtenCount} / ${suspects.length}`;
+        teamNoteList.innerHTML = suspects
+          .map((suspect) => {
+            const note = monitorNotes[suspect.id] || {};
+            const items = noteItems(note);
+            const latest = items.at(-1);
+            const meta = latest ? `최근: ${latest.author || "조원"} · ${formatMonitorDate(latest.createdAt)}` : "작성 전";
+            return `
+              <article class="team-note-item">
+                <div class="team-note-head">
+                  <span>${escapeHtml(suspect.name)}</span>
+                  <span>${escapeHtml(suspect.id)}</span>
+                </div>
+                <div class="team-note-meta">${escapeHtml(meta)}</div>
+                <div class="team-note-body ${items.length ? "" : "team-note-empty"}">${
+                  items.length
+                    ? items
+                        .map(
+                          (item) => `
+                            <div class="team-note-entry">
+                              <div class="team-note-author">${escapeHtml(item.author || "조원")} · ${escapeHtml(formatMonitorDate(item.createdAt))}</div>
+                              <div>${escapeHtml(item.content || "")}</div>
+                            </div>
+                          `,
+                        )
+                        .join("")
+                    : "아직 메모가 없습니다."
+                }</div>
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      function renderTeamMonitor() {
+        renderMonitorTabs();
+        renderMonitorClues();
+        renderMonitorEvidence();
+        renderMonitorNotes();
+      }
+
+      async function fetchTeamMonitor(includeEvidence) {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+        try {
+          const response = await fetch(`/api/team?group=${selectedMonitorGroup}&evidence=${includeEvidence ? "1" : "0"}`, {
+            cache: "no-store",
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error("team api unavailable");
+          return response.json();
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
+      }
+
+      function applyTeamMonitorPayload(payload) {
+        monitorClueIds = new Set(Array.isArray(payload.clueIds) ? payload.clueIds : []);
+        monitorEvidenceCount = Math.max(0, Number(payload.evidenceCount) || 0);
+        monitorLatestEvidenceId = String(payload.latestEvidenceId || "");
+        if (Array.isArray(payload.evidence)) monitorEvidence = payload.evidence;
+        monitorNotes = payload.notes && typeof payload.notes === "object" ? payload.notes : {};
+        const noteCount = suspects.filter((suspect) => noteItems(monitorNotes[suspect.id]).length).length;
+        teamMonitorStatus.textContent = `${selectedMonitorGroup}조 · 힌트 ${monitorClueIds.size}/${allClues.length} · 증거사진 ${monitorEvidenceCount}장 · 메모 ${noteCount}/${suspects.length} · 자동 갱신 중`;
+        renderTeamMonitor();
+      }
+
+      async function loadTeamMonitor(forceEvidence = false) {
+        if (monitorRequestInFlight) return;
+        monitorRequestInFlight = true;
+        refreshTeamMonitorButton.disabled = true;
+        try {
+          let payload = await fetchTeamMonitor(forceEvidence);
+          const evidenceChanged =
+            !forceEvidence &&
+            (Math.max(0, Number(payload.evidenceCount) || 0) !== monitorEvidenceCount || String(payload.latestEvidenceId || "") !== monitorLatestEvidenceId);
+          if (evidenceChanged) payload = await fetchTeamMonitor(true);
+          applyTeamMonitorPayload(payload);
+        } catch {
+          teamMonitorStatus.textContent = `${selectedMonitorGroup}조 현황을 불러오지 못했습니다. 서버 연결을 확인해주세요.`;
+        } finally {
+          monitorRequestInFlight = false;
+          refreshTeamMonitorButton.disabled = false;
+        }
+      }
+
+      function selectMonitorGroup(groupNumber) {
+        const group = Math.max(1, Math.min(3, Number(groupNumber) || 1));
+        if (group === selectedMonitorGroup && monitorEvidence.length) return;
+        selectedMonitorGroup = group;
+        monitorClueIds = new Set();
+        monitorEvidence = [];
+        monitorEvidenceCount = 0;
+        monitorLatestEvidenceId = "";
+        monitorNotes = {};
+        teamMonitorStatus.textContent = `${group}조 현황을 불러오는 중입니다.`;
+        renderTeamMonitor();
+        loadTeamMonitor(true);
+      }
+
+      function openAdminEvidenceViewer(item) {
+        adminViewerTitle.textContent = `${selectedMonitorGroup}조 · ${item.caption || "증거사진"}`;
+        adminViewerImage.src = item.imageData;
+        adminViewerCopy.textContent = `${item.author || "조원"} · ${formatMonitorDate(item.createdAt)} · ${item.caption || "증거사진"}`;
+        adminPhotoViewer.hidden = false;
+        document.body.classList.add("admin-modal-open");
+      }
+
+      function closeAdminEvidenceViewer() {
+        adminPhotoViewer.hidden = true;
+        adminViewerImage.removeAttribute("src");
+        document.body.classList.remove("admin-modal-open");
+      }
+
+      function parseGroups(text) {
+        const groups = [];
+        String(text || "")
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .forEach((line, index) => {
+            const match = line.match(/^(\d+)\s*(?:조|팀)?\s*[:：-]?\s*(.*)$/);
+            const number = match ? Number(match[1]) : index + 1;
+            const namesText = match ? match[2] : line;
+            const names = namesText
+              .split(/[,，/、\s]+/)
+              .map((name) => name.trim())
+              .filter(Boolean);
+            groups.push({ number, names });
+          });
+        return normalizeGroups(groups);
+      }
+
+      function groupsToText(groups) {
+        return normalizeGroups(groups)
+          .map((group) => `${group.number}조: ${group.names.join(", ")}`)
+          .join("\n");
+      }
+
+      function renderGroupRosterInput(groups) {
+        if (document.activeElement === groupRosterInput) return;
+        groupRosterInput.value = groupsToText(groups);
+      }
+
+      function renderGroupStatus(groups = sharedGroups) {
+        const normalized = normalizeGroups(groups);
+        const total = normalized.reduce((sum, group) => sum + group.names.length, 0);
+        groupStatus.textContent = `조 편성: ${normalized.length}개 조 · ${total}명 등록`;
+      }
+
+      function modeSourceLabel(source) {
+        if (source === "redis") return "공유 서버";
+        if (source === "local-file") return "로컬 서버";
+        if (source === "memory") return "임시 서버";
+        return "서버 동기화";
+      }
+
+      function publishLocalMode(mode, source = "로컬") {
+        const normalized = normalizeGameMode(mode);
+        const changed = localStorage.getItem(gameModeKey) !== normalized || localStorage.getItem("gameMode") !== normalized;
+        if (localStorage.getItem(gameModeKey) !== normalized) localStorage.setItem(gameModeKey, normalized);
+        if (localStorage.getItem("gameMode") !== normalized) localStorage.setItem("gameMode", normalized);
+        if (changed && modeChannel) modeChannel.postMessage({ mode: normalized });
+        renderModeStatus(normalized, source);
+      }
+
+      async function fetchModeApi(options = {}) {
+        const controller = new AbortController();
+        const timeoutMs = String(options.method || "GET").toUpperCase() === "POST" ? 5000 : 1800;
+        const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const response = await fetch("/api/mode", {
+            cache: "no-store",
+            ...options,
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error("mode api unavailable");
+          return response.json();
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
+      }
+
+      async function pushSharedMode(mode) {
+        const normalized = normalizeGameMode(mode);
+        publishLocalMode(normalized, "전송 중");
+        try {
+          const payload = await fetchModeApi({
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: normalized }),
+          });
+          lastAdminModeVersion = Number(payload.version) || lastAdminModeVersion;
+          publishLocalMode(payload.mode, modeSourceLabel(payload.source));
+          sharedTimer = payload.timer;
+          sharedGroups = normalizeGroups(payload.groups);
+          sharedParticipants = normalizeParticipants(payload.participants);
+          sharedRecreation = payload.recreation || { started: false };
+          renderGroupRosterInput(sharedGroups);
+          renderTimerStatus();
+          renderGroupStatus();
+          renderParticipantList();
+          renderRecreationStatus();
+        } catch {
+          renderModeStatus(normalized, "이 브라우저 미리보기");
+        }
+      }
+
+      async function resetEntireGame() {
+        const confirmed = window.confirm(
+          "입장 명단, 조 편성, 타이머, 힌트 획득 기록과 모든 조의 증거사진을 삭제하고 처음 상태로 돌아갑니다. 계속할까요?",
+        );
+        if (!confirmed) return;
+
+        const originalLabel = resetAllGameButton.textContent;
+        resetAllGameButton.disabled = true;
+        resetAllGameButton.textContent = "초기화 중";
+        modeStatus.textContent = "전체 게임 데이터를 초기화하는 중입니다.";
+        try {
+          const payload = await fetchModeApi({
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ resetAll: true }),
+          });
+          lastAdminModeVersion = Number(payload.version) || lastAdminModeVersion;
+          sharedTimer = payload.timer;
+          sharedGroups = normalizeGroups(payload.groups);
+          sharedParticipants = normalizeParticipants(payload.participants);
+          sharedRecreation = payload.recreation || { started: false };
+          state.clueId = null;
+          state.viewed.clear();
+          selectedMonitorGroup = 1;
+          monitorClueIds = new Set();
+          monitorEvidence = [];
+          monitorEvidenceCount = 0;
+          monitorLatestEvidenceId = "";
+          monitorNotes = {};
+          timerMinutesInput.value = 10;
+          publishLocalMode(payload.mode, modeSourceLabel(payload.source));
+          renderGroupRosterInput(sharedGroups);
+          renderTimerStatus();
+          renderGroupStatus();
+          renderParticipantList();
+          renderRecreationStatus();
+          renderTeamMonitor();
+          render();
+          teamMonitorStatus.textContent = "전체 초기화 완료 · 1조 수사 기록 0건";
+          modeStatus.textContent = "전체 초기화 완료 · 참가자 화면: 레크레이션 화면";
+          if (modeChannel) {
+            modeChannel.postMessage({
+              mode: payload.mode,
+              timer: payload.timer,
+              groups: payload.groups,
+              participants: payload.participants,
+              recreation: payload.recreation,
+              sessionId: payload.sessionId,
+            });
+          }
+        } catch {
+          modeStatus.textContent = "전체 초기화 실패 · 서버 연결을 확인해주세요.";
+        } finally {
+          resetAllGameButton.disabled = false;
+          resetAllGameButton.textContent = originalLabel;
+        }
+      }
+
+      async function pushSharedTimer(action) {
+        const minutes = Math.max(1, Math.min(180, Number(timerMinutesInput.value) || 10));
+        timerMinutesInput.value = minutes;
+        const shouldResume = action === "play" && sharedTimer && !sharedTimer.running && getTimerRemaining(sharedTimer) > 0 && getTimerRemaining(sharedTimer) < sharedTimer.durationSeconds;
+        const resolvedAction = action === "play" ? (shouldResume ? "resume" : "start") : action;
+        const timer = { action: resolvedAction, durationSeconds: minutes * 60 };
+        if (resolvedAction === "start") {
+          renderTimerStatus({ durationSeconds: timer.durationSeconds, remainingSeconds: timer.durationSeconds, running: true, endsAt: new Date(Date.now() + timer.durationSeconds * 1000).toISOString() });
+        } else if (resolvedAction === "pause") {
+          renderTimerStatus({ ...sharedTimer, remainingSeconds: getTimerRemaining(sharedTimer), running: false, endsAt: "" });
+        }
+        try {
+          const payload = await fetchModeApi({
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ timer }),
+          });
+          lastAdminModeVersion = Number(payload.version) || lastAdminModeVersion;
+          sharedTimer = payload.timer;
+          renderTimerStatus();
+          if (modeChannel) modeChannel.postMessage({ mode: payload.mode, timer: payload.timer });
+        } catch {
+          timerStatus.textContent = "타이머: 서버 연결 필요";
+        }
+      }
+
+      async function syncSharedMode() {
+        try {
+          const payload = await fetchModeApi();
+          const version = Number(payload.version) || 0;
+          if (sharedTimer && version === lastAdminModeVersion) return;
+          lastAdminModeVersion = version;
+          publishLocalMode(payload.mode, modeSourceLabel(payload.source));
+          sharedTimer = payload.timer;
+          sharedGroups = normalizeGroups(payload.groups);
+          sharedParticipants = normalizeParticipants(payload.participants);
+          sharedRecreation = payload.recreation || { started: false };
+          renderGroupRosterInput(sharedGroups);
+          renderTimerStatus();
+          renderGroupStatus();
+          renderParticipantList();
+          renderRecreationStatus();
+        } catch {
+          renderModeStatus(localStorage.getItem(gameModeKey) || "recreation", "이 브라우저 미리보기");
+        }
+      }
+
+      async function pushSharedGroups() {
+        const groups = parseGroups(groupRosterInput.value);
+        groupRosterInput.value = groupsToText(groups);
+        groupStatus.textContent = "조 편성: 저장 중";
+        try {
+          const payload = await fetchModeApi({
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ groups }),
+          });
+          lastAdminModeVersion = Number(payload.version) || lastAdminModeVersion;
+          sharedGroups = normalizeGroups(payload.groups);
+          groupRosterInput.value = groupsToText(sharedGroups);
+          renderGroupStatus();
+          renderParticipantList();
+          if (modeChannel) modeChannel.postMessage({ mode: payload.mode, timer: payload.timer, groups: payload.groups, recreation: payload.recreation });
+        } catch {
+          groupStatus.textContent = "조 편성: 서버 연결 필요";
+        }
+      }
+
+      async function pushSharedRecreation(started) {
+        sharedRecreation = { started };
+        renderRecreationStatus();
+        try {
+          const payload = await fetchModeApi({
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ recreation: { started } }),
+          });
+          lastAdminModeVersion = Number(payload.version) || lastAdminModeVersion;
+          sharedRecreation = payload.recreation || { started };
+          renderRecreationStatus();
+          if (modeChannel) modeChannel.postMessage({ mode: payload.mode, timer: payload.timer, groups: payload.groups, recreation: payload.recreation });
+        } catch {
+          recreationStatus.textContent = "레크레이션: 서버 연결 필요";
+        }
+      }
+
+      function assignParticipantToGroup(name, groupNumber) {
+        const cleanName = String(name || "").trim();
+        if (!cleanName) return;
+        const groups = normalizeGroups(sharedGroups).map((group) => ({
+          number: group.number,
+          names: group.names.filter((item) => normalizeGroupName(item) !== normalizeGroupName(cleanName)),
+        }));
+        const target = groups.find((group) => group.number === groupNumber) || groups[0];
+        target.names.push(cleanName);
+        sharedGroups = normalizeGroups(groups);
+        groupRosterInput.value = groupsToText(sharedGroups);
+        renderGroupStatus();
+        renderParticipantList();
+        pushSharedGroups();
+      }
+
+      async function renameParticipant(oldName) {
+        const cleanOldName = String(oldName || "").trim();
+        if (!cleanOldName) return;
+        const newName = window.prompt("참가자 이름을 수정하세요.", cleanOldName);
+        if (newName === null) return;
+        const cleanNewName = String(newName || "").trim();
+        if (!cleanNewName || normalizeGroupName(cleanNewName) === normalizeGroupName(cleanOldName)) return;
+
+        const groups = normalizeGroups(sharedGroups).map((group) => ({
+          number: group.number,
+          names: group.names.map((name) => (normalizeGroupName(name) === normalizeGroupName(cleanOldName) ? cleanNewName : name)),
+        }));
+        sharedGroups = normalizeGroups(groups);
+        sharedParticipants = normalizeParticipants(sharedParticipants).map((participant) =>
+          normalizeGroupName(participant.name) === normalizeGroupName(cleanOldName) ? { ...participant, name: cleanNewName } : participant,
+        );
+        groupRosterInput.value = groupsToText(sharedGroups);
+        renderGroupStatus();
+        renderParticipantList();
+        participantStatus.textContent = "입장 명단: 이름 저장 중";
+
+        try {
+          const payload = await fetchModeApi({
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              participant: { action: "rename", oldName: cleanOldName, newName: cleanNewName },
+              groups: sharedGroups,
+            }),
+          });
+          lastAdminModeVersion = Number(payload.version) || lastAdminModeVersion;
+          sharedGroups = normalizeGroups(payload.groups);
+          sharedParticipants = normalizeParticipants(payload.participants);
+          groupRosterInput.value = groupsToText(sharedGroups);
+          renderGroupStatus();
+          renderParticipantList();
+          if (modeChannel) {
+            modeChannel.postMessage({ mode: payload.mode, timer: payload.timer, groups: payload.groups, participants: payload.participants, recreation: payload.recreation });
+          }
+        } catch {
+          participantStatus.textContent = "입장 명단: 이름 저장 실패";
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function findClue(id) {
+        for (const suspect of suspects) {
+          const clue = suspect.clues.find((item) => item.id === id);
+          if (clue) return { suspect, clue };
+        }
+        return { suspect: suspects[0], clue: null };
+      }
+
+      function renderClueGrid() {
+        clueGridEl.innerHTML = suspects
+          .map((suspect) => {
+            const opened = suspect.clues.filter((clue) => state.viewed.has(clue.id)).length;
+            return `
+              <section class="person-column">
+                <div class="person-head">
+                  <div class="person-portrait">
+                    <img src="${escapeHtml(suspect.portrait)}" alt="${escapeHtml(suspect.name)} 가상 인물 이미지" loading="lazy" decoding="async" />
+                  </div>
+                  <div class="person-id"><span>${suspect.id}</span><span>${opened} / ${suspect.clues.length}</span></div>
+                  <div class="person-name">${suspect.name}</div>
+                  <div class="person-role">직업: ${suspect.role}<br>나이: ${suspect.age}<br>성별: ${suspect.gender}</div>
+                </div>
+                <div class="matrix-clues">
+                  ${suspect.clues
+                    .map((clue) => {
+                      const active = clue.id === state.clueId ? "active" : "";
+                      const viewed = state.viewed.has(clue.id) ? "viewed" : "";
+                      const locked = state.viewed.has(clue.id) ? "" : "locked";
+                      return `
+                        <button class="matrix-clue ${active} ${viewed} ${locked}" type="button" data-clue="${clue.id}">
+                          <span class="clue-number">${clue.hint}</span>
+                          <span>
+                            <span class="clue-title">${state.viewed.has(clue.id) ? clue.title : clue.hint}</span>
+                            <span class="clue-sub">${state.viewed.has(clue.id) ? clue.short : "힌트 코드 입력 필요"}</span>
+                          </span>
+                        </button>
+                      `;
+                    })
+                    .join("")}
+                </div>
+              </section>
+            `;
+          })
+          .join("");
+
+        document.querySelectorAll("[data-clue]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const clueId = button.dataset.clue;
+            if (!state.viewed.has(clueId)) {
+              state.clueId = null;
+              codeMessage.textContent = "잠긴 힌트입니다. 현장에서 얻은 힌트 코드를 입력해야 열립니다.";
+              codeMessage.classList.add("error");
+              render();
+              return;
+            }
+            state.clueId = clueId;
+            codeMessage.textContent = "이미 해제된 힌트를 다시 열람 중입니다.";
+            codeMessage.classList.remove("error");
+            render();
+          });
+        });
+      }
+
+      function renderCaseNote(suspect, clue) {
+        caseNoteEl.innerHTML = `
+          <div class="case-note-inner">
+            <div class="case-note-portrait">
+              <img src="${escapeHtml(suspect.portrait)}" alt="${escapeHtml(suspect.name)} 가상 인물 이미지" loading="lazy" decoding="async" />
+            </div>
+            <div class="profile-label">${suspect.id} · ${clue ? clue.hint : "힌트 선택 대기"}</div>
+            <h2>${suspect.name}</h2>
+            <div class="profile-grid" style="margin-top: 1rem;">
+              <div class="profile-field">
+                <div class="field-name">직업</div>
+                <div class="field-value">${suspect.role}</div>
+              </div>
+              <div class="profile-field">
+                <div class="field-name">나이</div>
+                <div class="field-value">${suspect.age}</div>
+              </div>
+              <div class="profile-field">
+                <div class="field-name">성별</div>
+                <div class="field-value">${suspect.gender}</div>
+              </div>
+              <div class="profile-field">
+                <div class="field-name">소개</div>
+                <div class="field-value">${suspect.summary}</div>
+              </div>
+              <div class="profile-field">
+                <div class="field-name">동기</div>
+                <div class="field-value">${suspect.motive}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function waveBars() {
+        const heights = [22, 42, 18, 58, 33, 68, 29, 48, 76, 34, 54, 21, 63, 38, 72, 26, 46, 60, 31, 52, 19, 66, 41, 28];
+        return heights.map((height) => `<span style="--h:${height}"></span>`).join("");
+      }
+
+      function renderArtifact(clue) {
+        if (!clue) {
+          return `
+            <div class="evidence-head">
+              <div class="evidence-title">증거 미선택</div>
+              <div class="evidence-id">----</div>
+            </div>
+            <div class="evidence-body">
+              <div class="empty-evidence">위 매트릭스에서 인물별 힌트 1~3 중 하나를 선택하세요.<br>총 12개의 힌트를 비교해 범인과 수단을 추리합니다.</div>
+            </div>
+          `;
+        }
+
+        const header = `
+          <div class="evidence-head">
+            <div class="evidence-title">${clue.title}</div>
+            <div class="evidence-id">${clue.id}</div>
+          </div>
+        `;
+        const imageBlock = clue.image && clue.render !== "audio" && !clue.audioSrc
+          ? `
+            <figure class="evidence-photo-strip ${clue.imageMode === "full" ? "full" : ""}">
+              <img src="${escapeHtml(clue.image)}" alt="${escapeHtml(clue.title)} 증거 사진" loading="lazy" decoding="async" />
+              <figcaption>${escapeHtml(clue.artifactTitle)}</figcaption>
+            </figure>
+          `
+          : "";
+
+        let artifact = "";
+        if (clue.imageOnly) {
+          artifact = "";
+        } else if (clue.render === "audio") {
+          artifact = `
+            <div class="artifact audio">
+              ${
+                clue.audioSrc
+                  ? `<div class="evidence-audio">
+                      <div class="evidence-audio-label">녹음 파일</div>
+                      <audio controls preload="metadata" src="${escapeHtml(clue.audioSrc)}"></audio>
+                    </div>`
+                  : `<div class="wave">${waveBars()}</div>
+                    <div class="transcript">
+                      ${clue.lines
+                        .map(
+                          ([speaker, speech]) => `
+                            <div class="line">
+                              <div class="speaker">${escapeHtml(speaker)}</div>
+                              <div class="speech">${escapeHtml(speech)}</div>
+                            </div>
+                          `,
+                        )
+                        .join("")}
+                    </div>`
+              }
+            </div>
+          `;
+        }
+
+        if (clue.render === "photo") {
+          artifact = `
+            <div class="artifact photo">
+              <div class="photo-frame"></div>
+              <div class="photo-caption">${escapeHtml(clue.artifactTitle)}<br>${escapeHtml(clue.body)}</div>
+            </div>
+          `;
+        }
+
+        if (clue.render === "chat") {
+          artifact = `
+            <div class="artifact chat">
+              <div class="chat-top">${escapeHtml(clue.artifactTitle)}</div>
+              ${clue.messages
+                .map((message) => `<div class="bubble ${message[0] === "right" ? "right" : ""}">${escapeHtml(message[1])}</div>`)
+                .join("")}
+            </div>
+          `;
+        }
+
+        if (clue.render === "item") {
+          artifact = `
+            <div class="artifact item">
+              <div class="evidence-tag">${escapeHtml(clue.artifactTitle)}</div>
+              <div class="item-sketch">${escapeHtml(clue.sketch)}</div>
+              <div>${escapeHtml(clue.body)}</div>
+            </div>
+          `;
+        }
+
+        if (clue.render === "book") {
+          artifact = `
+            <div class="artifact book">
+              <div class="chat-top">${escapeHtml(clue.artifactTitle)}</div>
+              ${clue.rows
+                .map(
+                  (row) => `
+                    <div class="ledger-row">
+                      <span>${escapeHtml(row[0])}</span>
+                      <span>${escapeHtml(row[1])}</span>
+                      <strong>${escapeHtml(row[2])}</strong>
+                    </div>
+                  `,
+                )
+                .join("")}
+            </div>
+          `;
+        }
+
+        return `
+          ${header}
+          <div class="evidence-body">
+            ${imageBlock}
+            ${artifact}
+            <div class="readout"><strong>수사 메모</strong><br>${escapeHtml(clue.readout)}</div>
+          </div>
+        `;
+      }
+
+      function renderProgress() {
+        progressTextEl.textContent = `${state.viewed.size} / ${allClues.length}`;
+        locksEl.innerHTML = allClues
+          .map((clue) => `<div class="lock ${state.viewed.has(clue.id) ? "open" : ""}"></div>`)
+          .join("");
+      }
+
+      function render() {
+        const { suspect, clue } = findClue(state.clueId);
+        renderClueGrid();
+        renderCaseNote(suspect, clue);
+        evidenceEl.innerHTML = renderArtifact(clue);
+        renderProgress();
+      }
+
+      function unlockHintCode(rawCode) {
+        const code = rawCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+        const clue = codeMap.get(code);
+        if (!clue) {
+          state.clueId = null;
+          codeMessage.textContent = "일치하는 힌트 코드가 없습니다. 코드의 영문과 숫자를 다시 확인하세요.";
+          codeMessage.classList.add("error");
+          render();
+          return false;
+        }
+
+        state.viewed.add(clue.id);
+        state.clueId = clue.id;
+        codeMessage.textContent = `${code} 코드가 승인되었습니다. 해당 힌트가 해제되었습니다.`;
+        codeMessage.classList.remove("error");
+        render();
+        return true;
+      }
+
+      window.unlockHintCode = unlockHintCode;
+
+      codeForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (unlockHintCode(hintCodeInput.value)) {
+          hintCodeInput.value = "";
+        }
+      });
+
+      startCrimeModeButton.addEventListener("click", () => pushSharedMode("crime"));
+      resetRecreationModeButton.addEventListener("click", () => pushSharedMode("recreation"));
+      resetAllGameButton.addEventListener("click", resetEntireGame);
+      startRecreationButton.addEventListener("click", () => pushSharedRecreation(true));
+      pauseRecreationButton.addEventListener("click", () => pushSharedRecreation(false));
+      startTimerButton.addEventListener("click", () => pushSharedTimer("play"));
+      stopTimerButton.addEventListener("click", () => pushSharedTimer("pause"));
+      resetTimerButton.addEventListener("click", () => pushSharedTimer("reset"));
+      clearTimerButton.addEventListener("click", () => pushSharedTimer("clear"));
+      saveGroupsButton.addEventListener("click", pushSharedGroups);
+      document.querySelector(".team-tabs").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-monitor-group]");
+        if (!button) return;
+        selectMonitorGroup(Number(button.dataset.monitorGroup));
+      });
+      refreshTeamMonitorButton.addEventListener("click", () => loadTeamMonitor(true));
+      adminEvidenceGrid.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-admin-evidence]");
+        if (!button) return;
+        const item = monitorEvidence.find((entry) => entry.id === button.dataset.adminEvidence);
+        if (item) openAdminEvidenceViewer(item);
+      });
+      closeAdminViewerButton.addEventListener("click", closeAdminEvidenceViewer);
+      adminPhotoViewer.addEventListener("click", (event) => {
+        if (event.target === adminPhotoViewer) closeAdminEvidenceViewer();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !adminPhotoViewer.hidden) closeAdminEvidenceViewer();
+      });
+      participantList.addEventListener("click", (event) => {
+        const editButton = event.target.closest("[data-edit-participant]");
+        if (editButton) {
+          renameParticipant(editButton.dataset.editParticipant);
+          return;
+        }
+        const button = event.target.closest("[data-assign-group]");
+        if (!button) return;
+        assignParticipantToGroup(button.dataset.participant, Number(button.dataset.assignGroup));
+      });
+      window.addEventListener("storage", (event) => {
+        if (event.key === gameModeKey || event.key === "gameMode") {
+          renderModeStatus(event.newValue || "recreation", "이 브라우저 미리보기");
+        }
+      });
+      if (modeChannel) {
+        modeChannel.addEventListener("message", (event) => {
+          if (event.data?.mode) renderModeStatus(event.data.mode, "이 브라우저 미리보기");
+          if (event.data?.timer) {
+            sharedTimer = event.data.timer;
+            renderTimerStatus();
+          }
+          if (event.data?.groups) {
+            sharedGroups = normalizeGroups(event.data.groups);
+            renderGroupRosterInput(sharedGroups);
+            renderGroupStatus();
+            renderParticipantList();
+          }
+          if (event.data?.participants) {
+            sharedParticipants = normalizeParticipants(event.data.participants);
+            renderParticipantList();
+          }
+          if (event.data?.recreation) {
+            sharedRecreation = event.data.recreation;
+            renderRecreationStatus();
+          }
+        });
+      }
+
+      syncSharedMode();
+      renderTeamMonitor();
+      loadTeamMonitor(true);
+      setInterval(syncSharedMode, 1800);
+      setInterval(() => loadTeamMonitor(false), 2500);
+      setInterval(renderTimerStatus, 1000);
+      renderParticipantList();
+      renderRecreationStatus();
+      render();
+    </script>
+  </body>
+</html>

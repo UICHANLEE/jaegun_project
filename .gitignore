@@ -1,7 +1,10 @@
 .env
+.DS_Store
 __pycache__/
 *.py[cod]
 .runtime/
 .vercel/
 node_modules/
 dist/
+outputs/.DS_Store
+outputs/video/

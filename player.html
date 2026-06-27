@@ -1288,6 +1288,62 @@
         line-height: 1.45;
       }
 
+      .note-profile {
+        display: grid;
+        grid-template-columns: 92px 1fr;
+        gap: 0.78rem;
+        align-items: stretch;
+        margin-bottom: 0.78rem;
+        border: 1px solid rgba(232, 196, 119, 0.2);
+        background:
+          linear-gradient(135deg, rgba(232, 196, 119, 0.08), transparent 46%),
+          rgba(255, 255, 255, 0.035);
+      }
+
+      .note-profile img {
+        width: 100%;
+        height: 100%;
+        min-height: 132px;
+        object-fit: cover;
+        border-right: 1px solid rgba(232, 196, 119, 0.2);
+      }
+
+      .note-profile-copy {
+        display: grid;
+        gap: 0.48rem;
+        align-content: center;
+        min-width: 0;
+        padding: 0.78rem 0.76rem 0.78rem 0;
+      }
+
+      .note-profile-name {
+        color: var(--text);
+        font-size: 1.22rem;
+        font-weight: 950;
+        line-height: 1.1;
+      }
+
+      .note-profile-meta {
+        color: var(--muted);
+        font-size: 0.73rem;
+        font-weight: 850;
+        line-height: 1.45;
+      }
+
+      .note-profile-section {
+        display: grid;
+        gap: 0.18rem;
+        color: var(--text);
+        font-size: 0.78rem;
+        line-height: 1.5;
+      }
+
+      .note-profile-section b {
+        color: var(--gold);
+        font-size: 0.68rem;
+        letter-spacing: 0.04em;
+      }
+
       .note-thread {
         display: grid;
         gap: 0.58rem;
@@ -1507,6 +1563,23 @@
 
         .word-card-grid {
           grid-template-columns: 1fr;
+        }
+
+        .note-profile {
+          grid-template-columns: 84px 1fr;
+          gap: 0.64rem;
+        }
+
+        .note-profile img {
+          min-height: 122px;
+        }
+
+        .note-profile-copy {
+          padding: 0.68rem 0.62rem 0.68rem 0;
+        }
+
+        .note-profile-name {
+          font-size: 1.08rem;
         }
       }
 
@@ -1756,6 +1829,7 @@
           <button class="sheet-close" type="button" data-close-evidence="note">닫기</button>
         </div>
         <div class="sheet-body">
+          <div class="note-profile" id="teamNoteProfile"></div>
           <div class="note-thread" id="teamNoteEntries"></div>
           <textarea class="note-editor" id="teamNoteInput" maxlength="1200" placeholder="새 메모 추가: 의심점, 알리바이, 반박 근거를 적어보세요."></textarea>
           <div class="note-meta" id="teamNoteMeta">같은 조원에게만 공유됩니다.</div>
@@ -1793,6 +1867,8 @@
           age: "32세",
           gender: "남성",
           portrait: "assets/portrait-hong-gangdo.jpg",
+          summary: "너무 많은 사역으로 지치고 병든 나",
+          motive: "사례를 올려달라고 요청하다가 핀잔만 듣고 나옴.",
           clues: [
             {
               id: "H01",
@@ -1829,7 +1905,6 @@
               type: "AUDIO",
               title: "사례비 대화 녹취",
               short: "목사님과 전도사님의 대화 일부",
-              image: "assets/evidence-allergy-peanut.jpg",
               artifactTitle: "사례비 대화 녹취 파일",
               audioSrc: "assets/pastor-minister-call.m4a",
               lines: [
@@ -1848,6 +1923,8 @@
           age: "55세",
           gender: "여성",
           portrait: "assets/portrait-lee-biri.jpg",
+          summary: "불의를 보면 참지 않음",
+          motive: "목사님의 비리를 알고 폭로하겠다고 찾아감.",
           clues: [
             {
               id: "H05",
@@ -1856,8 +1933,8 @@
               type: "AUDIO",
               title: "화내는 음성",
               short: "복도에서 녹음된 비리 폭로 암시 음성",
-              image: "assets/evidence-finance-ledger.jpg",
               artifactTitle: "복도에서 화내는 음성",
+              audioSrc: "assets/lee-biri-argument.m4a",
               lines: [
                 ["이비리", "목사님, 이 장부 제가 다 봤습니다. 그냥 넘어갈 문제가 아니에요."],
                 ["목사님", "예배 전에 소란 만들지 마세요."],
@@ -1900,10 +1977,12 @@
         {
           id: "P03",
           name: "서신자",
-          role: "새신자",
+          role: "신도(?)",
           age: "23세",
           gender: "여성",
           portrait: "assets/portrait-seo-shinja.jpg",
+          summary: "얼마 전에 새로 온 새신자",
+          motive: "최근 청년들과 관계가 좋지 못해 목사님을 찾아갔지만 나의 문제라고 꾸중을 들음.",
           clues: [
             {
               id: "H09",
@@ -1950,10 +2029,12 @@
         {
           id: "P04",
           name: "박간호",
-          role: "간호사 / 최초 발견자",
+          role: "간호사",
           age: "24세",
           gender: "여성",
           portrait: "assets/portrait-park-ganho.jpg",
+          summary: "최초 발견자",
+          motive: "3연속 나이트 근무를 한 후 다음날 데이 근무를 위해 잠을 청하지만 들려오는 옆 교회 찬양소리.",
           clues: [
             {
               id: "H13",
@@ -1962,7 +2043,6 @@
               type: "AUDIO",
               title: "혼잣말 녹음",
               short: "찬양 BGM 때문에 잠을 못 자는 짜증 섞인 음성",
-              image: "assets/evidence-nurse-bag.jpg",
               artifactTitle: "혼잣말 녹음 파일",
               audioSrc: "assets/park-ganho-memo.m4a",
               lines: [
@@ -2134,6 +2214,7 @@
       const teamNoteSheet = document.querySelector("#teamNoteSheet");
       const teamNoteTitle = document.querySelector("#teamNoteTitle");
       const teamNoteSubtitle = document.querySelector("#teamNoteSubtitle");
+      const teamNoteProfile = document.querySelector("#teamNoteProfile");
       const teamNoteEntries = document.querySelector("#teamNoteEntries");
       const teamNoteInput = document.querySelector("#teamNoteInput");
       const teamNoteMeta = document.querySelector("#teamNoteMeta");
@@ -2407,6 +2488,30 @@
           .join("");
       }
 
+      function renderNoteProfile(suspect) {
+        teamNoteProfile.innerHTML = `
+          <img src="${escapeHtml(suspect.portrait)}" alt="${escapeHtml(suspect.name)} 프로필 사진" loading="lazy" decoding="async" />
+          <div class="note-profile-copy">
+            <div>
+              <div class="person-id">${escapeHtml(suspect.id)}</div>
+              <div class="note-profile-name">${escapeHtml(suspect.name)}</div>
+            </div>
+            <div class="note-profile-meta">
+              나이: ${escapeHtml(suspect.age)}<br>
+              직업: ${escapeHtml(suspect.role)}
+            </div>
+            <div class="note-profile-section">
+              <b>소개</b>
+              <span>${escapeHtml(suspect.summary || "")}</span>
+            </div>
+            <div class="note-profile-section">
+              <b>동기</b>
+              <span>${escapeHtml(suspect.motive || "")}</span>
+            </div>
+          </div>
+        `;
+      }
+
       function renderTeamNoteSheet() {
         const suspect = findSuspectById(activeNoteSuspectId);
         if (!suspect) return;
@@ -2416,6 +2521,7 @@
         const latest = items.at(-1);
         teamNoteTitle.textContent = `${suspect.name} 추리 메모`;
         teamNoteSubtitle.textContent = group ? `${group.number}조 공동 기록` : "조 배정 필요";
+        renderNoteProfile(suspect);
         renderNoteEntries(items);
         teamNoteMeta.textContent = latest
           ? `최근 메모: ${latest.author || "조원"} · ${formatEvidenceDate(latest.createdAt)}`
@@ -3033,7 +3139,7 @@
               ${
                 clue.audioSrc
                   ? `<div class="evidence-audio">
-                      <div class="evidence-audio-label">실제 통화 녹음</div>
+                      <div class="evidence-audio-label">녹음 파일</div>
                       <audio controls preload="metadata" src="${escapeHtml(clue.audioSrc)}"></audio>
                     </div>`
                   : clue.lines
@@ -3067,16 +3173,22 @@
           artifact = `<div class="artifact paper">${escapeHtml(clue.body)}</div>`;
         }
 
+        const imageBlock = clue.image && !clue.audioSrc
+          ? `
+            <figure class="photo-strip ${clue.imageMode === "full" ? "full" : ""}">
+              <img src="${escapeHtml(clue.image)}" alt="${escapeHtml(clue.title)} 증거 이미지" loading="lazy" decoding="async" />
+              <figcaption>${escapeHtml(clue.artifactTitle)}</figcaption>
+            </figure>
+          `
+          : "";
+
         return `
           <div class="evidence-head">
             <div class="evidence-title">${escapeHtml(clue.title)}</div>
             <div class="evidence-id">${escapeHtml(clue.id)}</div>
           </div>
           <div class="evidence-body">
-            <figure class="photo-strip ${clue.imageMode === "full" ? "full" : ""}">
-              <img src="${escapeHtml(clue.image)}" alt="${escapeHtml(clue.title)} 증거 이미지" loading="lazy" decoding="async" />
-              <figcaption>${escapeHtml(clue.artifactTitle)}</figcaption>
-            </figure>
+            ${imageBlock}
             ${artifact}
             <div class="readout"><strong>수사 메모</strong><br>${escapeHtml(clue.readout)}</div>
           </div>
