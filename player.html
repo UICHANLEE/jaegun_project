@@ -1360,11 +1360,31 @@
         line-height: 1.5;
       }
 
+      .gallery-state.attention-pulse {
+        border-color: rgba(255, 213, 118, 0.78);
+        color: #ffe6a3;
+        background:
+          linear-gradient(90deg, rgba(255, 213, 118, 0.16), transparent 72%),
+          rgba(255, 213, 118, 0.06);
+        animation: attentionRing 1.05s ease-in-out infinite;
+      }
+
       .team-gallery {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.62rem;
         margin-top: 0.72rem;
+      }
+
+      .evidence-overlay.gallery-alert .evidence-sheet {
+        border-color: rgba(255, 213, 118, 0.62);
+        box-shadow:
+          0 28px 80px rgba(0, 0, 0, 0.66),
+          0 0 34px rgba(255, 213, 118, 0.16);
+      }
+
+      .evidence-overlay.gallery-alert .sheet-title {
+        color: #ffe6a3;
       }
 
       .gallery-item {
@@ -2184,6 +2204,9 @@
         attentionClueIds = new Set();
         attentionEvidenceIds = new Set();
         latestKnownEvidenceId = "";
+        openGalleryButton.classList.remove("attention-pulse");
+        teamGallerySheet.classList.remove("gallery-alert");
+        teamGalleryStatus.classList.remove("attention-pulse");
         lastTeamProgressSignature = "";
         teamProgressRetryAfter = 0;
         lastTeamClueFetchAt = 0;
@@ -2545,11 +2568,14 @@
         if (!id) return;
         attentionEvidenceIds.add(id);
         openGalleryButton.classList.add("attention-pulse");
+        teamGallerySheet.classList.add("gallery-alert");
         evidenceShareStatus.textContent = "새 증거가 우리 조 증거함에 도착했습니다.";
         evidenceShareStatus.classList.remove("error");
         window.setTimeout(() => {
           attentionEvidenceIds.delete(id);
           openGalleryButton.classList.toggle("attention-pulse", attentionEvidenceIds.size > 0);
+          teamGallerySheet.classList.toggle("gallery-alert", attentionEvidenceIds.size > 0);
+          teamGalleryStatus.classList.toggle("attention-pulse", attentionEvidenceIds.size > 0);
           if (!attentionEvidenceIds.size) renderTeamEvidence();
         }, 12000);
       }
@@ -2679,6 +2705,9 @@
 
       function renderTeamEvidence() {
         const group = findParticipantGroup();
+        const hasNewEvidence = attentionEvidenceIds.size > 0;
+        teamGallerySheet.classList.toggle("gallery-alert", hasNewEvidence);
+        teamGalleryStatus.classList.toggle("attention-pulse", hasNewEvidence);
         teamGallerySubtitle.textContent = group ? `${group.number}조 공동 수집 기록` : "조 배정 필요";
         if (!teamEvidenceItems.length) {
           teamGalleryGrid.innerHTML = "";
@@ -2686,7 +2715,9 @@
           return;
         }
 
-        teamGalleryStatus.textContent = `최근 증거 ${teamEvidenceItems.length}장 · 사진을 누르면 크게 볼 수 있습니다.`;
+        teamGalleryStatus.textContent = hasNewEvidence
+          ? `새 증거 ${attentionEvidenceIds.size}장 도착 · 반짝이는 사진을 눌러 확인하세요.`
+          : `최근 증거 ${teamEvidenceItems.length}장 · 사진을 누르면 크게 볼 수 있습니다.`;
         teamGalleryGrid.innerHTML = teamEvidenceItems
           .map(
             (item) => `
@@ -2733,17 +2764,19 @@
           return;
         }
         evidenceShareStatus.classList.remove("error");
-        attentionEvidenceIds.clear();
         openGalleryButton.classList.remove("attention-pulse");
         openEvidenceOverlay(teamGallerySheet);
         await loadTeamEvidence();
       }
 
       function openEvidenceViewer(item) {
+        attentionEvidenceIds.delete(String(item.id || ""));
+        openGalleryButton.classList.toggle("attention-pulse", attentionEvidenceIds.size > 0);
         evidenceViewerTitle.textContent = item.caption || "증거 사진";
         evidenceViewerByline.textContent = `${item.author || "조원"} · ${formatEvidenceDate(item.createdAt)}`;
         evidenceViewerImage.src = item.imageData;
         evidenceViewerCopy.textContent = item.caption || "증거 사진";
+        renderTeamEvidence();
         openEvidenceOverlay(evidencePhotoViewer);
       }
 
@@ -2753,7 +2786,7 @@
         retakeEvidenceButton.disabled = true;
         setCaptureStatus("우리 조 증거함에 저장하는 중입니다.");
         try {
-          await evidenceApi("/api/evidence", {
+          const savedPayload = await evidenceApi("/api/evidence", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -2762,6 +2795,7 @@
               imageData: pendingEvidenceImage,
             }),
           });
+          markEvidenceAttention(savedPayload.item?.id);
           pendingEvidenceImage = "";
           captureEvidencePreview.removeAttribute("src");
           evidenceCaptionInput.value = "";
@@ -3204,6 +3238,9 @@
         attentionClueIds = new Set();
         attentionEvidenceIds = new Set();
         latestKnownEvidenceId = "";
+        openGalleryButton.classList.remove("attention-pulse");
+        teamGallerySheet.classList.remove("gallery-alert");
+        teamGalleryStatus.classList.remove("attention-pulse");
         lastTeamProgressSignature = "";
         teamProgressRetryAfter = 0;
         lastTeamClueFetchAt = 0;
