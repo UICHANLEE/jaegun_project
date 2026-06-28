@@ -1020,6 +1020,21 @@
         line-height: 1.7;
       }
 
+      .request-only {
+        display: grid;
+        min-height: 260px;
+        place-items: center;
+        border: 1px solid rgba(232, 196, 119, 0.24);
+        background:
+          linear-gradient(180deg, rgba(232, 196, 119, 0.08), transparent 58%),
+          rgba(6, 10, 10, 0.72);
+        color: #ffffff;
+        font-size: clamp(1.7rem, 8vw, 2.9rem);
+        font-weight: 950;
+        line-height: 1.08;
+        text-align: center;
+      }
+
       .photo-strip {
         margin: 0 0 0.82rem;
         padding: 0.48rem;
@@ -2301,6 +2316,7 @@
       const allClues = suspects.flatMap((suspect) => suspect.clues);
       const validClueIds = new Set(allClues.map((clue) => clue.id));
       state.viewed = new Set([...state.viewed].filter((id) => validClueIds.has(id)));
+      const requestOnlyCodes = new Set(["SILOAM73", "KAIROS18", "TITHE68", "LEDGER31", "TALITHA86", "MANNA57"]);
       const codeMap = new Map(allClues.map((clue) => [clue.code, clue]));
       const suspectsEl = document.querySelector("#suspects");
       const evidenceEl = document.querySelector("#evidence");
@@ -3249,13 +3265,14 @@
                   ${suspect.clues
                     .map((clue) => {
                       const openedClue = state.viewed.has(clue.id);
+                      const requestOnly = openedClue && requestOnlyCodes.has(clue.code);
                       const attention = attentionClueIds.has(clue.id) ? "attention-pulse" : "";
                       return `
                         <button class="hint-button ${openedClue ? "open" : ""} ${attention}" type="button" data-clue="${clue.id}">
                           <span class="hint-no">${clue.hint}</span>
                           <span>
-                            <span class="hint-title">${openedClue ? clue.title : clue.hint}</span>
-                            <span class="hint-sub">${openedClue ? clue.short : "힌트 코드 입력 필요"}</span>
+                            <span class="hint-title">${requestOnly ? "용의자에게 요청하세요" : openedClue ? clue.title : clue.hint}</span>
+                            ${requestOnly ? "" : `<span class="hint-sub">${openedClue ? clue.short : "힌트 코드 입력 필요"}</span>`}
                           </span>
                         </button>
                       `;
@@ -3299,6 +3316,14 @@
             </div>
             <div class="evidence-body">
               <div class="empty">힌트코드를 입력하면 증거가 열립니다.</div>
+            </div>
+          `;
+        }
+
+        if (requestOnlyCodes.has(clue.code)) {
+          return `
+            <div class="evidence-body">
+              <div class="request-only">용의자에게<br>요청하세요</div>
             </div>
           `;
         }
