@@ -512,7 +512,7 @@
 
       .word-card-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
         gap: 0.42rem;
       }
 
@@ -532,11 +532,58 @@
         text-align: left;
       }
 
-      .word-option.selected {
+      .word-option.assigned {
         border-color: rgba(255, 158, 67, 0.72);
         color: #ffffff;
         background: linear-gradient(180deg, #ffb45d, #cf7132);
         box-shadow: 0 10px 24px rgba(207, 113, 50, 0.18);
+      }
+
+      .word-scan-actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+      }
+
+      .word-scan-button,
+      .word-qr-link {
+        min-height: 48px;
+        border: 1px solid rgba(37, 80, 111, 0.28);
+        border-radius: 0;
+        padding: 0.62rem 0.74rem;
+        color: #ffffff;
+        background: linear-gradient(180deg, #3f87b2, #25506f);
+        font: inherit;
+        font-size: 0.84rem;
+        font-weight: 950;
+        text-align: center;
+        text-decoration: none;
+      }
+
+      .word-qr-link {
+        display: grid;
+        place-items: center;
+        min-width: 88px;
+        color: #25506f;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .word-scan-button:disabled {
+        border-color: rgba(37, 80, 111, 0.14);
+        color: rgba(37, 80, 111, 0.45);
+        background: rgba(255, 255, 255, 0.52);
+      }
+
+      .word-scan-status {
+        min-height: 20px;
+        color: #58728a;
+        font-size: 0.76rem;
+        font-weight: 850;
+        line-height: 1.45;
+      }
+
+      .word-scan-status.error {
+        color: #b84d35;
       }
 
       .word-qr {
@@ -616,7 +663,9 @@
       }
 
       body[data-recreation-started="false"] .word-card-grid,
-      body[data-recreation-started="false"] .word-card {
+      body[data-recreation-started="false"] .word-card,
+      body[data-recreation-started="false"] .word-scan-actions,
+      body[data-recreation-started="false"] .word-scan-status {
         display: none;
       }
 
@@ -1274,6 +1323,15 @@
         box-shadow: 0 0 0 3px rgba(105, 198, 189, 0.14);
       }
 
+      .qr-scanner-video {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 5;
+        border: 1px solid rgba(232, 196, 119, 0.24);
+        background: #020505;
+        object-fit: cover;
+      }
+
       .note-editor {
         width: 100%;
         min-height: 120px;
@@ -1763,8 +1821,13 @@
             <div class="word-count" id="wordCount">선택 대기</div>
           </div>
           <div class="word-start-wait" id="wordStartWait">진행자 시작 대기</div>
+          <div class="word-scan-actions">
+            <button class="word-scan-button" type="button" id="scanWordQrButton">QR 스캔하기</button>
+            <a class="word-qr-link" href="qr-word.html" target="_blank" rel="noopener">QR 보기</a>
+          </div>
+          <div class="word-scan-status" id="wordScanStatus">QR을 스캔하면 우리 조 제시어 카드가 등장합니다.</div>
           <div class="word-card-grid" id="wordCardGrid"></div>
-          <div class="word-card" id="wordCard">제시어 카드를 선택하세요</div>
+          <div class="word-card" id="wordCard">QR을 스캔하면 제시어 카드가 등장합니다</div>
         </div>
         <div class="mode-wait" id="modeWait">진행자 신호 대기</div>
       </div>
@@ -1834,6 +1897,26 @@
         <div class="sheet-actions">
           <button class="sheet-button secondary" type="button" id="retakeEvidenceButton">다시 촬영</button>
           <button class="sheet-button" type="button" id="saveEvidenceButton">증거함에 저장</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="evidence-overlay" id="wordQrScannerSheet" role="dialog" aria-modal="true" aria-labelledby="wordQrScannerTitle" hidden>
+      <div class="evidence-sheet">
+        <div class="sheet-head">
+          <div>
+            <div class="sheet-title" id="wordQrScannerTitle">QR 스캔</div>
+            <div class="sheet-subtitle">그림그리기 제시어 카드</div>
+          </div>
+          <button class="sheet-close" type="button" data-close-evidence="word-qr">닫기</button>
+        </div>
+        <div class="sheet-body">
+          <video class="qr-scanner-video" id="wordQrVideo" autoplay muted playsinline></video>
+          <div class="field-status" id="wordQrScannerStatus" aria-live="polite">카메라로 QR 코드를 비춰주세요.</div>
+        </div>
+        <div class="sheet-actions">
+          <button class="sheet-button secondary" type="button" id="stopWordQrScanButton">스캔 닫기</button>
+          <a class="sheet-button" href="qr-word.html" target="_blank" rel="noopener">QR 링크 보기</a>
         </div>
       </div>
     </section>
@@ -2202,6 +2285,13 @@
         const cleanUrl = `${window.location.pathname}${urlParams.toString() ? `?${urlParams.toString()}` : ""}`;
         window.history.replaceState(null, "", cleanUrl);
       }
+      const pendingDrawingQrFromUrl = urlParams.get("draw") === "next" || urlParams.get("qr") === "draw";
+      if (pendingDrawingQrFromUrl) {
+        urlParams.delete("draw");
+        urlParams.delete("qr");
+        const cleanUrl = `${window.location.pathname}${urlParams.toString() ? `?${urlParams.toString()}` : ""}`;
+        window.history.replaceState(null, "", cleanUrl);
+      }
 
       const state = {
         clueId: null,
@@ -2223,6 +2313,12 @@
       const wordCardGrid = document.querySelector("#wordCardGrid");
       const wordCard = document.querySelector("#wordCard");
       const wordCount = document.querySelector("#wordCount");
+      const scanWordQrButton = document.querySelector("#scanWordQrButton");
+      const wordScanStatus = document.querySelector("#wordScanStatus");
+      const wordQrScannerSheet = document.querySelector("#wordQrScannerSheet");
+      const wordQrVideo = document.querySelector("#wordQrVideo");
+      const wordQrScannerStatus = document.querySelector("#wordQrScannerStatus");
+      const stopWordQrScanButton = document.querySelector("#stopWordQrScanButton");
       const nameGate = document.querySelector("#nameGate");
       const nameForm = document.querySelector("#nameForm");
       const participantNameInput = document.querySelector("#participantNameInput");
@@ -2272,10 +2368,10 @@
       const fastPollBaseMs = 500;
       const hiddenPollBaseMs = 5000;
       const drawingWords = ["찻잔", "돈", "수첩"];
-      let drawingWordIndex = -1;
+      const drawingQrToken = "JAEGUN-DRAW-NEXT";
       let sharedTimer = null;
       let sharedGroups = [];
-      let sharedRecreation = { started: false };
+      let sharedRecreation = { started: false, wordAssignments: {} };
       let participantName = readStoredValue(participantNameKey);
       let currentGameMode = normalizeGameMode(readStoredValue(gameModeKey) || readStoredValue("gameMode"));
       [participantNameKey, gameSessionKey, gameModeKey, "gameMode", "viewedClues"].forEach(refreshStoredCookie);
@@ -2292,6 +2388,9 @@
       let teamProgressRetryAfter = 0;
       let lastTeamClueFetchAt = 0;
       let teamClueFetchRetryAfter = 0;
+      let wordQrStream = null;
+      let wordQrScanFrame = 0;
+      let pendingUrlDrawingClaim = pendingDrawingQrFromUrl;
 
       function normalizeGameMode(mode) {
         return mode === "crime" ? "crime" : "recreation";
@@ -2312,8 +2411,8 @@
         participantName = "";
         state.clueId = null;
         state.viewed.clear();
-        drawingWordIndex = -1;
-        wordCard.textContent = "제시어 카드를 선택하세요";
+        sharedRecreation = { started: false, wordAssignments: {} };
+        wordCard.textContent = "QR을 스캔하면 제시어 카드가 등장합니다";
         wordCount.textContent = "시작 대기";
         hintCodeInput.value = "";
         message.textContent = "해제한 힌트는 아래 목록에서 다시 볼 수 있습니다.";
@@ -2358,16 +2457,45 @@
         if (normalized !== "crime") closeAllEvidenceOverlays();
       }
 
+      function normalizeWordAssignments(assignments) {
+        const source = assignments && typeof assignments === "object" ? assignments : {};
+        return Object.fromEntries(
+          [1, 2, 3].map((group) => {
+            const seen = new Set();
+            const items = (Array.isArray(source[group]) ? source[group] : [])
+              .map((item) => {
+                const index = Number(item?.index);
+                if (!Number.isInteger(index) || index < 0 || index >= drawingWords.length || seen.has(index)) return null;
+                seen.add(index);
+                return {
+                  index,
+                  word: drawingWords[index],
+                  assignedAt: String(item?.assignedAt || ""),
+                  assignedBy: String(item?.assignedBy || ""),
+                };
+              })
+              .filter(Boolean)
+              .sort((a, b) => a.index - b.index);
+            return [String(group), items];
+          }),
+        );
+      }
+
+      function normalizeRecreationState(recreation) {
+        return {
+          started: Boolean(recreation?.started),
+          updatedAt: String(recreation?.updatedAt || ""),
+          wordAssignments: normalizeWordAssignments(recreation?.wordAssignments),
+        };
+      }
+
       function applyRecreation(recreation) {
-        const started = Boolean(recreation?.started);
-        sharedRecreation = { started };
+        sharedRecreation = normalizeRecreationState(recreation);
+        const started = sharedRecreation.started;
         const startedValue = started ? "true" : "false";
         if (document.body.dataset.recreationStarted !== startedValue) document.body.dataset.recreationStarted = startedValue;
-        if (!sharedRecreation.started) {
-          wordCount.textContent = "시작 대기";
-        } else if (drawingWordIndex < 0) {
-          wordCount.textContent = "선택 대기";
-        }
+        renderWordCards();
+        maybeClaimPendingUrlDrawingWord();
       }
 
       function modeSourceLabel(source) {
@@ -2408,6 +2536,7 @@
           if (participantBadge.textContent !== "재건 부산노회 청년부") participantBadge.textContent = "재건 부산노회 청년부";
           if (playerGroupValue.textContent !== "이름 입력 필요") playerGroupValue.textContent = "이름 입력 필요";
           renderEvidenceAvailability();
+          renderWordCards();
           return;
         }
 
@@ -2417,6 +2546,8 @@
         if (participantBadge.textContent !== badgeText) participantBadge.textContent = badgeText;
         if (playerGroupValue.textContent !== groupText) playerGroupValue.textContent = groupText;
         renderEvidenceAvailability();
+        renderWordCards();
+        maybeClaimPendingUrlDrawingWord();
         syncTeamClueProgress();
         syncTeamCluesFromServer(true);
       }
@@ -2443,7 +2574,7 @@
       }
 
       function syncEvidenceModalState() {
-        const open = !captureEvidenceSheet.hidden || !teamGallerySheet.hidden || !teamNoteSheet.hidden || !evidencePhotoViewer.hidden;
+        const open = !captureEvidenceSheet.hidden || !wordQrScannerSheet.hidden || !teamGallerySheet.hidden || !teamNoteSheet.hidden || !evidencePhotoViewer.hidden;
         document.body.classList.toggle("modal-open", open);
       }
 
@@ -2471,11 +2602,13 @@
       }
 
       function closeAllEvidenceOverlays() {
+        stopWordQrScanner();
         pendingEvidenceImage = "";
         captureEvidencePreview.removeAttribute("src");
         evidenceCaptionInput.value = "";
         evidenceViewerImage.removeAttribute("src");
         captureEvidenceSheet.hidden = true;
+        wordQrScannerSheet.hidden = true;
         teamGallerySheet.hidden = true;
         teamNoteSheet.hidden = true;
         evidencePhotoViewer.hidden = true;
@@ -3297,6 +3430,8 @@
       }
 
       captureEvidenceButton.addEventListener("click", triggerEvidenceCamera);
+      scanWordQrButton.addEventListener("click", startWordQrScanner);
+      stopWordQrScanButton.addEventListener("click", closeWordQrScanner);
       openGalleryButton.addEventListener("click", openTeamGallery);
       refreshGalleryButton.addEventListener("click", loadTeamEvidence);
       galleryCaptureButton.addEventListener("click", () => {
@@ -3342,6 +3477,7 @@
         button.addEventListener("click", () => {
           const target = button.dataset.closeEvidence;
           if (target === "capture") discardPendingEvidence();
+          if (target === "word-qr") closeWordQrScanner();
           if (target === "gallery") closeEvidenceOverlay(teamGallerySheet);
           if (target === "note") {
             activeNoteSuspectId = "";
@@ -3351,10 +3487,11 @@
         });
       });
 
-      [captureEvidenceSheet, teamGallerySheet, teamNoteSheet, evidencePhotoViewer].forEach((overlay) => {
+      [captureEvidenceSheet, wordQrScannerSheet, teamGallerySheet, teamNoteSheet, evidencePhotoViewer].forEach((overlay) => {
         overlay.addEventListener("click", (event) => {
           if (event.target !== overlay) return;
           if (overlay === captureEvidenceSheet) discardPendingEvidence();
+          else if (overlay === wordQrScannerSheet) closeWordQrScanner();
           else if (overlay === evidencePhotoViewer) closeEvidenceViewer();
           else if (overlay === teamNoteSheet) {
             activeNoteSuspectId = "";
@@ -3367,6 +3504,7 @@
       document.addEventListener("keydown", (event) => {
         if (event.key !== "Escape") return;
         if (!evidencePhotoViewer.hidden) closeEvidenceViewer();
+        else if (!wordQrScannerSheet.hidden) closeWordQrScanner();
         else if (!captureEvidenceSheet.hidden) discardPendingEvidence();
         else if (!teamNoteSheet.hidden) {
           activeNoteSuspectId = "";
@@ -3401,43 +3539,199 @@
         requestAnimationFrame(() => participantNameInput.focus());
       });
 
-      function renderWordCards() {
-        wordCardGrid.innerHTML = drawingWords
-          .map(
-            (word, index) => `
-              <button class="word-option ${index === drawingWordIndex ? "selected" : ""}" type="button" data-word-index="${index}">
-                <span class="word-qr" aria-hidden="true"></span>
-                <span class="word-option-text">
-                  <span class="word-option-kicker">QR 제시어</span>
-                  <span>${escapeHtml(word)}</span>
-                </span>
-              </button>
-            `,
-          )
-          .join("");
-
-        document.querySelectorAll("[data-word-index]").forEach((button) => {
-          button.addEventListener("click", () => {
-            drawingWordIndex = Number(button.dataset.wordIndex);
-            renderSelectedWordCard();
-            wordCount.textContent = `${drawingWordIndex + 1} / ${drawingWords.length}`;
-            renderWordCards();
-          });
-        });
+      function validDrawingQrContent(content) {
+        const value = String(content || "").trim().toUpperCase();
+        return value === drawingQrToken || value.includes("DRAW=NEXT") || value.includes("QR=DRAW");
       }
 
-      function renderSelectedWordCard() {
-        if (drawingWordIndex < 0 || !drawingWords[drawingWordIndex]) {
-          wordCard.textContent = "제시어 카드를 선택하세요";
+      async function claimNextDrawingWord(content = drawingQrToken) {
+        if (!sharedRecreation.started) {
+          setWordScanStatus("아직 레크레이션이 시작되지 않았습니다.", true);
+          return false;
+        }
+        const group = findParticipantGroup();
+        if (!participantName || !group) {
+          setWordScanStatus("이름 입력과 조 배정이 먼저 필요합니다.", true);
+          return false;
+        }
+        if (!validDrawingQrContent(content)) {
+          setWordScanStatus("이 레크레이션 QR 코드가 아닙니다.", true);
+          return false;
+        }
+        scanWordQrButton.disabled = true;
+        setWordScanStatus("제시어 카드를 배정하는 중입니다.");
+        try {
+          const response = await fetch("/api/mode", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ wordScan: { name: participantName, token: content } }),
+          });
+          if (!response.ok) throw new Error("제시어를 배정하지 못했습니다.");
+          const payload = await response.json();
+          sharedGroups = normalizeGroups(payload.groups);
+          applyRecreation(payload.recreation);
+          if (modeChannel) modeChannel.postMessage({ mode: payload.mode, timer: payload.timer, groups: payload.groups, recreation: payload.recreation });
+          const assignments = groupWordAssignments();
+          setWordScanStatus(
+            assignments.length >= drawingWords.length
+              ? "우리 조의 모든 제시어 카드가 열렸습니다."
+              : "제시어 카드가 우리 조에 공유되었습니다.",
+          );
+          return true;
+        } catch (error) {
+          setWordScanStatus(error instanceof Error ? error.message : "제시어 배정에 실패했습니다.", true);
+          renderWordCards();
+          return false;
+        }
+      }
+
+      function maybeClaimPendingUrlDrawingWord() {
+        if (!pendingUrlDrawingClaim) return;
+        if (!participantName || !findParticipantGroup() || !sharedRecreation.started) {
+          if (participantName && !findParticipantGroup()) setWordScanStatus("조 배정 후 QR 제시어가 자동으로 열립니다.");
           return;
         }
+        pendingUrlDrawingClaim = false;
+        claimNextDrawingWord(`${window.location.origin}${window.location.pathname}?draw=next`);
+      }
+
+      function closeWordQrScanner() {
+        stopWordQrScanner();
+        closeEvidenceOverlay(wordQrScannerSheet);
+      }
+
+      function stopWordQrScanner() {
+        if (wordQrScanFrame) cancelAnimationFrame(wordQrScanFrame);
+        wordQrScanFrame = 0;
+        if (wordQrStream) {
+          wordQrStream.getTracks().forEach((track) => track.stop());
+          wordQrStream = null;
+        }
+        wordQrVideo.srcObject = null;
+      }
+
+      async function startWordQrScanner() {
+        if (!("BarcodeDetector" in window)) {
+          setWordScanStatus("이 브라우저는 앱 안 QR 스캔을 지원하지 않습니다. 휴대폰 기본 카메라로 QR을 열어주세요.", true);
+          return;
+        }
+        const group = findParticipantGroup();
+        if (!participantName || !group || !sharedRecreation.started) {
+          renderWordCards();
+          return;
+        }
+        try {
+          wordQrScannerStatus.textContent = "카메라를 여는 중입니다.";
+          openEvidenceOverlay(wordQrScannerSheet);
+          const detector = new BarcodeDetector({ formats: ["qr_code"] });
+          wordQrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+          wordQrVideo.srcObject = wordQrStream;
+          await wordQrVideo.play();
+          wordQrScannerStatus.textContent = "QR 코드를 화면 중앙에 맞춰주세요.";
+
+          const scan = async () => {
+            if (wordQrScannerSheet.hidden || !wordQrStream) return;
+            try {
+              const codes = await detector.detect(wordQrVideo);
+              const content = codes[0]?.rawValue || "";
+              if (content) {
+                wordQrScannerStatus.textContent = "QR을 확인했습니다. 제시어를 여는 중입니다.";
+                const success = await claimNextDrawingWord(content);
+                if (success) {
+                  closeWordQrScanner();
+                  return;
+                }
+              }
+            } catch {
+              wordQrScannerStatus.textContent = "QR을 읽는 중입니다. 화면을 조금 더 밝게 비춰주세요.";
+            }
+            wordQrScanFrame = requestAnimationFrame(scan);
+          };
+          wordQrScanFrame = requestAnimationFrame(scan);
+        } catch (error) {
+          closeWordQrScanner();
+          setWordScanStatus("카메라를 열지 못했습니다. 휴대폰 기본 카메라로 QR 링크를 열어주세요.", true);
+        }
+      }
+
+      function groupWordAssignments() {
+        const group = findParticipantGroup();
+        if (!group) return [];
+        return sharedRecreation.wordAssignments?.[String(group.number)] || [];
+      }
+
+      function setWordScanStatus(text, isError = false) {
+        wordScanStatus.textContent = text;
+        wordScanStatus.classList.toggle("error", isError);
+      }
+
+      function renderWordCards() {
+        const group = findParticipantGroup();
+        const assignments = groupWordAssignments();
+        const started = Boolean(sharedRecreation.started);
+        const canScan = Boolean(started && participantName && group && assignments.length < drawingWords.length);
+        scanWordQrButton.disabled = !canScan;
+
+        if (!started) {
+          wordCount.textContent = "시작 대기";
+          wordCardGrid.innerHTML = "";
+          wordCard.textContent = "진행자가 레크레이션을 시작하면 QR 스캔이 열립니다";
+          setWordScanStatus("진행자 시작 대기");
+          return;
+        }
+
+        if (!participantName) {
+          wordCount.textContent = "이름 필요";
+          wordCardGrid.innerHTML = "";
+          wordCard.textContent = "이름을 입력한 뒤 QR을 스캔하세요";
+          setWordScanStatus("이름을 입력해야 조별 제시어를 받을 수 있습니다.", true);
+          return;
+        }
+
+        if (!group) {
+          wordCount.textContent = "?조";
+          wordCardGrid.innerHTML = "";
+          wordCard.textContent = "관리자가 조를 배정하면 QR 스캔이 가능합니다";
+          setWordScanStatus("관리자에게 조 배정을 요청해주세요.", true);
+          return;
+        }
+
+        wordCount.textContent = `${assignments.length} / ${drawingWords.length}`;
+        wordCardGrid.innerHTML = assignments.length
+          ? assignments
+              .map(
+                (item) => `
+                  <article class="word-option assigned">
+                    <span class="word-qr" aria-hidden="true"></span>
+                    <span class="word-option-text">
+                      <span class="word-option-kicker">${escapeHtml(group.number)}조 제시어 ${Number(item.index) + 1}</span>
+                      <span>${escapeHtml(item.word)}</span>
+                    </span>
+                  </article>
+                `,
+              )
+              .join("")
+          : "";
+
+        if (!assignments.length) {
+          wordCard.textContent = "QR을 스캔하면 제시어 카드가 등장합니다";
+          setWordScanStatus(`${group.number}조 QR 스캔 대기 · 같은 조원에게 공유됩니다.`);
+          return;
+        }
+
+        const latest = assignments.at(-1);
         wordCard.innerHTML = `
           <span class="word-qr" aria-hidden="true"></span>
           <span class="word-card-copy">
-            <span class="word-card-kicker">그림그리기 제시어 카드(QR 코드)</span>
-            <span>${escapeHtml(drawingWords[drawingWordIndex])}</span>
+            <span class="word-card-kicker">${escapeHtml(group.number)}조 그림그리기 제시어 카드</span>
+            <span>${escapeHtml(latest.word)}</span>
           </span>
         `;
+        setWordScanStatus(
+          assignments.length >= drawingWords.length
+            ? "이 조는 모든 제시어를 받았습니다."
+            : "다음 QR 스캔으로 다음 제시어를 받을 수 있습니다.",
+        );
       }
 
       syncGameModeLoop();

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>그림그리기 제시어 QR</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17324a;
+        --muted: #58728a;
+        --line: rgba(37, 80, 111, 0.18);
+        --gold: #ff9e43;
+        --blue: #e9f8ff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 20% 12%, rgba(255, 222, 122, 0.55), transparent 15rem),
+          linear-gradient(135deg, #fff7d6 0%, #dff7ff 56%, #fff0f6 100%);
+        font-family:
+          "Pretendard Variable",
+          Pretendard,
+          "Noto Sans KR",
+          "Apple SD Gothic Neo",
+          system-ui,
+          sans-serif;
+      }
+
+      main {
+        width: min(100%, 520px);
+        border: 1px solid var(--line);
+        padding: 22px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 24px 80px rgba(50, 85, 112, 0.24);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.1rem, 10vw, 3.5rem);
+        line-height: 1.05;
+      }
+
+      p {
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-weight: 800;
+        line-height: 1.55;
+      }
+
+      .qr-frame {
+        display: grid;
+        place-items: center;
+        margin: 22px auto 16px;
+        border: 1px solid rgba(255, 158, 67, 0.34);
+        padding: 18px;
+        background: #ffffff;
+      }
+
+      .qr-frame img {
+        display: block;
+        width: min(74vw, 330px);
+        aspect-ratio: 1;
+      }
+
+      .link-box {
+        border: 1px solid var(--line);
+        padding: 12px;
+        color: var(--ink);
+        background: var(--blue);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.82rem;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+      }
+
+      button {
+        width: 100%;
+        min-height: 48px;
+        margin-top: 14px;
+        border: 1px solid rgba(37, 80, 111, 0.28);
+        color: #ffffff;
+        background: linear-gradient(180deg, #3f87b2, #25506f);
+        font: inherit;
+        font-weight: 950;
+      }
+
+      .hint {
+        color: #9a5b16;
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>그림그리기<br />제시어 QR</h1>
+      <p>이 QR을 스캔하면 참가자 페이지가 열리고, 조별로 다음 제시어 카드가 순차 배정됩니다.</p>
+      <div class="qr-frame">
+        <img id="qrImage" alt="그림그리기 제시어 배정 QR 코드" />
+      </div>
+      <div class="link-box" id="qrLink"></div>
+      <button type="button" id="copyButton">링크 복사</button>
+      <p class="hint">Canva, PPT, 안내문 등에 이 QR 이미지를 삽입해 사용할 수 있습니다.</p>
+    </main>
+    <script>
+      const target = `${window.location.origin}/?draw=next`;
+      const qrImage = document.querySelector("#qrImage");
+      const qrLink = document.querySelector("#qrLink");
+      const copyButton = document.querySelector("#copyButton");
+      qrLink.textContent = target;
+      qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=640x640&margin=12&data=${encodeURIComponent(target)}`;
+      copyButton.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(target);
+          copyButton.textContent = "복사 완료";
+        } catch {
+          copyButton.textContent = "직접 링크를 복사해주세요";
+        }
+      });
+    </script>
+  </body>
+</html>

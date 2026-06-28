@@ -32,6 +32,8 @@ MAX_NOTE_LENGTH = 1200
 MAX_NOTE_ITEMS_PER_SUSPECT = 30
 VALID_CLUE_IDS = {"H01", "H02", "H03", "H05", "H06", "H07", "H09", "H10", "H11", "H13", "H14", "H15"}
 VALID_SUSPECT_IDS = {"P01", "P02", "P03", "P04"}
+DRAWING_WORDS = ["찻잔", "돈", "수첩"]
+DRAWING_QR_TOKEN = "JAEGUN-DRAW-NEXT"
 
 
 def normalize_mode(mode: str | None) -> str:
@@ -65,7 +67,36 @@ def default_groups() -> list[dict[str, int | list[str]]]:
 
 
 def default_recreation() -> dict[str, str | bool]:
-    return {"started": False, "updatedAt": ""}
+    return {"started": False, "updatedAt": "", "wordAssignments": {}}
+
+
+def normalize_word_assignments(assignments: object) -> dict[str, list[dict[str, object]]]:
+    source = assignments if isinstance(assignments, dict) else {}
+    normalized: dict[str, list[dict[str, object]]] = {}
+    for group in [1, 2, 3]:
+        items = source.get(str(group), source.get(group, []))
+        items = items if isinstance(items, list) else []
+        seen = set()
+        group_items = []
+        for item in items:
+            item = item if isinstance(item, dict) else {}
+            try:
+                index = int(item.get("index"))
+            except Exception:
+                continue
+            if index < 0 or index >= len(DRAWING_WORDS) or index in seen:
+                continue
+            seen.add(index)
+            group_items.append(
+                {
+                    "index": index,
+                    "word": DRAWING_WORDS[index],
+                    "assignedAt": str(item.get("assignedAt") or ""),
+                    "assignedBy": str(item.get("assignedBy") or "")[:40],
+                }
+            )
+        normalized[str(group)] = sorted(group_items, key=lambda item: int(item["index"]))
+    return normalized
 
 
 def normalize_recreation(recreation: object) -> dict[str, str | bool]:
@@ -73,6 +104,7 @@ def normalize_recreation(recreation: object) -> dict[str, str | bool]:
     return {
         "started": bool(recreation.get("started", False)),
         "updatedAt": str(recreation.get("updatedAt") or ""),
+        "wordAssignments": normalize_word_assignments(recreation.get("wordAssignments")),
     }
 
 
@@ -84,6 +116,53 @@ def next_recreation(current_recreation: object, payload: object) -> dict[str, st
         recreation["started"] = payload["started"]
         recreation["updatedAt"] = datetime.now(UTC).isoformat()
     return recreation
+
+
+def valid_drawing_qr_token(value: object) -> bool:
+    token = str(value or "").strip().upper()
+    return token == DRAWING_QR_TOKEN or "DRAW=NEXT" in token or "QR=DRAW" in token
+
+
+def participant_group_number_from_groups(name: object, groups: object) -> int | None:
+    key = normalize_name_key(name)
+    if not key:
+        return None
+    for group in normalize_groups(groups):
+        if any(normalize_name_key(member) == key for member in group.get("names", [])):
+            return int(group["number"])
+    return None
+
+
+def next_recreation_with_word_scan(recreation: object, groups: object, payload: object) -> dict[str, object]:
+    next_value: dict[str, object] = normalize_recreation(recreation)
+    scan = payload if isinstance(payload, dict) else {}
+    if not valid_drawing_qr_token(scan.get("token") or scan.get("content") or scan.get("value")):
+        return next_value
+    group = participant_group_number_from_groups(scan.get("name"), groups)
+    if group is None:
+        return next_value
+    assignments = normalize_word_assignments(next_value.get("wordAssignments"))
+    group_key = str(group)
+    current_items = assignments.get(group_key, [])
+    used = {int(item["index"]) for item in current_items}
+    next_index = next((index for index in range(len(DRAWING_WORDS)) if index not in used), None)
+    if next_index is None:
+        return next_value
+    assignments[group_key] = sorted(
+        [
+            *current_items,
+            {
+                "index": next_index,
+                "word": DRAWING_WORDS[next_index],
+                "assignedAt": datetime.now(UTC).isoformat(),
+                "assignedBy": normalize_name(scan.get("name"))[:40],
+            },
+        ],
+        key=lambda item: int(item["index"]),
+    )
+    next_value["wordAssignments"] = assignments
+    next_value["updatedAt"] = datetime.now(UTC).isoformat()
+    return next_value
 
 
 def normalize_name(name: object) -> str:
@@ -279,6 +358,8 @@ def write_state(payload: dict | None) -> dict[str, str | int | bool | dict]:
     current = read_state()
     payload = payload if isinstance(payload, dict) else {}
     normalized = normalize_mode(payload.get("mode", current["mode"]))
+    next_groups = normalize_groups(payload.get("groups") if isinstance(payload.get("groups"), list) else current.get("groups"))
+    recreation_state = next_recreation(current.get("recreation"), payload.get("recreation"))
     next_state = {
         "mode": normalized,
         "version": int(current["version"]) + 1,
@@ -286,9 +367,9 @@ def write_state(payload: dict | None) -> dict[str, str | int | bool | dict]:
         "updatedAt": datetime.now(UTC).isoformat(),
         "source": "local-file",
         "timer": next_timer(current["timer"], payload.get("timer")),
-        "groups": normalize_groups(payload.get("groups") if isinstance(payload.get("groups"), list) else current.get("groups")),
+        "groups": next_groups,
         "participants": next_participants(current.get("participants"), payload.get("participant")),
-        "recreation": next_recreation(current.get("recreation"), payload.get("recreation")),
+        "recreation": next_recreation_with_word_scan(recreation_state, next_groups, payload.get("wordScan")),
     }
     RUNTIME_DIR.mkdir(exist_ok=True)
     MODE_TMP_FILE.write_text(json.dumps(next_state, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -4,6 +4,8 @@ const MODE_LOCK_KEY = `${MODE_KEY}:write-lock`;
 const EVIDENCE_KEYS = [1, 2, 3].map((group) => `crime-scene:evidence:group:${group}`);
 const CLUE_KEYS = [1, 2, 3].map((group) => `crime-scene:clues:group:${group}`);
 const NOTE_KEYS = [1, 2, 3].map((group) => `crime-scene:notes:group:${group}`);
+const DRAWING_WORDS = ["찻잔", "돈", "수첩"];
+const DRAWING_QR_TOKEN = "JAEGUN-DRAW-NEXT";
 
 function newSessionId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
@@ -28,13 +30,38 @@ function fallbackState() {
 }
 
 function defaultRecreation() {
-  return { started: false, updatedAt: "" };
+  return { started: false, updatedAt: "", wordAssignments: {} };
+}
+
+function normalizeWordAssignments(assignments) {
+  const source = assignments && typeof assignments === "object" ? assignments : {};
+  return Object.fromEntries(
+    [1, 2, 3].map((group) => {
+      const seen = new Set();
+      const items = (Array.isArray(source[group]) ? source[group] : [])
+        .map((item) => {
+          const index = Number(item?.index);
+          if (!Number.isInteger(index) || index < 0 || index >= DRAWING_WORDS.length || seen.has(index)) return null;
+          seen.add(index);
+          return {
+            index,
+            word: DRAWING_WORDS[index],
+            assignedAt: String(item?.assignedAt || ""),
+            assignedBy: String(item?.assignedBy || "").trim().slice(0, 40),
+          };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.index - b.index);
+      return [String(group), items];
+    }),
+  );
 }
 
 function normalizeRecreation(recreation) {
   return {
     started: Boolean(recreation?.started),
     updatedAt: recreation?.updatedAt || "",
+    wordAssignments: normalizeWordAssignments(recreation?.wordAssignments),
   };
 }
 
@@ -45,6 +72,47 @@ function nextRecreation(currentRecreation, payload) {
     recreation.started = payload.started;
     recreation.updatedAt = new Date().toISOString();
   }
+  return recreation;
+}
+
+function validDrawingQrToken(value) {
+  const token = String(value || "").trim().toUpperCase();
+  return token === DRAWING_QR_TOKEN || token.includes("DRAW=NEXT") || token.includes("QR=DRAW");
+}
+
+function participantGroupNumber(name, groups) {
+  const key = normalizeNameKey(name);
+  if (!key) return null;
+  const group = normalizeGroups(groups).find((item) => item.names.some((member) => normalizeNameKey(member) === key));
+  return group ? Math.max(1, Number(group.number) || 1) : null;
+}
+
+function nextRecreationWithWordScan(currentRecreation, groups, payload) {
+  const recreation = normalizeRecreation(currentRecreation);
+  const scan = payload && typeof payload === "object" ? payload : null;
+  if (!scan || !validDrawingQrToken(scan.token || scan.content || scan.value)) return recreation;
+
+  const group = participantGroupNumber(scan.name, groups);
+  if (!group) return recreation;
+
+  const assignments = normalizeWordAssignments(recreation.wordAssignments);
+  const groupKey = String(group);
+  const currentItems = Array.isArray(assignments[groupKey]) ? assignments[groupKey] : [];
+  const used = new Set(currentItems.map((item) => item.index));
+  const nextIndex = DRAWING_WORDS.findIndex((_, index) => !used.has(index));
+  if (nextIndex < 0) return recreation;
+
+  assignments[groupKey] = [
+    ...currentItems,
+    {
+      index: nextIndex,
+      word: DRAWING_WORDS[nextIndex],
+      assignedAt: new Date().toISOString(),
+      assignedBy: normalizeName(scan.name).slice(0, 40),
+    },
+  ].sort((a, b) => a.index - b.index);
+  recreation.wordAssignments = assignments;
+  recreation.updatedAt = new Date().toISOString();
   return recreation;
 }
 
@@ -350,7 +418,7 @@ async function writeModeStateUnlocked(payload) {
     timer: nextTimer(current.timer, body.timer),
     groups: Array.isArray(body.groups) ? normalizeGroups(body.groups) : normalizeGroups(current.groups),
     participants: nextParticipants(current.participants, body.participant),
-    recreation: nextRecreation(current.recreation, body.recreation),
+    recreation: nextRecreationWithWordScan(nextRecreation(current.recreation, body.recreation), Array.isArray(body.groups) ? body.groups : current.groups, body.wordScan),
   };
 
   if (hasRedis()) {

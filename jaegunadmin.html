@@ -1581,6 +1581,7 @@
           <div class="page-links">
             <a class="page-link" href="./">참가자용 모바일 페이지</a>
             <a class="page-link" href="./?reset=1">참가자 힌트 초기화 링크</a>
+            <a class="page-link" href="qr-word.html">레크레이션 QR</a>
             <a class="page-link" href="docs/APP_FLOW.md">앱 흐름도</a>
           </div>
           <div class="mode-controls" aria-label="참가자 화면 전환">
@@ -2096,7 +2097,7 @@
       }
 
       function renderRecreationStatus(recreation = sharedRecreation) {
-        recreationStatus.textContent = `레크레이션: ${recreation?.started ? "제시어 공개 중" : "시작 대기"}`;
+        recreationStatus.textContent = `레크레이션: ${recreation?.started ? "QR 제시어 배정 가능" : "시작 대기"}`;
       }
 
       function renderParticipantList() {
