@@ -1975,6 +1975,7 @@
       </div>
     </section>
 
+    <script src="assets/jsQR.js"></script>
     <script>
       const suspects = [
         {
@@ -3605,11 +3606,23 @@
         wordQrVideo.srcObject = null;
       }
 
+      function decodeQrWithJsQr(video) {
+        if (typeof window.jsQR !== "function") return "";
+        const width = video.videoWidth || 0;
+        const height = video.videoHeight || 0;
+        if (!width || !height) return "";
+        const canvas = decodeQrWithJsQr.canvas || document.createElement("canvas");
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) return "";
+        canvas.width = width;
+        canvas.height = height;
+        context.drawImage(video, 0, 0, width, height);
+        const imageData = context.getImageData(0, 0, width, height);
+        decodeQrWithJsQr.canvas = canvas;
+        return window.jsQR(imageData.data, width, height)?.data || "";
+      }
+
       async function startWordQrScanner() {
-        if (!("BarcodeDetector" in window)) {
-          setWordScanStatus("이 브라우저는 앱 안 QR 스캔을 지원하지 않습니다. 휴대폰 기본 카메라로 QR을 열어주세요.", true);
-          return;
-        }
         const group = findParticipantGroup();
         if (!participantName || !group || !sharedRecreation.started) {
           renderWordCards();
@@ -3618,17 +3631,34 @@
         try {
           wordQrScannerStatus.textContent = "카메라를 여는 중입니다.";
           openEvidenceOverlay(wordQrScannerSheet);
-          const detector = new BarcodeDetector({ formats: ["qr_code"] });
+          let detector = null;
+          if ("BarcodeDetector" in window) {
+            try {
+              detector = new BarcodeDetector({ formats: ["qr_code"] });
+            } catch {
+              detector = null;
+            }
+          }
           wordQrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
           wordQrVideo.srcObject = wordQrStream;
           await wordQrVideo.play();
-          wordQrScannerStatus.textContent = "QR 코드를 화면 중앙에 맞춰주세요.";
+          wordQrScannerStatus.textContent = detector
+            ? "QR 코드를 화면 중앙에 맞춰주세요."
+            : "QR 코드를 화면 중앙에 맞춰주세요. 미지원 브라우저용 스캐너로 읽는 중입니다.";
 
           const scan = async () => {
             if (wordQrScannerSheet.hidden || !wordQrStream) return;
             try {
-              const codes = await detector.detect(wordQrVideo);
-              const content = codes[0]?.rawValue || "";
+              let content = "";
+              if (detector) {
+                try {
+                  const codes = await detector.detect(wordQrVideo);
+                  content = codes[0]?.rawValue || "";
+                } catch {
+                  detector = null;
+                }
+              }
+              if (!content) content = decodeQrWithJsQr(wordQrVideo);
               if (content) {
                 wordQrScannerStatus.textContent = "QR을 확인했습니다. 제시어를 여는 중입니다.";
                 const success = await claimNextDrawingWord(content);
@@ -3645,7 +3675,7 @@
           wordQrScanFrame = requestAnimationFrame(scan);
         } catch (error) {
           closeWordQrScanner();
-          setWordScanStatus("카메라를 열지 못했습니다. 휴대폰 기본 카메라로 QR 링크를 열어주세요.", true);
+          setWordScanStatus("카메라를 열지 못했습니다. 브라우저 카메라 권한을 허용했는지 확인해주세요.", true);
         }
       }
 
