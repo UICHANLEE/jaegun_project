@@ -144,13 +144,11 @@ def next_recreation_with_word_scan(recreation: object, groups: object, payload: 
     assignments = normalize_word_assignments(next_value.get("wordAssignments"))
     group_key = str(group)
     current_items = assignments.get(group_key, [])
-    used = {int(item["index"]) for item in current_items}
-    next_index = next((index for index in range(len(DRAWING_WORDS)) if index not in used), None)
-    if next_index is None:
+    next_index = (group - 1) % len(DRAWING_WORDS)
+    if len(current_items) == 1 and int(current_items[0]["index"]) == next_index:
         return next_value
     assignments[group_key] = sorted(
         [
-            *current_items,
             {
                 "index": next_index,
                 "word": DRAWING_WORDS[next_index],

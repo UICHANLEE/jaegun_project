@@ -98,12 +98,10 @@ function nextRecreationWithWordScan(currentRecreation, groups, payload) {
   const assignments = normalizeWordAssignments(recreation.wordAssignments);
   const groupKey = String(group);
   const currentItems = Array.isArray(assignments[groupKey]) ? assignments[groupKey] : [];
-  const used = new Set(currentItems.map((item) => item.index));
-  const nextIndex = DRAWING_WORDS.findIndex((_, index) => !used.has(index));
-  if (nextIndex < 0) return recreation;
+  const nextIndex = (group - 1) % DRAWING_WORDS.length;
+  if (currentItems.length === 1 && currentItems[0]?.index === nextIndex) return recreation;
 
   assignments[groupKey] = [
-    ...currentItems,
     {
       index: nextIndex,
       word: DRAWING_WORDS[nextIndex],

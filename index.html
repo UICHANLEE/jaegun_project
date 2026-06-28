@@ -1820,9 +1820,9 @@
             <button class="word-scan-button" type="button" id="scanWordQrButton">QR 스캔하기</button>
             <a class="word-qr-link" href="qr-word.html" target="_blank" rel="noopener">QR 보기</a>
           </div>
-          <div class="word-scan-status" id="wordScanStatus">QR을 스캔하면 우리 조 제시어 카드가 등장합니다.</div>
+          <div class="word-scan-status" id="wordScanStatus">QR을 스캔하면 우리 조 전용 제시어 카드가 등장합니다.</div>
           <div class="word-card-grid" id="wordCardGrid"></div>
-          <div class="word-card" id="wordCard">QR을 스캔하면 제시어 카드가 등장합니다</div>
+          <div class="word-card" id="wordCard">QR을 스캔하면 우리 조 제시어 카드가 등장합니다</div>
         </div>
         <div class="mode-wait" id="modeWait">진행자 신호 대기</div>
       </div>
@@ -2364,6 +2364,7 @@
       const fastPollBaseMs = 500;
       const hiddenPollBaseMs = 5000;
       const drawingWords = ["찻잔", "돈", "수첩"];
+      const drawingWordsPerGroup = 1;
       const drawingQrToken = "JAEGUN-DRAW-NEXT";
       let sharedTimer = null;
       let sharedGroups = [];
@@ -2408,7 +2409,7 @@
         state.clueId = null;
         state.viewed.clear();
         sharedRecreation = { started: false, wordAssignments: {} };
-        wordCard.textContent = "QR을 스캔하면 제시어 카드가 등장합니다";
+        wordCard.textContent = "QR을 스캔하면 우리 조 제시어 카드가 등장합니다";
         wordCount.textContent = "시작 대기";
         hintCodeInput.value = "";
         message.textContent = "해제한 힌트는 아래 목록에서 다시 볼 수 있습니다.";
@@ -3569,8 +3570,8 @@
           if (modeChannel) modeChannel.postMessage({ mode: payload.mode, timer: payload.timer, groups: payload.groups, recreation: payload.recreation });
           const assignments = groupWordAssignments();
           setWordScanStatus(
-            assignments.length >= drawingWords.length
-              ? "우리 조의 모든 제시어 카드가 열렸습니다."
+            assignments.length >= drawingWordsPerGroup
+              ? "우리 조 제시어 카드가 열렸습니다."
               : "제시어 카드가 우리 조에 공유되었습니다.",
           );
           return true;
@@ -3682,7 +3683,8 @@
       function groupWordAssignments() {
         const group = findParticipantGroup();
         if (!group) return [];
-        return sharedRecreation.wordAssignments?.[String(group.number)] || [];
+        const wordIndex = (Number(group.number) - 1) % drawingWords.length;
+        return (sharedRecreation.wordAssignments?.[String(group.number)] || []).filter((item) => item.index === wordIndex);
       }
 
       function setWordScanStatus(text, isError = false) {
@@ -3694,7 +3696,7 @@
         const group = findParticipantGroup();
         const assignments = groupWordAssignments();
         const started = Boolean(sharedRecreation.started);
-        const canScan = Boolean(started && participantName && group && assignments.length < drawingWords.length);
+        const canScan = Boolean(started && participantName && group && assignments.length < drawingWordsPerGroup);
         scanWordQrButton.disabled = !canScan;
 
         if (!started) {
@@ -3721,14 +3723,14 @@
           return;
         }
 
-        wordCount.textContent = `${assignments.length} / ${drawingWords.length}`;
+        wordCount.textContent = `${assignments.length} / ${drawingWordsPerGroup}`;
         wordCardGrid.innerHTML = assignments.length
           ? assignments
               .map(
                 (item) => `
                   <article class="word-option assigned">
                     <span class="word-option-text">
-                      <span class="word-option-kicker">${escapeHtml(group.number)}조 제시어 ${Number(item.index) + 1}</span>
+                      <span class="word-option-kicker">${escapeHtml(group.number)}조 전용 제시어</span>
                       <span>${escapeHtml(item.word)}</span>
                     </span>
                   </article>
@@ -3738,7 +3740,7 @@
           : "";
 
         if (!assignments.length) {
-          wordCard.textContent = "QR을 스캔하면 제시어 카드가 등장합니다";
+          wordCard.textContent = "QR을 스캔하면 우리 조 제시어 카드가 등장합니다";
           setWordScanStatus(`${group.number}조 QR 스캔 대기 · 같은 조원에게 공유됩니다.`);
           return;
         }
@@ -3751,9 +3753,9 @@
           </span>
         `;
         setWordScanStatus(
-          assignments.length >= drawingWords.length
-            ? "이 조는 모든 제시어를 받았습니다."
-            : "다음 QR 스캔으로 다음 제시어를 받을 수 있습니다.",
+          assignments.length >= drawingWordsPerGroup
+            ? "우리 조 제시어를 받았습니다."
+            : "QR 스캔으로 우리 조 제시어를 받을 수 있습니다.",
         );
       }
 
