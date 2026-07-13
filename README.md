@@ -55,6 +55,22 @@ UPSTASH_REDIS_REST_TOKEN=
 
 설정이 없으면 `/api/mode`는 메모리 모드로 동작합니다. 이 모드는 로컬/짧은 preview 확인에는 충분하지만, 행사 당일 다중 기기 동기화용으로는 권장하지 않습니다.
 
+## 초기화 전 Supabase 회차 보관
+
+Redis는 실시간 동기화에 계속 사용하고, 관리자가 `전체 초기화`를 누를 때 현재 회차를 Supabase의 `game_archives` 테이블에 먼저 보관합니다. 보관에 실패하면 Redis 초기화도 중단되어 기존 데이터가 유지됩니다.
+
+1. Supabase SQL Editor에서 `supabase/game_archives.sql`을 실행합니다.
+2. Vercel 프로젝트에 다음 서버 환경변수를 연결합니다.
+
+```env
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+Vercel Marketplace가 `SUPABASE_SECRET_KEY` 이름으로 키를 제공한 경우에도 동작합니다. 서버 키는 브라우저 코드에 노출하면 안 됩니다. 환경변수를 추가한 뒤에는 Vercel에서 다시 배포해야 합니다.
+
+보관되는 내용은 참가자 명단, 조 편성, 타이머와 진행 상태, 조별 힌트 획득 여부, 추리 메모, 증거사진 원본입니다. 관리자 페이지의 `지난 회차 보관함`에서 다시 확인할 수 있습니다.
+
 ## 운영 흐름
 
 1. 참가자들은 기본 링크(`/`)에 접속해 밝은 레크레이션 화면을 봅니다.

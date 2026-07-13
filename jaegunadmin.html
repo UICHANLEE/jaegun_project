@@ -587,6 +587,93 @@
         font-style: italic;
       }
 
+      .archive-panel {
+        margin-bottom: 14px;
+        overflow: hidden;
+      }
+
+      .archive-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.48rem;
+      }
+
+      .archive-select {
+        min-width: min(360px, 100%);
+        min-height: 40px;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        border-radius: 0;
+        padding: 0 0.72rem;
+        color: var(--text);
+        background: #101615;
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 850;
+      }
+
+      .archive-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.58rem;
+        padding: 0.9rem;
+      }
+
+      .archive-team {
+        min-width: 0;
+        border: 1px solid rgba(232, 196, 119, 0.18);
+        padding: 0.72rem;
+        color: inherit;
+        background: rgba(255, 255, 255, 0.03);
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .archive-team-title {
+        color: var(--gold);
+        font-size: 0.82rem;
+        font-weight: 950;
+      }
+
+      .archive-team-meta {
+        margin-top: 0.3rem;
+        color: var(--muted);
+        font-size: 0.72rem;
+        line-height: 1.55;
+      }
+
+      .archive-detail {
+        border-top: 1px solid rgba(232, 196, 119, 0.18);
+        padding: 0.9rem;
+      }
+
+      .archive-detail[hidden] {
+        display: none;
+      }
+
+      .archive-detail-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.65rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .archive-evidence-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 0.55rem;
+        margin-top: 0.75rem;
+      }
+
+      .archive-notes {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+        margin-top: 0.75rem;
+      }
+
       body.admin-modal-open {
         overflow: hidden;
       }
@@ -1555,8 +1642,14 @@
         }
 
         .team-clue-grid,
-        .admin-evidence-grid {
+        .admin-evidence-grid,
+        .archive-summary,
+        .archive-notes {
           grid-template-columns: 1fr 1fr;
+        }
+
+        .archive-evidence-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .locks {
@@ -1670,6 +1763,36 @@
             </div>
             <div class="team-note-list" id="teamNoteList"></div>
           </section>
+        </div>
+      </section>
+
+      <section class="panel archive-panel" aria-label="지난 회차 보관함">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">지난 회차 보관함</div>
+            <div class="panel-meta">SUPABASE SESSION ARCHIVE</div>
+          </div>
+          <div class="archive-controls">
+            <select class="archive-select" id="archiveSelect" aria-label="보관 회차 선택">
+              <option value="">보관된 회차를 불러오는 중입니다.</option>
+            </select>
+            <button class="team-refresh" type="button" id="refreshArchives">새로고침</button>
+          </div>
+        </div>
+        <div class="team-monitor-status" id="archiveStatus" aria-live="polite">Supabase 보관 상태를 확인하는 중입니다.</div>
+        <div class="archive-summary" id="archiveSummary"></div>
+        <div class="archive-detail" id="archiveDetail" hidden>
+          <div class="archive-detail-head">
+            <div class="team-section-title" id="archiveDetailTitle">지난 회차 상세</div>
+            <div class="team-tabs" role="tablist" aria-label="지난 회차 조 선택">
+              <button class="team-tab active" type="button" role="tab" aria-selected="true" data-archive-group="1">1조</button>
+              <button class="team-tab" type="button" role="tab" aria-selected="false" data-archive-group="2">2조</button>
+              <button class="team-tab" type="button" role="tab" aria-selected="false" data-archive-group="3">3조</button>
+            </div>
+          </div>
+          <div class="team-clue-grid" id="archiveClueGrid"></div>
+          <div class="archive-evidence-grid" id="archiveEvidenceGrid"></div>
+          <div class="archive-notes" id="archiveNoteList"></div>
         </div>
       </section>
 
@@ -2005,6 +2128,15 @@
       const adminViewerImage = document.querySelector("#adminViewerImage");
       const adminViewerCopy = document.querySelector("#adminViewerCopy");
       const closeAdminViewerButton = document.querySelector("#closeAdminViewer");
+      const archiveSelect = document.querySelector("#archiveSelect");
+      const refreshArchivesButton = document.querySelector("#refreshArchives");
+      const archiveStatus = document.querySelector("#archiveStatus");
+      const archiveSummary = document.querySelector("#archiveSummary");
+      const archiveDetail = document.querySelector("#archiveDetail");
+      const archiveDetailTitle = document.querySelector("#archiveDetailTitle");
+      const archiveClueGrid = document.querySelector("#archiveClueGrid");
+      const archiveEvidenceGrid = document.querySelector("#archiveEvidenceGrid");
+      const archiveNoteList = document.querySelector("#archiveNoteList");
 
       const allClues = suspects.flatMap((suspect) => suspect.clues);
       const clueOwnerMap = new Map(suspects.flatMap((suspect) => suspect.clues.map((clue) => [clue.id, suspect.name])));
@@ -2023,6 +2155,9 @@
       let monitorNotes = {};
       let monitorRequestInFlight = false;
       let lastAdminModeVersion = 0;
+      let archiveList = [];
+      let selectedArchive = null;
+      let selectedArchiveGroup = 1;
 
       function normalizeGameMode(mode) {
         return mode === "crime" ? "crime" : "recreation";
@@ -2154,6 +2289,113 @@
               },
             ]
           : [];
+      }
+
+      function archiveTeamData() {
+        return selectedArchive?.team_data?.[String(selectedArchiveGroup)] || { evidence: [], clueIds: [], notes: {} };
+      }
+
+      function renderArchiveDetail() {
+        if (!selectedArchive) {
+          archiveDetail.hidden = true;
+          return;
+        }
+        archiveDetail.hidden = false;
+        const team = archiveTeamData();
+        const clueIds = new Set(Array.isArray(team.clueIds) ? team.clueIds : []);
+        const evidence = Array.isArray(team.evidence) ? team.evidence : [];
+        const notes = team.notes && typeof team.notes === "object" ? team.notes : {};
+        archiveDetailTitle.textContent = `${selectedArchiveGroup}조 상세 · 힌트 ${clueIds.size} · 사진 ${evidence.length}`;
+        document.querySelectorAll("[data-archive-group]").forEach((button) => {
+          const active = Number(button.dataset.archiveGroup) === selectedArchiveGroup;
+          button.classList.toggle("active", active);
+          button.setAttribute("aria-selected", active ? "true" : "false");
+        });
+        archiveClueGrid.innerHTML = allClues
+          .map((clue) => {
+            const acquired = clueIds.has(clue.id);
+            return `<div class="team-clue-item ${acquired ? "acquired" : ""}">
+              <div class="team-clue-id">${escapeHtml(clue.id)}</div>
+              <div><div class="team-clue-name">${acquired ? escapeHtml(clue.title) : `${escapeHtml(clue.hint)} · 미획득`}</div><div class="team-clue-owner">${escapeHtml(clueOwnerMap.get(clue.id) || "")}</div></div>
+            </div>`;
+          })
+          .join("");
+        archiveEvidenceGrid.innerHTML = evidence.length
+          ? evidence
+              .map((item) => `<article class="admin-evidence-item">
+                <button class="admin-evidence-photo" type="button" data-archive-evidence="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.caption || "증거사진")} 크게 보기">
+                  <img src="${escapeHtml(item.imageData)}" alt="${escapeHtml(item.caption || "증거사진")}" loading="lazy" decoding="async" />
+                </button>
+                <div class="admin-evidence-meta"><div class="admin-evidence-caption">${escapeHtml(item.caption || "증거사진")}</div><div class="admin-evidence-byline">${escapeHtml(item.author || "조원")} · ${escapeHtml(formatMonitorDate(item.createdAt))}</div></div>
+              </article>`)
+              .join("")
+          : `<div class="admin-evidence-empty">${selectedArchiveGroup}조의 보관된 증거사진이 없습니다.</div>`;
+        archiveNoteList.innerHTML = suspects
+          .map((suspect) => {
+            const items = noteItems(notes[suspect.id]);
+            return `<article class="team-note-item"><div class="team-note-head"><span>${escapeHtml(suspect.name)}</span><span>${escapeHtml(suspect.id)}</span></div><div class="team-note-body ${items.length ? "" : "team-note-empty"}">${
+              items.length
+                ? items.map((item) => `<div class="team-note-entry"><div class="team-note-author">${escapeHtml(item.author || "조원")} · ${escapeHtml(formatMonitorDate(item.createdAt))}</div><div>${escapeHtml(item.content || "")}</div></div>`).join("")
+                : "작성된 메모가 없습니다."
+            }</div></article>`;
+          })
+          .join("");
+      }
+
+      function renderArchiveSummary() {
+        if (!selectedArchive) {
+          archiveSummary.innerHTML = `<div class="admin-evidence-empty">보관된 회차를 선택하면 조별 기록을 확인할 수 있습니다.</div>`;
+          renderArchiveDetail();
+          return;
+        }
+        const summary = selectedArchive.evidence_summary || {};
+        archiveSummary.innerHTML = [1, 2, 3]
+          .map((group) => {
+            const item = summary[String(group)] || {};
+            return `<button class="archive-team" type="button" data-archive-summary-group="${group}"><div class="archive-team-title">${group}조</div><div class="archive-team-meta">힌트 ${Number(item.clueCount) || 0}개 · 사진 ${Number(item.evidenceCount) || 0}장 · 메모 ${Number(item.noteCount) || 0}개</div></button>`;
+          })
+          .join("");
+        renderArchiveDetail();
+      }
+
+      async function loadArchive(id) {
+        if (!id) {
+          selectedArchive = null;
+          renderArchiveSummary();
+          return;
+        }
+        archiveStatus.textContent = "지난 회차 원본 기록을 불러오는 중입니다.";
+        const response = await fetch(`/api/archives?id=${encodeURIComponent(id)}`, { cache: "no-store" });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.message || "지난 회차를 불러오지 못했습니다.");
+        selectedArchive = payload.archive;
+        selectedArchiveGroup = 1;
+        archiveStatus.textContent = `${formatMonitorDate(selectedArchive.archived_at)} 보관 회차 · 원본 기록 열람 가능`;
+        renderArchiveSummary();
+      }
+
+      async function loadArchiveList(selectLatest = false) {
+        refreshArchivesButton.disabled = true;
+        archiveStatus.textContent = "Supabase 보관 회차를 확인하는 중입니다.";
+        try {
+          const response = await fetch("/api/archives?limit=30", { cache: "no-store" });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(payload.message || "보관함 연결 실패");
+          archiveList = Array.isArray(payload.archives) ? payload.archives : [];
+          archiveSelect.innerHTML = `<option value="">회차를 선택하세요</option>${archiveList
+            .map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.title || "게임 회차")} · ${escapeHtml(formatMonitorDate(item.archived_at))}</option>`)
+            .join("")}`;
+          archiveStatus.textContent = archiveList.length ? `보관된 회차 ${archiveList.length}개` : "아직 보관된 회차가 없습니다.";
+          if (selectLatest && archiveList[0]) {
+            archiveSelect.value = archiveList[0].id;
+            await loadArchive(archiveList[0].id);
+          }
+        } catch (error) {
+          archiveSelect.innerHTML = `<option value="">Supabase 설정을 확인하세요</option>`;
+          archiveStatus.textContent = error instanceof Error ? error.message : "보관함 연결 실패";
+        } finally {
+          refreshArchivesButton.disabled = false;
+        }
       }
 
       function renderMonitorTabs() {
@@ -2375,16 +2617,18 @@
 
       async function fetchModeApi(options = {}) {
         const controller = new AbortController();
-        const timeoutMs = String(options.method || "GET").toUpperCase() === "POST" ? 5000 : 1800;
+        const timeoutMs = Number(options.timeoutMs) || (String(options.method || "GET").toUpperCase() === "POST" ? 5000 : 1800);
         const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+        const { timeoutMs: ignoredTimeout, ...fetchOptions } = options;
         try {
           const response = await fetch("/api/mode", {
             cache: "no-store",
-            ...options,
+            ...fetchOptions,
             signal: controller.signal,
           });
-          if (!response.ok) throw new Error("mode api unavailable");
-          return response.json();
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(payload.message || "mode api unavailable");
+          return payload;
         } finally {
           window.clearTimeout(timeoutId);
         }
@@ -2430,6 +2674,7 @@
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ resetAll: true }),
+            timeoutMs: 30000,
           });
           lastAdminModeVersion = Number(payload.version) || lastAdminModeVersion;
           sharedTimer = payload.timer;
@@ -2455,6 +2700,7 @@
           render();
           teamMonitorStatus.textContent = "전체 초기화 완료 · 1조 수사 기록 0건";
           modeStatus.textContent = "전체 초기화 완료 · 참가자 화면: 레크레이션 화면";
+          await loadArchiveList(true);
           if (modeChannel) {
             modeChannel.postMessage({
               mode: payload.mode,
@@ -2465,8 +2711,8 @@
               sessionId: payload.sessionId,
             });
           }
-        } catch {
-          modeStatus.textContent = "전체 초기화 실패 · 서버 연결을 확인해주세요.";
+        } catch (error) {
+          modeStatus.textContent = `전체 초기화 중단 · ${error instanceof Error ? error.message : "서버 연결을 확인해주세요."}`;
         } finally {
           resetAllGameButton.disabled = false;
           resetAllGameButton.textContent = originalLabel;
@@ -2905,6 +3151,34 @@
         selectMonitorGroup(Number(button.dataset.monitorGroup));
       });
       refreshTeamMonitorButton.addEventListener("click", () => loadTeamMonitor(true));
+      refreshArchivesButton.addEventListener("click", () => loadArchiveList(false));
+      archiveSelect.addEventListener("change", () => loadArchive(archiveSelect.value).catch((error) => {
+        archiveStatus.textContent = error instanceof Error ? error.message : "지난 회차를 불러오지 못했습니다.";
+      }));
+      archiveSummary.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-archive-summary-group]");
+        if (!button) return;
+        selectedArchiveGroup = Number(button.dataset.archiveSummaryGroup) || 1;
+        renderArchiveDetail();
+      });
+      archiveDetail.addEventListener("click", (event) => {
+        const groupButton = event.target.closest("[data-archive-group]");
+        if (groupButton) {
+          selectedArchiveGroup = Number(groupButton.dataset.archiveGroup) || 1;
+          renderArchiveDetail();
+          return;
+        }
+        const photoButton = event.target.closest("[data-archive-evidence]");
+        if (!photoButton) return;
+        const item = (archiveTeamData().evidence || []).find((entry) => entry.id === photoButton.dataset.archiveEvidence);
+        if (item) {
+          adminViewerTitle.textContent = `지난 회차 ${selectedArchiveGroup}조 · ${item.caption || "증거사진"}`;
+          adminViewerImage.src = item.imageData;
+          adminViewerCopy.textContent = `${item.author || "조원"} · ${formatMonitorDate(item.createdAt)} · ${item.caption || "증거사진"}`;
+          adminPhotoViewer.hidden = false;
+          document.body.classList.add("admin-modal-open");
+        }
+      });
       adminEvidenceGrid.addEventListener("click", (event) => {
         const button = event.target.closest("[data-admin-evidence]");
         if (!button) return;
@@ -2960,6 +3234,7 @@
       syncSharedMode();
       renderTeamMonitor();
       loadTeamMonitor(true);
+      loadArchiveList(false);
       setInterval(syncSharedMode, 1800);
       setInterval(() => loadTeamMonitor(false), 2500);
       setInterval(renderTimerStatus, 1000);

@@ -1,3 +1,10 @@
+import {
+  archiveConfigurationMessage,
+  buildTeamArchive,
+  hasSupabaseArchive,
+  saveGameArchive,
+} from "../lib/supabase-archive.js";
+
 const DEFAULT_MODE = "recreation";
 const MODE_KEY = "crime-scene:mode";
 const MODE_LOCK_KEY = `${MODE_KEY}:write-lock`;
@@ -310,6 +317,19 @@ async function redisCommands(commands) {
   });
 }
 
+async function archiveCurrentGame(current) {
+  if (!hasRedis()) throw new Error("Redis가 연결되지 않아 현재 회차를 안전하게 보관할 수 없습니다.");
+  if (!hasSupabaseArchive()) throw new Error(`초기화 중단: ${archiveConfigurationMessage()}`);
+
+  const commands = [1, 2, 3].flatMap((group) => [
+    ["LRANGE", `crime-scene:evidence:group:${group}`, 0, -1],
+    ["SMEMBERS", `crime-scene:clues:group:${group}`],
+    ["HGETALL", `crime-scene:notes:group:${group}`],
+  ]);
+  const teamData = buildTeamArchive(await redisCommands(commands));
+  return saveGameArchive(current, teamData);
+}
+
 function wait(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
@@ -319,7 +339,7 @@ async function withRedisWriteLock(callback) {
   const deadline = Date.now() + 6000;
 
   while (Date.now() < deadline) {
-    const acquired = await redisCommand(["SET", MODE_LOCK_KEY, token, "NX", "PX", 8000]);
+    const acquired = await redisCommand(["SET", MODE_LOCK_KEY, token, "NX", "PX", 45000]);
     if (acquired === "OK") {
       try {
         return await callback();
@@ -386,6 +406,7 @@ async function writeModeStateUnlocked(payload) {
   const current = await readModeState();
   const body = payload && typeof payload === "object" ? payload : {};
   if (body.resetAll === true) {
+    const archived = await archiveCurrentGame(current);
     const reset = {
       mode: DEFAULT_MODE,
       version: current.version + 1,
@@ -395,6 +416,8 @@ async function writeModeStateUnlocked(payload) {
       groups: defaultGroups(),
       participants: [],
       recreation: defaultRecreation(),
+      archivedSessionId: String(archived?.id || ""),
+      archivedAt: String(archived?.archived_at || ""),
     };
     if (hasRedis()) {
       await redisCommands([
