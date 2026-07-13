@@ -317,7 +317,19 @@ async function redisCommands(commands) {
   });
 }
 
-async function archiveCurrentGame(current) {
+function normalizeGameContent(value) {
+  if (!value || typeof value !== "object") return null;
+  try {
+    const serialized = JSON.stringify(value);
+    if (serialized.length > 500000) throw new Error("게임 콘텐츠가 보관 제한 용량을 초과했습니다.");
+    return JSON.parse(serialized);
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("게임 콘텐츠를 보관할 수 없습니다.");
+  }
+}
+
+async function archiveCurrentGame(current, gameContent) {
   if (!hasRedis()) throw new Error("Redis가 연결되지 않아 현재 회차를 안전하게 보관할 수 없습니다.");
   if (!hasSupabaseArchive()) throw new Error(`초기화 중단: ${archiveConfigurationMessage()}`);
 
@@ -327,7 +339,7 @@ async function archiveCurrentGame(current) {
     ["HGETALL", `crime-scene:notes:group:${group}`],
   ]);
   const teamData = buildTeamArchive(await redisCommands(commands));
-  return saveGameArchive(current, teamData);
+  return saveGameArchive({ ...current, gameContent: normalizeGameContent(gameContent) }, teamData);
 }
 
 function wait(milliseconds) {
@@ -406,7 +418,7 @@ async function writeModeStateUnlocked(payload) {
   const current = await readModeState();
   const body = payload && typeof payload === "object" ? payload : {};
   if (body.resetAll === true) {
-    const archived = await archiveCurrentGame(current);
+    const archived = await archiveCurrentGame(current, body.gameContent);
     const reset = {
       mode: DEFAULT_MODE,
       version: current.version + 1,

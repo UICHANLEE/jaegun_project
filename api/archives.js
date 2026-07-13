@@ -1,6 +1,7 @@
 import {
   archiveConfigurationMessage,
   getGameArchive,
+  getGameArchiveBySessionId,
   hasSupabaseArchive,
   listGameArchives,
 } from "../lib/supabase-archive.js";
@@ -26,6 +27,16 @@ export default async function handler(request, response) {
 
   try {
     const id = String(request.query?.id || "").trim();
+    const sessionId = String(request.query?.sessionId || "").trim();
+    if (sessionId) {
+      const archive = await getGameArchiveBySessionId(sessionId);
+      if (!archive) {
+        response.status(404).json({ error: "Archive not found" });
+        return;
+      }
+      response.status(200).json({ archive, source: "supabase" });
+      return;
+    }
     if (id) {
       const archive = await getGameArchive(id);
       if (!archive) {

@@ -674,6 +674,63 @@
         margin-top: 0.75rem;
       }
 
+      .archive-mode-banner {
+        position: sticky;
+        top: 10px;
+        z-index: 70;
+        display: none;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 12px;
+        border: 1px solid rgba(232, 196, 119, 0.64);
+        padding: 0.78rem 0.9rem;
+        background: rgba(24, 18, 10, 0.96);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
+        backdrop-filter: blur(12px);
+      }
+
+      body.archive-readonly .archive-mode-banner {
+        display: grid;
+      }
+
+      .archive-mode-title {
+        color: var(--gold);
+        font-size: 0.88rem;
+        font-weight: 950;
+      }
+
+      .archive-mode-copy {
+        margin-top: 0.18rem;
+        color: var(--muted);
+        font-size: 0.72rem;
+      }
+
+      body.archive-readonly .hero .mode-button,
+      body.archive-readonly .hero input,
+      body.archive-readonly .hero textarea,
+      body.archive-readonly .participant-controls button {
+        pointer-events: none;
+        opacity: 0.46;
+      }
+
+      body.archive-readonly .matrix-board button,
+      body.archive-readonly .matrix-board input {
+        pointer-events: none;
+        opacity: 0.46;
+      }
+
+      body.archive-readonly .team-refresh {
+        opacity: 0.46;
+        pointer-events: none;
+      }
+
+      body.archive-readonly .archive-panel .team-refresh,
+      body.archive-readonly .archive-mode-banner .mode-button {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
       body.admin-modal-open {
         overflow: hidden;
       }
@@ -1652,6 +1709,10 @@
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
+        .archive-mode-banner {
+          grid-template-columns: 1fr;
+        }
+
         .locks {
           grid-template-columns: repeat(6, 1fr);
         }
@@ -1664,6 +1725,13 @@
   </head>
   <body>
     <main class="app">
+      <section class="archive-mode-banner" id="archiveModeBanner" aria-live="polite">
+        <div>
+          <div class="archive-mode-title" id="archiveModeTitle">지난 회차 열람 중</div>
+          <div class="archive-mode-copy">읽기 전용 화면입니다. 현재 게임과 참가자 휴대폰에는 영향을 주지 않습니다.</div>
+        </div>
+        <button class="mode-button" type="button" id="returnToLiveGame">현재 게임으로 돌아가기</button>
+      </section>
       <section class="hero">
         <div>
           <div class="case-kicker"><span class="case-dot"></span> 관리자 콘솔</div>
@@ -1833,7 +1901,7 @@
     </section>
 
     <script>
-      const suspects = [
+      let suspects = [
         {
           id: "P01",
           name: "홍강도",
@@ -2137,10 +2205,14 @@
       const archiveClueGrid = document.querySelector("#archiveClueGrid");
       const archiveEvidenceGrid = document.querySelector("#archiveEvidenceGrid");
       const archiveNoteList = document.querySelector("#archiveNoteList");
+      const archiveModeTitle = document.querySelector("#archiveModeTitle");
+      const returnToLiveGameButton = document.querySelector("#returnToLiveGame");
 
-      const allClues = suspects.flatMap((suspect) => suspect.clues);
-      const clueOwnerMap = new Map(suspects.flatMap((suspect) => suspect.clues.map((clue) => [clue.id, suspect.name])));
-      const codeMap = new Map(allClues.map((clue) => [clue.code, clue]));
+      const cloneContent = (value) => JSON.parse(JSON.stringify(value));
+      const liveSuspects = cloneContent(suspects);
+      let allClues = [];
+      let clueOwnerMap = new Map();
+      let codeMap = new Map();
       const gameModeKey = "upupGameMode";
       const modeChannel = "BroadcastChannel" in window ? new BroadcastChannel("upup-game-mode") : null;
       let sharedTimer = null;
@@ -2158,6 +2230,24 @@
       let archiveList = [];
       let selectedArchive = null;
       let selectedArchiveGroup = 1;
+      let archiveMode = false;
+      let liveClueState = null;
+
+      function rebuildGameContentIndexes() {
+        allClues = suspects.flatMap((suspect) => (Array.isArray(suspect.clues) ? suspect.clues : []));
+        clueOwnerMap = new Map(suspects.flatMap((suspect) => (suspect.clues || []).map((clue) => [clue.id, suspect.name])));
+        codeMap = new Map(allClues.map((clue) => [clue.code, clue]));
+      }
+
+      function currentGameContent() {
+        return {
+          schemaVersion: 1,
+          title: "우리 사이에 비밀은 없어..?",
+          suspects: cloneContent(suspects),
+        };
+      }
+
+      rebuildGameContentIndexes();
 
       function normalizeGameMode(mode) {
         return mode === "crime" ? "crime" : "recreation";
@@ -2253,11 +2343,11 @@
                   <div class="participant-group">${group ? `${group.number}조` : "?조"}</div>
                 </div>
                 <div class="assign-buttons">
-                  <button class="participant-edit" type="button" data-edit-participant="${escapeHtml(participant.name)}">수정</button>
+                  <button class="participant-edit" type="button" data-edit-participant="${escapeHtml(participant.name)}" ${archiveMode ? "disabled" : ""}>수정</button>
                   ${[1, 2, 3]
                     .map(
                       (number) => `
-                        <button class="assign-button ${group?.number === number ? "active" : ""}" type="button" data-assign-group="${number}" data-participant="${escapeHtml(participant.name)}">
+                        <button class="assign-button ${group?.number === number ? "active" : ""}" type="button" data-assign-group="${number}" data-participant="${escapeHtml(participant.name)}" ${archiveMode ? "disabled" : ""}>
                           ${number}조
                         </button>
                       `,
@@ -2293,6 +2383,88 @@
 
       function archiveTeamData() {
         return selectedArchive?.team_data?.[String(selectedArchiveGroup)] || { evidence: [], clueIds: [], notes: {} };
+      }
+
+      function applyArchivedTeam(groupNumber = selectedMonitorGroup) {
+        const group = Math.max(1, Math.min(3, Number(groupNumber) || 1));
+        selectedMonitorGroup = group;
+        const team = selectedArchive?.team_data?.[String(group)] || {};
+        monitorClueIds = new Set(Array.isArray(team.clueIds) ? team.clueIds : []);
+        monitorEvidence = Array.isArray(team.evidence) ? team.evidence : [];
+        monitorEvidenceCount = monitorEvidence.length;
+        monitorLatestEvidenceId = String(monitorEvidence[0]?.id || "");
+        monitorNotes = team.notes && typeof team.notes === "object" ? team.notes : {};
+        const noteCount = suspects.filter((suspect) => noteItems(monitorNotes[suspect.id]).length).length;
+        teamMonitorStatus.textContent = `지난 회차 ${group}조 · 힌트 ${monitorClueIds.size}/${allClues.length} · 증거사진 ${monitorEvidenceCount}장 · 메모 ${noteCount}/${suspects.length} · 읽기 전용`;
+        renderTeamMonitor();
+      }
+
+      function enterArchiveMode() {
+        if (!selectedArchive) return;
+        if (!archiveMode) {
+          liveClueState = { clueId: state.clueId, viewed: new Set(state.viewed) };
+        }
+        archiveMode = true;
+        document.body.classList.add("archive-readonly");
+        const archivedState = selectedArchive.mode_state || {};
+        const archivedSuspects = archivedState.gameContent?.suspects;
+        suspects = Array.isArray(archivedSuspects) && archivedSuspects.length ? cloneContent(archivedSuspects) : cloneContent(liveSuspects);
+        rebuildGameContentIndexes();
+        state.clueId = null;
+        state.viewed = new Set(
+          Object.values(selectedArchive.team_data || {}).flatMap((team) => (Array.isArray(team?.clueIds) ? team.clueIds : [])),
+        );
+        sharedGroups = normalizeGroups(archivedState.groups);
+        sharedParticipants = normalizeParticipants(archivedState.participants);
+        sharedRecreation = archivedState.recreation || { started: false };
+        const archivedTimer = archivedState.timer || {};
+        sharedTimer = {
+          ...archivedTimer,
+          running: false,
+          endsAt: "",
+          remainingSeconds: Math.max(0, Number(archivedTimer.remainingSeconds) || 0),
+        };
+        selectedMonitorGroup = 1;
+        archiveModeTitle.textContent = `${selectedArchive.title || "지난 회차"} · ${formatMonitorDate(selectedArchive.archived_at)} 열람 중`;
+        renderModeStatus(archivedState.mode, "지난 회차 · 읽기 전용");
+        renderGroupRosterInput(sharedGroups);
+        renderGroupStatus(sharedGroups);
+        renderParticipantList();
+        renderTimerStatus(sharedTimer);
+        renderRecreationStatus(sharedRecreation);
+        recreationStatus.textContent += " · 지난 회차";
+        groupStatus.textContent += " · 지난 회차";
+        participantStatus.textContent += " · 지난 회차";
+        groupRosterInput.readOnly = true;
+        applyArchivedTeam(1);
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      async function returnToLiveGame(updateHistory = true) {
+        archiveMode = false;
+        document.body.classList.remove("archive-readonly");
+        groupRosterInput.readOnly = false;
+        archiveSelect.value = "";
+        selectedArchive = null;
+        selectedArchiveGroup = 1;
+        suspects = cloneContent(liveSuspects);
+        rebuildGameContentIndexes();
+        state.clueId = liveClueState?.clueId || null;
+        state.viewed = new Set(liveClueState?.viewed || []);
+        liveClueState = null;
+        renderArchiveSummary();
+        render();
+        if (updateHistory && window.location.pathname !== "/jaegunadmin.html") window.history.pushState({}, "", "/jaegunadmin.html");
+        modeStatus.textContent = "현재 게임 상태를 다시 불러오는 중입니다.";
+        await syncSharedMode(true);
+        selectedMonitorGroup = 1;
+        monitorEvidence = [];
+        monitorEvidenceCount = 0;
+        monitorLatestEvidenceId = "";
+        monitorClueIds = new Set();
+        monitorNotes = {};
+        await loadTeamMonitor(true);
       }
 
       function renderArchiveDetail() {
@@ -2358,8 +2530,33 @@
         renderArchiveDetail();
       }
 
+      function archiveSessionFromUrl() {
+        const querySession = new URLSearchParams(window.location.search).get("archiveSession");
+        if (querySession) return querySession;
+        const match = window.location.pathname.match(/^\/jaegunadmin\/([^/]+)\/?$/);
+        return match ? decodeURIComponent(match[1]) : "";
+      }
+
+      function updateArchiveUrl(sessionId) {
+        const normalized = String(sessionId || "").trim();
+        if (!normalized) return;
+        const nextPath = `/jaegunadmin/${encodeURIComponent(normalized)}`;
+        if (window.location.pathname !== nextPath) window.history.pushState({ archiveSession: normalized }, "", nextPath);
+      }
+
+      function activateArchiveRecord(archive) {
+        selectedArchive = archive;
+        selectedArchiveGroup = 1;
+        archiveSelect.value = archive.id || "";
+        archiveStatus.textContent = `${formatMonitorDate(archive.archived_at)} 보관 회차 · 원본 기록 열람 가능`;
+        enterArchiveMode();
+        renderArchiveSummary();
+        updateArchiveUrl(archive.session_id);
+      }
+
       async function loadArchive(id) {
         if (!id) {
+          if (archiveMode) await returnToLiveGame();
           selectedArchive = null;
           renderArchiveSummary();
           return;
@@ -2368,10 +2565,17 @@
         const response = await fetch(`/api/archives?id=${encodeURIComponent(id)}`, { cache: "no-store" });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(payload.message || "지난 회차를 불러오지 못했습니다.");
-        selectedArchive = payload.archive;
-        selectedArchiveGroup = 1;
-        archiveStatus.textContent = `${formatMonitorDate(selectedArchive.archived_at)} 보관 회차 · 원본 기록 열람 가능`;
-        renderArchiveSummary();
+        activateArchiveRecord(payload.archive);
+      }
+
+      async function loadArchiveBySession(sessionId) {
+        const normalized = String(sessionId || "").trim();
+        if (!normalized) return;
+        archiveStatus.textContent = `${normalized} 회차를 불러오는 중입니다.`;
+        const response = await fetch(`/api/archives?sessionId=${encodeURIComponent(normalized)}`, { cache: "no-store" });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.message || "요청한 회차를 찾지 못했습니다.");
+        activateArchiveRecord(payload.archive);
       }
 
       async function loadArchiveList(selectLatest = false) {
@@ -2395,6 +2599,17 @@
           archiveStatus.textContent = error instanceof Error ? error.message : "보관함 연결 실패";
         } finally {
           refreshArchivesButton.disabled = false;
+        }
+      }
+
+      async function initializeArchives() {
+        await loadArchiveList(false);
+        const sessionId = archiveSessionFromUrl();
+        if (!sessionId) return;
+        try {
+          await loadArchiveBySession(sessionId);
+        } catch (error) {
+          archiveStatus.textContent = error instanceof Error ? error.message : "요청한 회차를 찾지 못했습니다.";
         }
       }
 
@@ -2517,6 +2732,10 @@
       }
 
       async function loadTeamMonitor(forceEvidence = false) {
+        if (archiveMode) {
+          applyArchivedTeam(selectedMonitorGroup);
+          return;
+        }
         if (monitorRequestInFlight) return;
         monitorRequestInFlight = true;
         refreshTeamMonitorButton.disabled = true;
@@ -2537,6 +2756,10 @@
 
       function selectMonitorGroup(groupNumber) {
         const group = Math.max(1, Math.min(3, Number(groupNumber) || 1));
+        if (archiveMode) {
+          applyArchivedTeam(group);
+          return;
+        }
         if (group === selectedMonitorGroup && monitorEvidence.length) return;
         selectedMonitorGroup = group;
         monitorClueIds = new Set();
@@ -2673,7 +2896,7 @@
           const payload = await fetchModeApi({
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ resetAll: true }),
+            body: JSON.stringify({ resetAll: true, gameContent: currentGameContent() }),
             timeoutMs: 30000,
           });
           lastAdminModeVersion = Number(payload.version) || lastAdminModeVersion;
@@ -2700,7 +2923,7 @@
           render();
           teamMonitorStatus.textContent = "전체 초기화 완료 · 1조 수사 기록 0건";
           modeStatus.textContent = "전체 초기화 완료 · 참가자 화면: 레크레이션 화면";
-          await loadArchiveList(true);
+          await loadArchiveList(false);
           if (modeChannel) {
             modeChannel.postMessage({
               mode: payload.mode,
@@ -2745,11 +2968,12 @@
         }
       }
 
-      async function syncSharedMode() {
+      async function syncSharedMode(force = false) {
+        if (archiveMode && !force) return;
         try {
           const payload = await fetchModeApi();
           const version = Number(payload.version) || 0;
-          if (sharedTimer && version === lastAdminModeVersion) return;
+          if (!force && sharedTimer && version === lastAdminModeVersion) return;
           lastAdminModeVersion = version;
           publishLocalMode(payload.mode, modeSourceLabel(payload.source));
           sharedTimer = payload.timer;
@@ -3152,6 +3376,9 @@
       });
       refreshTeamMonitorButton.addEventListener("click", () => loadTeamMonitor(true));
       refreshArchivesButton.addEventListener("click", () => loadArchiveList(false));
+      returnToLiveGameButton.addEventListener("click", () => returnToLiveGame().catch(() => {
+        modeStatus.textContent = "현재 게임을 다시 불러오지 못했습니다. 새로고침해주세요.";
+      }));
       archiveSelect.addEventListener("change", () => loadArchive(archiveSelect.value).catch((error) => {
         archiveStatus.textContent = error instanceof Error ? error.message : "지난 회차를 불러오지 못했습니다.";
       }));
@@ -3159,6 +3386,7 @@
         const button = event.target.closest("[data-archive-summary-group]");
         if (!button) return;
         selectedArchiveGroup = Number(button.dataset.archiveSummaryGroup) || 1;
+        if (archiveMode) applyArchivedTeam(selectedArchiveGroup);
         renderArchiveDetail();
       });
       archiveDetail.addEventListener("click", (event) => {
@@ -3207,6 +3435,18 @@
           renderModeStatus(event.newValue || "recreation", "이 브라우저 미리보기");
         }
       });
+      window.addEventListener("popstate", () => {
+        const sessionId = archiveSessionFromUrl();
+        if (sessionId) {
+          loadArchiveBySession(sessionId).catch((error) => {
+            archiveStatus.textContent = error instanceof Error ? error.message : "요청한 회차를 찾지 못했습니다.";
+          });
+        } else if (archiveMode) {
+          returnToLiveGame(false).catch(() => {
+            modeStatus.textContent = "현재 게임을 다시 불러오지 못했습니다. 새로고침해주세요.";
+          });
+        }
+      });
       if (modeChannel) {
         modeChannel.addEventListener("message", (event) => {
           if (event.data?.mode) renderModeStatus(event.data.mode, "이 브라우저 미리보기");
@@ -3234,7 +3474,7 @@
       syncSharedMode();
       renderTeamMonitor();
       loadTeamMonitor(true);
-      loadArchiveList(false);
+      initializeArchives();
       setInterval(syncSharedMode, 1800);
       setInterval(() => loadTeamMonitor(false), 2500);
       setInterval(renderTimerStatus, 1000);

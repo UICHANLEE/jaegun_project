@@ -22,6 +22,10 @@
   ],
   "rewrites": [
     {
+      "source": "/jaegunadmin/:sessionId",
+      "destination": "/jaegunadmin.html?archiveSession=:sessionId"
+    },
+    {
       "source": "/",
       "destination": "/index.html"
     }
