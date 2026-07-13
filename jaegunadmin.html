@@ -228,6 +228,39 @@
         font-weight: 900;
       }
 
+      .announcement-controls {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) auto auto minmax(160px, 0.55fr);
+        gap: 0.55rem;
+        align-items: stretch;
+        max-width: 920px;
+        margin-top: 0.65rem;
+      }
+
+      .announcement-input {
+        min-height: 46px;
+        max-height: 120px;
+        resize: vertical;
+        border: 1px solid rgba(232, 196, 119, 0.34);
+        border-radius: 0;
+        padding: 0.7rem;
+        color: var(--text);
+        background: rgba(6, 9, 9, 0.68);
+        font: inherit;
+        font-weight: 750;
+        outline: none;
+      }
+
+      .announcement-status {
+        min-height: 46px;
+        border: 1px solid rgba(105, 198, 189, 0.28);
+        padding: 0.65rem 0.7rem;
+        color: var(--teal);
+        background: rgba(105, 198, 189, 0.1);
+        font-size: 0.78rem;
+        font-weight: 850;
+      }
+
       .group-controls {
         display: grid;
         gap: 0.55rem;
@@ -1691,6 +1724,15 @@
           grid-column: 1 / -1;
         }
 
+        .announcement-controls {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .announcement-input,
+        .announcement-status {
+          grid-column: 1 / -1;
+        }
+
         .group-row {
           grid-template-columns: 1fr;
         }
@@ -1765,6 +1807,12 @@
             <button class="mode-button secondary" type="button" id="resetTimer">초기화</button>
             <button class="mode-button secondary" type="button" id="clearTimer">숨김</button>
             <div class="timer-status" id="timerStatus">타이머: --:--</div>
+          </div>
+          <div class="announcement-controls" aria-label="참가자 공지 전송">
+            <textarea class="announcement-input" id="announcementInput" maxlength="300" rows="2" placeholder="참가자 화면에 띄울 공지를 입력하세요."></textarea>
+            <button class="mode-button" type="button" id="sendAnnouncement">공지 전송</button>
+            <button class="mode-button secondary" type="button" id="clearAnnouncement">공지 내리기</button>
+            <div class="announcement-status" id="announcementStatus">공지: 없음</div>
           </div>
           <div class="group-controls" aria-label="참가자 조 편성">
             <div class="group-row">
@@ -2179,6 +2227,10 @@
       const resetTimerButton = document.querySelector("#resetTimer");
       const clearTimerButton = document.querySelector("#clearTimer");
       const timerStatus = document.querySelector("#timerStatus");
+      const announcementInput = document.querySelector("#announcementInput");
+      const sendAnnouncementButton = document.querySelector("#sendAnnouncement");
+      const clearAnnouncementButton = document.querySelector("#clearAnnouncement");
+      const announcementStatus = document.querySelector("#announcementStatus");
       const groupRosterInput = document.querySelector("#groupRosterInput");
       const saveGroupsButton = document.querySelector("#saveGroups");
       const groupStatus = document.querySelector("#groupStatus");
@@ -2220,6 +2272,7 @@
       let sharedGroups = [];
       let sharedParticipants = [];
       let sharedRecreation = { started: false };
+      let sharedAnnouncement = null;
       let selectedMonitorGroup = 1;
       let monitorClueIds = new Set();
       let monitorEvidence = [];
@@ -2312,6 +2365,17 @@
         timerStatus.textContent = `타이머: ${formatSeconds(remaining)} · ${label}`;
         startTimerButton.textContent = !timer.running && remaining > 0 && remaining < timer.durationSeconds ? "계속" : "재생";
         stopTimerButton.disabled = !timer.running || remaining <= 0;
+      }
+
+      function renderAnnouncementStatus(announcement = sharedAnnouncement) {
+        if (!announcement?.text) {
+          announcementStatus.textContent = "공지: 없음";
+          clearAnnouncementButton.disabled = true;
+          return;
+        }
+        const preview = announcement.text.replace(/\s+/g, " ").slice(0, 38);
+        announcementStatus.textContent = `최근 공지: ${preview}${announcement.text.length > 38 ? "…" : ""}`;
+        clearAnnouncementButton.disabled = false;
       }
 
       function normalizeGroupName(name) {
@@ -2899,11 +2963,13 @@
           sharedGroups = normalizeGroups(payload.groups);
           sharedParticipants = normalizeParticipants(payload.participants);
           sharedRecreation = payload.recreation || { started: false };
+          sharedAnnouncement = payload.announcement || null;
           renderGroupRosterInput(sharedGroups);
           renderTimerStatus();
           renderGroupStatus();
           renderParticipantList();
           renderRecreationStatus();
+          renderAnnouncementStatus();
         } catch {
           renderModeStatus(normalized, "이 브라우저 미리보기");
         }
@@ -2931,6 +2997,7 @@
           sharedGroups = normalizeGroups(payload.groups);
           sharedParticipants = normalizeParticipants(payload.participants);
           sharedRecreation = payload.recreation || { started: false };
+          sharedAnnouncement = null;
           state.clueId = null;
           state.viewed.clear();
           selectedMonitorGroup = 1;
@@ -2946,6 +3013,7 @@
           renderGroupStatus();
           renderParticipantList();
           renderRecreationStatus();
+          renderAnnouncementStatus();
           renderTeamMonitor();
           render();
           teamMonitorStatus.textContent = "전체 초기화 완료 · 1조 수사 기록 0건";
@@ -2958,6 +3026,7 @@
               groups: payload.groups,
               participants: payload.participants,
               recreation: payload.recreation,
+              announcement: payload.announcement,
               sessionId: payload.sessionId,
             });
           }
@@ -2995,6 +3064,36 @@
         }
       }
 
+      async function pushAnnouncement(action) {
+        if (archiveMode) return;
+        const text = announcementInput.value.trim();
+        if (action === "send" && !text) {
+          announcementStatus.textContent = "공지 내용을 먼저 입력해주세요.";
+          announcementInput.focus();
+          return;
+        }
+        sendAnnouncementButton.disabled = true;
+        clearAnnouncementButton.disabled = true;
+        announcementStatus.textContent = action === "clear" ? "공지를 내리는 중" : "공지 전송 중";
+        try {
+          const payload = await fetchModeApi({
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ announcement: { action, text } }),
+          });
+          lastAdminModeVersion = Number(payload.version) || lastAdminModeVersion;
+          sharedAnnouncement = payload.announcement || null;
+          renderAnnouncementStatus();
+          if (action === "send") announcementInput.value = "";
+          if (modeChannel) modeChannel.postMessage({ announcement: sharedAnnouncement });
+        } catch {
+          announcementStatus.textContent = "공지 전송 실패 · 서버 연결을 확인해주세요.";
+        } finally {
+          sendAnnouncementButton.disabled = false;
+          clearAnnouncementButton.disabled = !sharedAnnouncement;
+        }
+      }
+
       async function syncSharedMode(force = false) {
         if (archiveMode && !force) return;
         try {
@@ -3007,11 +3106,13 @@
           sharedGroups = normalizeGroups(payload.groups);
           sharedParticipants = normalizeParticipants(payload.participants);
           sharedRecreation = payload.recreation || { started: false };
+          sharedAnnouncement = payload.announcement || null;
           renderGroupRosterInput(sharedGroups);
           renderTimerStatus();
           renderGroupStatus();
           renderParticipantList();
           renderRecreationStatus();
+          renderAnnouncementStatus();
         } catch {
           renderModeStatus(localStorage.getItem(gameModeKey) || "recreation", "이 브라우저 미리보기");
         }
@@ -3395,6 +3496,8 @@
       stopTimerButton.addEventListener("click", () => pushSharedTimer("pause"));
       resetTimerButton.addEventListener("click", () => pushSharedTimer("reset"));
       clearTimerButton.addEventListener("click", () => pushSharedTimer("clear"));
+      sendAnnouncementButton.addEventListener("click", () => pushAnnouncement("send"));
+      clearAnnouncementButton.addEventListener("click", () => pushAnnouncement("clear"));
       saveGroupsButton.addEventListener("click", pushSharedGroups);
       document.querySelector(".team-tabs").addEventListener("click", (event) => {
         const button = event.target.closest("[data-monitor-group]");
@@ -3495,6 +3598,10 @@
             sharedRecreation = event.data.recreation;
             renderRecreationStatus();
           }
+          if (event.data?.announcement !== undefined) {
+            sharedAnnouncement = event.data.announcement;
+            renderAnnouncementStatus();
+          }
         });
       }
 
@@ -3507,6 +3614,7 @@
       setInterval(renderTimerStatus, 1000);
       renderParticipantList();
       renderRecreationStatus();
+      renderAnnouncementStatus();
       render();
     </script>
   </body>

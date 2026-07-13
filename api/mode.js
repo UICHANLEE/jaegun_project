@@ -33,8 +33,33 @@ function fallbackState() {
     groups: defaultGroups(),
     participants: [],
     recreation: defaultRecreation(),
+    announcement: null,
   };
   return globalThis.__upupGameModeState;
+}
+
+function normalizeAnnouncement(announcement) {
+  if (!announcement || typeof announcement !== "object") return null;
+  const text = String(announcement.text || "").trim().slice(0, 300);
+  const id = String(announcement.id || "").trim();
+  if (!text || !id) return null;
+  return {
+    id,
+    text,
+    createdAt: String(announcement.createdAt || new Date().toISOString()),
+  };
+}
+
+function nextAnnouncement(currentAnnouncement, payload) {
+  if (!payload || typeof payload !== "object") return normalizeAnnouncement(currentAnnouncement);
+  if (payload.action === "clear") return null;
+  const text = String(payload.text || "").trim().slice(0, 300);
+  if (!text) return normalizeAnnouncement(currentAnnouncement);
+  return {
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    text,
+    createdAt: new Date().toISOString(),
+  };
 }
 
 function defaultRecreation() {
@@ -393,6 +418,7 @@ async function readModeState() {
         groups: normalizeGroups(parsed.groups),
         participants: normalizeParticipants(parsed.participants),
         recreation: normalizeRecreation(parsed.recreation),
+        announcement: normalizeAnnouncement(parsed.announcement),
       };
   } catch {
     return fallbackState();
@@ -429,6 +455,7 @@ async function writeModeStateUnlocked(payload) {
       groups: defaultGroups(),
       participants: [],
       recreation: defaultRecreation(),
+      announcement: null,
       archivedSessionId: String(archived?.id || ""),
       archivedAt: String(archived?.archived_at || ""),
     };
@@ -453,6 +480,7 @@ async function writeModeStateUnlocked(payload) {
     groups: Array.isArray(body.groups) ? normalizeGroups(body.groups) : normalizeGroups(current.groups),
     participants: nextParticipants(current.participants, body.participant),
     recreation: nextRecreationWithWordScan(nextRecreation(current.recreation, body.recreation), Array.isArray(body.groups) ? body.groups : current.groups, body.wordScan),
+    announcement: nextAnnouncement(current.announcement, body.announcement),
   };
 
   if (hasRedis()) {
@@ -500,6 +528,7 @@ export default async function handler(request, response) {
             timer: state.timer,
             groups: state.groups,
             recreation: state.recreation,
+            announcement: state.announcement,
           },
         });
       }

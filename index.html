@@ -253,8 +253,32 @@
         color: #17324a;
         box-shadow: 0 24px 60px rgba(50, 85, 112, 0.28);
         transform: translate(-50%, -50%);
-        pointer-events: none;
+        appearance: none;
+        cursor: pointer;
+        touch-action: manipulation;
         text-align: center;
+        transition: top 220ms ease, left 220ms ease, right 220ms ease, min-width 220ms ease, padding 220ms ease, transform 220ms ease;
+      }
+
+      .player-timer.is-compact {
+        top: max(12px, env(safe-area-inset-top));
+        right: 12px;
+        left: auto;
+        min-width: 112px;
+        padding: 0.55rem 0.7rem;
+        transform: none;
+      }
+
+      .player-timer.is-compact .timer-small {
+        font-size: 0.58rem;
+      }
+
+      .player-timer.is-compact .timer-time {
+        font-size: 1.75rem;
+      }
+
+      .player-timer.is-finished {
+        animation: timerFinished 780ms ease-in-out 3;
       }
 
       .player-timer[hidden] {
@@ -284,6 +308,79 @@
         font-size: clamp(3.25rem, 18vw, 5.8rem);
         line-height: 0.95;
         font-weight: 950;
+      }
+
+      .announcement-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 150;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(9, 16, 20, 0.7);
+        backdrop-filter: blur(8px);
+      }
+
+      .announcement-overlay[hidden] {
+        display: none;
+      }
+
+      .announcement-card {
+        width: min(100%, 420px);
+        border: 1px solid rgba(37, 80, 111, 0.26);
+        padding: 1.2rem;
+        background: #fff;
+        color: #17324a;
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.38);
+        animation: announcementEnter 260ms ease-out both;
+      }
+
+      body[data-mode="crime"] .announcement-card {
+        border-color: rgba(232, 196, 119, 0.42);
+        background: #101414;
+        color: var(--text);
+      }
+
+      .announcement-kicker {
+        display: block;
+        margin-bottom: 0.55rem;
+        color: #a43f32;
+        font-size: 0.76rem;
+        font-weight: 950;
+      }
+
+      .announcement-copy {
+        margin: 0;
+        white-space: pre-wrap;
+        font-size: 1.15rem;
+        font-weight: 850;
+        line-height: 1.55;
+      }
+
+      .announcement-confirm {
+        width: 100%;
+        min-height: 48px;
+        margin-top: 1rem;
+        border: 0;
+        background: #17324a;
+        color: #fff;
+        font: inherit;
+        font-weight: 900;
+      }
+
+      body[data-mode="crime"] .announcement-confirm {
+        background: var(--gold);
+        color: #111;
+      }
+
+      @keyframes timerFinished {
+        0%, 100% { box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48); }
+        50% { box-shadow: 0 0 0 7px rgba(215, 72, 55, 0.25), 0 24px 70px rgba(215, 72, 55, 0.62); }
+      }
+
+      @keyframes announcementEnter {
+        from { opacity: 0; transform: translateY(16px) scale(0.97); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
       .name-gate {
@@ -1790,10 +1887,17 @@
         </form>
       </div>
     </section>
-    <div class="player-timer" id="playerTimer" hidden>
+    <button class="player-timer" id="playerTimer" type="button" aria-label="타이머 작게 보기" aria-pressed="false" hidden>
       <span class="timer-small" id="playerTimerLabel">MISSION TIMER</span>
       <span class="timer-time" id="playerTimerTime">--:--</span>
-    </div>
+    </button>
+    <section class="announcement-overlay" id="announcementOverlay" role="alertdialog" aria-modal="true" aria-labelledby="announcementTitle" hidden>
+      <div class="announcement-card">
+        <strong class="announcement-kicker" id="announcementTitle">진행자 공지</strong>
+        <p class="announcement-copy" id="announcementCopy"></p>
+        <button class="announcement-confirm" id="announcementConfirm" type="button">확인</button>
+      </div>
+    </section>
     <section class="recreation-screen" aria-label="레크레이션 대기 화면">
       <div class="recreation-top">
         <span class="rec-badge" id="participantBadge">재건 부산노회 청년부</span>
@@ -2345,6 +2449,9 @@
       const playerTimer = document.querySelector("#playerTimer");
       const playerTimerLabel = document.querySelector("#playerTimerLabel");
       const playerTimerTime = document.querySelector("#playerTimerTime");
+      const announcementOverlay = document.querySelector("#announcementOverlay");
+      const announcementCopy = document.querySelector("#announcementCopy");
+      const announcementConfirm = document.querySelector("#announcementConfirm");
       const evidenceGroupLabel = document.querySelector("#evidenceGroupLabel");
       const evidenceShareStatus = document.querySelector("#evidenceShareStatus");
       const captureEvidenceButton = document.querySelector("#captureEvidenceButton");
@@ -2381,6 +2488,8 @@
       const gameModeKey = "upupGameMode";
       const participantNameKey = "participantName";
       const gameSessionKey = "gameSessionId";
+      const compactTimerKey = "compactPlayerTimer";
+      const dismissedAnnouncementKey = "dismissedAnnouncementId";
       const modeChannel = "BroadcastChannel" in window ? new BroadcastChannel("upup-game-mode") : null;
       const fastPollBaseMs = 900;
       const hiddenPollBaseMs = 5000;
@@ -2390,6 +2499,7 @@
       const drawingWordsPerGroup = 1;
       const drawingQrToken = "JAEGUN-DRAW-NEXT";
       let sharedTimer = null;
+      let sharedAnnouncement = null;
       let sharedGroups = [];
       let sharedRecreation = { started: false, wordAssignments: {} };
       let participantName = readStoredValue(participantNameKey);
@@ -2417,6 +2527,65 @@
       let realtimeTeamGroup = 0;
       let realtimeConnected = false;
       let realtimeSyncTimer = 0;
+      let timerAudioContext = null;
+      let lastTimerSignature = "";
+      let lastTimerRemaining = null;
+      let timerEndNotifiedFor = "";
+
+      const timerStartsCompact = readStoredValue(compactTimerKey) === "1";
+      playerTimer.classList.toggle("is-compact", timerStartsCompact);
+      playerTimer.setAttribute("aria-pressed", String(timerStartsCompact));
+      playerTimer.setAttribute("aria-label", timerStartsCompact ? "타이머 크게 보기" : "타이머 작게 보기");
+
+      function applyAnnouncement(announcement) {
+        sharedAnnouncement = announcement && announcement.id && announcement.text ? announcement : null;
+        const dismissedId = readStoredValue(dismissedAnnouncementKey);
+        if (!sharedAnnouncement || sharedAnnouncement.id === dismissedId) {
+          announcementOverlay.hidden = true;
+          return;
+        }
+        announcementCopy.textContent = sharedAnnouncement.text;
+        announcementOverlay.hidden = false;
+      }
+
+      function primeTimerFeedback() {
+        if (!window.AudioContext && !window.webkitAudioContext) return;
+        if (!timerAudioContext) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          timerAudioContext = new AudioContextClass();
+        }
+        if (timerAudioContext.state === "suspended") timerAudioContext.resume().catch(() => {});
+      }
+
+      function playTimerFinishedSound() {
+        try {
+          primeTimerFeedback();
+          if (!timerAudioContext || timerAudioContext.state !== "running") return;
+          [0, 0.28, 0.56].forEach((delay, index) => {
+            const oscillator = timerAudioContext.createOscillator();
+            const gain = timerAudioContext.createGain();
+            const start = timerAudioContext.currentTime + delay;
+            oscillator.type = "sine";
+            oscillator.frequency.value = index === 2 ? 880 : 660;
+            gain.gain.setValueAtTime(0.0001, start);
+            gain.gain.exponentialRampToValueAtTime(0.22, start + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.2);
+            oscillator.connect(gain).connect(timerAudioContext.destination);
+            oscillator.start(start);
+            oscillator.stop(start + 0.22);
+          });
+        } catch {}
+      }
+
+      function notifyTimerFinished(signature) {
+        if (!signature || timerEndNotifiedFor === signature) return;
+        timerEndNotifiedFor = signature;
+        playerTimer.classList.remove("is-finished");
+        void playerTimer.offsetWidth;
+        playerTimer.classList.add("is-finished");
+        playTimerFinishedSound();
+        if (navigator.vibrate) navigator.vibrate([250, 120, 250, 120, 500]);
+      }
 
       function normalizeGameMode(mode) {
         return mode === "crime" ? "crime" : "recreation";
@@ -3182,9 +3351,21 @@
       function renderPlayerTimer() {
         if (!sharedTimer || !sharedTimer.durationSeconds) {
           if (!playerTimer.hidden) playerTimer.hidden = true;
+          lastTimerSignature = "";
+          lastTimerRemaining = null;
+          playerTimer.classList.remove("is-finished");
           return;
         }
         const remaining = getTimerRemaining(sharedTimer);
+        const signature = `${sharedTimer.updatedAt || sharedTimer.endsAt || "timer"}:${sharedTimer.durationSeconds}`;
+        if (signature !== lastTimerSignature) {
+          lastTimerSignature = signature;
+          lastTimerRemaining = remaining;
+          if (remaining > 0) playerTimer.classList.remove("is-finished");
+        } else if (remaining <= 0 && Number(lastTimerRemaining) > 0) {
+          notifyTimerFinished(signature);
+        }
+        lastTimerRemaining = remaining;
         if (playerTimer.hidden) playerTimer.hidden = false;
         const timeText = formatSeconds(remaining);
         const labelText = sharedTimer.running && remaining > 0 ? "MISSION TIMER" : remaining <= 0 ? "TIME OVER" : "PAUSED";
@@ -3209,6 +3390,7 @@
         applyServerSession(realtimeState.sessionId);
         applyGameMode(realtimeState.mode, "실시간");
         sharedTimer = realtimeState.timer;
+        applyAnnouncement(realtimeState.announcement);
         sharedGroups = normalizeGroups(realtimeState.groups);
         applyRecreation(realtimeState.recreation);
         renderParticipantIdentity();
@@ -3287,6 +3469,7 @@
             applyServerSession(payload.sessionId);
             applyGameMode(payload.mode, modeSourceLabel(payload.source));
             sharedTimer = payload.timer;
+            applyAnnouncement(payload.announcement);
             sharedGroups = normalizeGroups(payload.groups);
             applyRecreation(payload.recreation);
             renderParticipantIdentity();
@@ -3548,6 +3731,7 @@
             sharedTimer = event.data.timer;
             renderPlayerTimer();
           }
+          if (event.data?.announcement !== undefined) applyAnnouncement(event.data.announcement);
           if (event.data?.groups) {
             sharedGroups = normalizeGroups(event.data.groups);
             renderParticipantIdentity();
@@ -3559,6 +3743,19 @@
       }
 
       captureEvidenceButton.addEventListener("click", triggerEvidenceCamera);
+      playerTimer.addEventListener("click", () => {
+        const compact = !playerTimer.classList.contains("is-compact");
+        playerTimer.classList.toggle("is-compact", compact);
+        playerTimer.setAttribute("aria-pressed", String(compact));
+        playerTimer.setAttribute("aria-label", compact ? "타이머 크게 보기" : "타이머 작게 보기");
+        writeStoredValue(compactTimerKey, compact ? "1" : "0");
+        primeTimerFeedback();
+      });
+      announcementConfirm.addEventListener("click", () => {
+        if (sharedAnnouncement?.id) writeStoredValue(dismissedAnnouncementKey, sharedAnnouncement.id);
+        announcementOverlay.hidden = true;
+      });
+      document.addEventListener("pointerdown", primeTimerFeedback, { once: true });
       scanWordQrButton.addEventListener("click", startWordQrScanner);
       stopWordQrScanButton.addEventListener("click", closeWordQrScanner);
       openGalleryButton.addEventListener("click", openTeamGallery);

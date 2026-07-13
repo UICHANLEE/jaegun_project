@@ -70,6 +70,31 @@ def default_recreation() -> dict[str, str | bool]:
     return {"started": False, "updatedAt": "", "wordAssignments": {}}
 
 
+def normalize_announcement(announcement: object) -> dict[str, str] | None:
+    if not isinstance(announcement, dict):
+        return None
+    text = str(announcement.get("text") or "").strip()[:300]
+    announcement_id = str(announcement.get("id") or "").strip()
+    if not text or not announcement_id:
+        return None
+    return {
+        "id": announcement_id,
+        "text": text,
+        "createdAt": str(announcement.get("createdAt") or datetime.now(UTC).isoformat()),
+    }
+
+
+def next_announcement(current: object, payload: object) -> dict[str, str] | None:
+    if not isinstance(payload, dict):
+        return normalize_announcement(current)
+    if payload.get("action") == "clear":
+        return None
+    text = str(payload.get("text") or "").strip()[:300]
+    if not text:
+        return normalize_announcement(current)
+    return {"id": uuid.uuid4().hex, "text": text, "createdAt": datetime.now(UTC).isoformat()}
+
+
 def normalize_word_assignments(assignments: object) -> dict[str, list[dict[str, object]]]:
     source = assignments if isinstance(assignments, dict) else {}
     normalized: dict[str, list[dict[str, object]]] = {}
@@ -299,6 +324,7 @@ def read_state() -> dict[str, str | int | bool | dict]:
             "groups": normalize_groups(payload.get("groups")),
             "participants": normalize_participants(payload.get("participants")),
             "recreation": normalize_recreation(payload.get("recreation")),
+            "announcement": normalize_announcement(payload.get("announcement")),
         }
     except Exception:
         return {
@@ -311,6 +337,7 @@ def read_state() -> dict[str, str | int | bool | dict]:
             "groups": default_groups(),
             "participants": [],
             "recreation": default_recreation(),
+            "announcement": None,
         }
 
 
@@ -368,6 +395,7 @@ def write_state(payload: dict | None) -> dict[str, str | int | bool | dict]:
         "groups": next_groups,
         "participants": next_participants(current.get("participants"), payload.get("participant")),
         "recreation": next_recreation_with_word_scan(recreation_state, next_groups, payload.get("wordScan")),
+        "announcement": next_announcement(current.get("announcement"), payload.get("announcement")),
     }
     RUNTIME_DIR.mkdir(exist_ok=True)
     MODE_TMP_FILE.write_text(json.dumps(next_state, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -601,6 +629,7 @@ def reset_all_state() -> dict[str, object]:
         "groups": default_groups(),
         "participants": [],
         "recreation": default_recreation(),
+        "announcement": None,
     }
     RUNTIME_DIR.mkdir(exist_ok=True)
     MODE_TMP_FILE.write_text(json.dumps(reset, ensure_ascii=False, indent=2), encoding="utf-8")
