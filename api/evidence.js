@@ -1,3 +1,5 @@
+import { broadcastRealtime, teamRealtimeTopic } from "../lib/realtime.js";
+
 const MODE_KEY = "crime-scene:mode";
 const EVIDENCE_KEY_PREFIX = "crime-scene:evidence:group:";
 const MAX_ITEMS_PER_GROUP = 18;
@@ -127,6 +129,12 @@ export default async function handler(request, response) {
         ["LPUSH", evidenceKey(group), JSON.stringify(item)],
         ["LTRIM", evidenceKey(group), 0, MAX_ITEMS_PER_GROUP - 1],
       ]);
+      await broadcastRealtime(teamRealtimeTopic(group), "team-changed", {
+        group,
+        kind: "evidence",
+        evidenceId: item.id,
+        updatedAt: item.createdAt,
+      });
       response.status(201).json({ group, item, source: "redis" });
       return;
     }

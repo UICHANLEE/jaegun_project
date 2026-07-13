@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="/" />
     <title>우리 사이에 비밀은 없어..?</title>
     <style>
       :root {
@@ -2239,11 +2240,37 @@
         codeMap = new Map(allClues.map((clue) => [clue.code, clue]));
       }
 
-      function currentGameContent() {
+      function blobToDataUrl(blob) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.addEventListener("load", () => resolve(String(reader.result || "")), { once: true });
+          reader.addEventListener("error", () => reject(new Error("용의자 이미지를 읽지 못했습니다.")), { once: true });
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      async function archivePortraitSource(source) {
+        const value = String(source || "").trim();
+        if (!value || value.startsWith("data:")) return value;
+        const response = await fetch(new URL(value, window.location.href));
+        if (!response.ok) throw new Error(`용의자 이미지 저장 준비 실패: ${value}`);
+        const blob = await response.blob();
+        if (!blob.type.startsWith("image/")) throw new Error(`이미지 파일 형식이 아닙니다: ${value}`);
+        if (blob.size > 300000) throw new Error(`용의자 이미지가 너무 큽니다: ${value}`);
+        return blobToDataUrl(blob);
+      }
+
+      async function currentGameContent() {
+        const archivedSuspects = cloneContent(suspects);
+        await Promise.all(
+          archivedSuspects.map(async (suspect) => {
+            suspect.portrait = await archivePortraitSource(suspect.portrait);
+          }),
+        );
         return {
           schemaVersion: 1,
           title: "우리 사이에 비밀은 없어..?",
-          suspects: cloneContent(suspects),
+          suspects: archivedSuspects,
         };
       }
 
@@ -2896,7 +2923,7 @@
           const payload = await fetchModeApi({
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ resetAll: true, gameContent: currentGameContent() }),
+            body: JSON.stringify({ resetAll: true, gameContent: await currentGameContent() }),
             timeoutMs: 30000,
           });
           lastAdminModeVersion = Number(payload.version) || lastAdminModeVersion;

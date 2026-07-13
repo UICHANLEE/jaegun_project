@@ -1994,6 +1994,7 @@
       </div>
     </section>
 
+    <script src="/assets/supabase.js"></script>
     <script src="assets/jsQR.js"></script>
     <script>
       const suspects = [
@@ -2381,8 +2382,10 @@
       const participantNameKey = "participantName";
       const gameSessionKey = "gameSessionId";
       const modeChannel = "BroadcastChannel" in window ? new BroadcastChannel("upup-game-mode") : null;
-      const fastPollBaseMs = 500;
+      const fastPollBaseMs = 900;
       const hiddenPollBaseMs = 5000;
+      const realtimePollBaseMs = 12000;
+      const realtimeHiddenPollBaseMs = 30000;
       const drawingWords = ["찻잔", "돈", "수첩"];
       const drawingWordsPerGroup = 1;
       const drawingQrToken = "JAEGUN-DRAW-NEXT";
@@ -2408,6 +2411,12 @@
       let wordQrStream = null;
       let wordQrScanFrame = 0;
       let pendingUrlDrawingClaim = pendingDrawingQrFromUrl;
+      let realtimeClient = null;
+      let realtimeGlobalChannel = null;
+      let realtimeTeamChannel = null;
+      let realtimeTeamGroup = 0;
+      let realtimeConnected = false;
+      let realtimeSyncTimer = 0;
 
       function normalizeGameMode(mode) {
         return mode === "crime" ? "crime" : "recreation";
@@ -2554,6 +2563,7 @@
           if (playerGroupValue.textContent !== "이름 입력 필요") playerGroupValue.textContent = "이름 입력 필요";
           renderEvidenceAvailability();
           renderWordCards();
+          void ensureTeamRealtimeChannel();
           return;
         }
 
@@ -2567,6 +2577,7 @@
         maybeClaimPendingUrlDrawingWord();
         syncTeamClueProgress();
         syncTeamCluesFromServer(true);
+        void ensureTeamRealtimeChannel();
       }
 
       function renderEvidenceAvailability() {
@@ -2954,7 +2965,7 @@
         const group = findParticipantGroup();
         if (!participantName || !group) return;
         const now = Date.now();
-        const throttleMs = document.hidden ? 8000 : 2200;
+        const throttleMs = realtimeConnected ? (document.hidden ? 60000 : 30000) : document.hidden ? 8000 : 2200;
         if (!force && now - lastTeamClueFetchAt < throttleMs) return;
         if (now < teamClueFetchRetryAfter) return;
         lastTeamClueFetchAt = now;
@@ -3181,6 +3192,88 @@
         if (playerTimerLabel.textContent !== labelText) playerTimerLabel.textContent = labelText;
       }
 
+      function scheduleRealtimeModeSync() {
+        window.clearTimeout(realtimeSyncTimer);
+        realtimeSyncTimer = window.setTimeout(() => syncGameMode(), 40 + Math.floor(Math.random() * 650));
+      }
+
+      function applyRealtimeState(payload) {
+        const realtimeState = payload?.state;
+        if (!realtimeState || typeof realtimeState !== "object") {
+          scheduleRealtimeModeSync();
+          return;
+        }
+        const version = Number(realtimeState.version) || 0;
+        if (version && version < lastSharedVersion) return;
+        lastSharedVersion = version || lastSharedVersion;
+        applyServerSession(realtimeState.sessionId);
+        applyGameMode(realtimeState.mode, "실시간");
+        sharedTimer = realtimeState.timer;
+        sharedGroups = normalizeGroups(realtimeState.groups);
+        applyRecreation(realtimeState.recreation);
+        renderParticipantIdentity();
+        renderPlayerTimer();
+      }
+
+      async function ensureTeamRealtimeChannel() {
+        if (!realtimeClient) return;
+        const nextGroup = findParticipantGroup()?.number || 0;
+        if (nextGroup === realtimeTeamGroup && realtimeTeamChannel) return;
+        if (realtimeTeamChannel) {
+          await realtimeClient.removeChannel(realtimeTeamChannel).catch(() => {});
+          realtimeTeamChannel = null;
+        }
+        realtimeTeamGroup = nextGroup;
+        if (!nextGroup) return;
+        realtimeTeamChannel = realtimeClient
+          .channel(`jaegun-team-${nextGroup}`)
+          .on("broadcast", { event: "team-changed" }, (message) => {
+            const payload = message?.payload || {};
+            if (payload.kind === "evidence" && payload.evidenceId) {
+              const evidenceId = String(payload.evidenceId);
+              if (latestKnownEvidenceId !== evidenceId) markEvidenceAttention(evidenceId);
+              latestKnownEvidenceId = evidenceId;
+              return;
+            }
+            mergeTeamClueIds(payload.clueIds);
+            mergeTeamNotes(payload.notes);
+          })
+          .subscribe();
+      }
+
+      async function initializeRealtime() {
+        document.body.dataset.realtime = "connecting";
+        if (!window.supabase?.createClient) {
+          document.body.dataset.realtime = "fallback";
+          return;
+        }
+        try {
+          const response = await fetch("/api/realtime-config", { cache: "force-cache" });
+          const config = await response.json();
+          if (!response.ok || !config.enabled || !config.url || !config.key) {
+            document.body.dataset.realtime = "fallback";
+            return;
+          }
+          realtimeClient = window.supabase.createClient(config.url, config.key, {
+            auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+          });
+          realtimeGlobalChannel = realtimeClient
+            .channel(config.topic || "jaegun-game")
+            .on("broadcast", { event: "state-changed" }, (message) => applyRealtimeState(message?.payload))
+            .subscribe((status) => {
+              realtimeConnected = status === "SUBSCRIBED";
+              document.body.dataset.realtime = realtimeConnected ? "connected" : "fallback";
+              if (realtimeConnected) {
+                scheduleRealtimeModeSync();
+                void ensureTeamRealtimeChannel();
+              }
+            });
+        } catch {
+          realtimeConnected = false;
+          document.body.dataset.realtime = "fallback";
+        }
+      }
+
       async function syncGameMode() {
         const controller = new AbortController();
         const timeoutId = window.setTimeout(() => controller.abort(), 1400);
@@ -3208,6 +3301,10 @@
       }
 
       function nextSyncDelay() {
+        if (realtimeConnected) {
+          const base = document.hidden ? realtimeHiddenPollBaseMs : realtimePollBaseMs;
+          return base + Math.floor(Math.random() * 3000);
+        }
         if (document.hidden) return hiddenPollBaseMs + Math.floor(Math.random() * 1200);
         const timerRemaining = getTimerRemaining(sharedTimer);
         const timerVisible = Boolean(sharedTimer?.durationSeconds);
@@ -3225,6 +3322,12 @@
         window.clearTimeout(syncTimeoutId);
         if (!document.hidden) syncTeamCluesFromServer(true);
         syncTimeoutId = window.setTimeout(syncGameModeLoop, document.hidden ? 1000 : 50);
+      });
+
+      window.addEventListener("pagehide", () => {
+        window.clearTimeout(realtimeSyncTimer);
+        if (realtimeClient && realtimeTeamChannel) realtimeClient.removeChannel(realtimeTeamChannel);
+        if (realtimeClient && realtimeGlobalChannel) realtimeClient.removeChannel(realtimeGlobalChannel);
       });
 
       function escapeHtml(value) {
@@ -3788,6 +3891,7 @@
         );
       }
 
+      initializeRealtime();
       syncGameModeLoop();
       setInterval(renderPlayerTimer, 250);
       renderWordCards();

@@ -4,6 +4,7 @@ import {
   hasSupabaseArchive,
   saveGameArchive,
 } from "../lib/supabase-archive.js";
+import { broadcastRealtime, globalRealtimeTopic, modeChangeKind } from "../lib/realtime.js";
 
 const DEFAULT_MODE = "recreation";
 const MODE_KEY = "crime-scene:mode";
@@ -321,7 +322,7 @@ function normalizeGameContent(value) {
   if (!value || typeof value !== "object") return null;
   try {
     const serialized = JSON.stringify(value);
-    if (serialized.length > 500000) throw new Error("게임 콘텐츠가 보관 제한 용량을 초과했습니다.");
+    if (serialized.length > 2000000) throw new Error("게임 콘텐츠가 보관 제한 용량을 초과했습니다.");
     return JSON.parse(serialized);
   } catch (error) {
     if (error instanceof Error) throw error;
@@ -485,6 +486,23 @@ export default async function handler(request, response) {
 
     if (request.method === "POST") {
       const state = await writeModeState(request.body);
+      const kind = modeChangeKind(request.body);
+      if (kind !== "participant") {
+        await broadcastRealtime(globalRealtimeTopic(), "state-changed", {
+          kind,
+          version: state.version,
+          sessionId: state.sessionId,
+          updatedAt: state.updatedAt,
+          state: {
+            mode: state.mode,
+            version: state.version,
+            sessionId: state.sessionId,
+            timer: state.timer,
+            groups: state.groups,
+            recreation: state.recreation,
+          },
+        });
+      }
       response.status(200).json({ ...state, source: stateSource(), warning: stateWarning(), latencyMs: Date.now() - startedAt });
       return;
     }

@@ -1,3 +1,5 @@
+import { broadcastRealtime, teamRealtimeTopic } from "../lib/realtime.js";
+
 const MODE_KEY = "crime-scene:mode";
 const EVIDENCE_KEY_PREFIX = "crime-scene:evidence:group:";
 const CLUE_KEY_PREFIX = "crime-scene:clues:group:";
@@ -251,7 +253,16 @@ export default async function handler(request, response) {
       const results = await redisCommands(commands);
       const storedClueIds = results.at(-2);
       const storedNotes = results.at(-1);
-      response.status(200).json({ group, clueIds: normalizeClueIds(storedClueIds), notes: normalizeNotes(storedNotes), source: "redis" });
+      const normalizedStoredClueIds = normalizeClueIds(storedClueIds);
+      const normalizedStoredNotes = normalizeNotes(storedNotes);
+      await broadcastRealtime(teamRealtimeTopic(group), "team-changed", {
+        group,
+        kind: incomingNote ? "note" : "clue",
+        clueIds: normalizedStoredClueIds,
+        notes: normalizedStoredNotes,
+        updatedAt: new Date().toISOString(),
+      });
+      response.status(200).json({ group, clueIds: normalizedStoredClueIds, notes: normalizedStoredNotes, source: "redis" });
       return;
     }
   } catch (error) {
